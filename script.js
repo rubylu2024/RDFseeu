@@ -214,6 +214,9 @@ function savePosts() {
 
 // 页面加载完成后执行
 window.addEventListener('DOMContentLoaded', function() {
+    // 初始化帖子数据
+    savePosts();
+    
     // 检查是否是帖子详情页面
     if (window.location.pathname.includes('post.html')) {
         loadPostDetails();
@@ -242,130 +245,133 @@ window.addEventListener('DOMContentLoaded', function() {
 // 更新用户导航链接
 function updateUserLinks() {
     const userLinksContainer = document.getElementById('user-links-container');
-    if (userLinksContainer) {
-        const userLoggedIn = localStorage.getItem('userLoggedIn');
+    if (!userLinksContainer) return;
+    
+    const userLoggedIn = localStorage.getItem('userLoggedIn');
+    
+    if (userLoggedIn) {
+        userLinksContainer.innerHTML = `
+            <a href="profile.html">个人资料</a>
+            <a href="#" id="logout-btn">退出登录</a>
+        `;
         
-        if (userLoggedIn) {
-            // 用户已登录，显示个人资料和退出登录链接
-            userLinksContainer.innerHTML = `
-                <a href="profile.html">个人资料</a>
-                <a href="#" id="logout-btn">退出登录</a>
-            `;
-            
-            // 绑定退出登录按钮
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // 清除登录状态
-                    localStorage.removeItem('userLoggedIn');
-                    localStorage.removeItem('currentUser');
-                    
-                    // 跳转到首页
-                    window.location.href = 'index.html';
-                });
-            }
-        } else {
-            // 用户未登录，显示登录和注册链接
-            userLinksContainer.innerHTML = `
-                <a href="user-login.html">登录</a>
-                <a href="register.html">注册</a>
-            `;
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('userLoggedIn');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            });
         }
+    } else {
+        userLinksContainer.innerHTML = `
+            <a href="user-login.html">登录</a>
+            <a href="register.html">注册</a>
+        `;
     }
 }
 
 // 设置布局切换功能
 function setupLayoutToggle() {
     const mobileToggle = document.getElementById('mobile-toggle');
-    if (mobileToggle) {
-        mobileToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // 切换到手机版布局
-            document.body.classList.add('mobile-layout');
-            localStorage.setItem('layoutPreference', 'mobile');
-            
-            // 添加电脑版切换按钮
-            addDesktopToggle();
-        });
-    }
+    if (!mobileToggle) return;
+    
+    mobileToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.body.classList.add('mobile-layout');
+        localStorage.setItem('layoutPreference', 'mobile');
+        addDesktopToggle();
+    });
 }
 
 // 添加电脑版切换按钮
 function addDesktopToggle() {
-    // 检查是否已经存在电脑版切换按钮
-    if (!document.getElementById('desktop-toggle')) {
-        const userLinks = document.querySelector('.user-links');
-        if (userLinks) {
-            const desktopToggle = document.createElement('a');
-            desktopToggle.id = 'desktop-toggle';
-            desktopToggle.href = '#';
-            desktopToggle.textContent = '电脑版';
-            
-            // 添加点击事件
-            desktopToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // 切换回电脑版布局
-                document.body.classList.remove('mobile-layout');
-                localStorage.removeItem('layoutPreference');
-                
-                // 移除电脑版切换按钮
-                this.remove();
-            });
-            
-            // 添加到用户链接区域
-            userLinks.appendChild(desktopToggle);
-        }
-    }
+    if (document.getElementById('desktop-toggle')) return;
+    
+    const userLinks = document.querySelector('.user-links');
+    if (!userLinks) return;
+    
+    const desktopToggle = document.createElement('a');
+    desktopToggle.id = 'desktop-toggle';
+    desktopToggle.href = '#';
+    desktopToggle.textContent = '电脑版';
+    
+    desktopToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.body.classList.remove('mobile-layout');
+        localStorage.removeItem('layoutPreference');
+        this.remove();
+    });
+    
+    userLinks.appendChild(desktopToggle);
 }
 
 // 检查用户的布局偏好
 function checkLayoutPreference() {
     const layoutPreference = localStorage.getItem('layoutPreference');
     if (layoutPreference === 'mobile') {
-        // 应用手机版布局
         document.body.classList.add('mobile-layout');
-        
-        // 添加电脑版切换按钮
         addDesktopToggle();
     }
 }
 
 // 加载帖子详情
 function loadPostDetails() {
-    // 获取URL参数中的帖子ID
     const urlParams = new URLSearchParams(window.location.search);
     const postId = parseInt(urlParams.get('id'));
     
-    // 查找对应的帖子
+    if (isNaN(postId)) {
+        showPostError('无效的帖子ID');
+        return;
+    }
+    
     const post = posts.find(p => p.id === postId);
     
     if (post) {
-        // 更新帖子标题
         document.getElementById('post-title').textContent = post.title;
         
-        // 更新帖子元信息
         const postMeta = document.querySelector('.post-meta');
-        postMeta.innerHTML = `
-            <span>作者: ${post.author}</span>
-            <span>发布于: ${post.date}</span>
-            <span>浏览: ${post.views}</span>
-        `;
+        if (postMeta) {
+            postMeta.innerHTML = `
+                <span>作者: ${escapeHtml(post.author)}</span>
+                <span>发布于: ${escapeHtml(post.date)}</span>
+                <span>浏览: ${post.views}</span>
+            `;
+        }
         
-        // 更新帖子内容
         const postContent = document.querySelector('.post-content');
-        postContent.innerHTML = post.content;
+        if (postContent) {
+            postContent.innerHTML = post.content;
+        }
         
-        // 加载评论
         loadComments(postId);
     } else {
-        // 如果找不到帖子，显示错误信息
-        document.querySelector('.post-header h2').textContent = '帖子不存在';
-        document.querySelector('.post-content').innerHTML = '<p>抱歉，您请求的帖子不存在。</p>';
+        showPostError('帖子不存在');
     }
+}
+
+// 显示帖子错误
+function showPostError(message) {
+    const header = document.querySelector('.post-header h2');
+    const content = document.querySelector('.post-content');
+    
+    if (header) {
+        header.textContent = '错误';
+    }
+    if (content) {
+        content.innerHTML = `<p>${escapeHtml(message)}</p>`;
+    }
+}
+
+// HTML转义函数
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;')
+             .replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/"/g, '&quot;')
+             .replace(/'/g, '&#039;');
 }
 
 // 加载评论
@@ -373,20 +379,20 @@ function loadComments(postId) {
     const comments = JSON.parse(localStorage.getItem(`post_${postId}_comments`)) || [];
     const commentsList = document.querySelector('.comments-list');
     
-    // 清空评论列表
+    if (!commentsList) return;
+    
     commentsList.innerHTML = '';
     
-    // 添加评论到列表
     comments.forEach(comment => {
         const commentItem = document.createElement('div');
         commentItem.className = 'comment-item';
         commentItem.innerHTML = `
             <div class="comment-header">
-                <span class="comment-author">${comment.name}</span>
-                <span class="comment-date">${comment.date}</span>
+                <span class="comment-author">${escapeHtml(comment.name)}</span>
+                <span class="comment-date">${escapeHtml(comment.date)}</span>
             </div>
             <div class="comment-content">
-                <p>${comment.content}</p>
+                <p>${escapeHtml(comment.content)}</p>
             </div>
         `;
         commentsList.appendChild(commentItem);
@@ -395,56 +401,59 @@ function loadComments(postId) {
 
 // 保存评论
 function saveComment(postId, name, content) {
-    // 获取当前日期
     const today = new Date();
     const dateString = today.toISOString().split('T')[0];
     
-    // 创建新评论
     const newComment = {
-        name: name,
-        content: content,
+        name: name.trim(),
+        content: content.trim(),
         date: dateString
     };
     
-    // 从localStorage获取现有评论
     const comments = JSON.parse(localStorage.getItem(`post_${postId}_comments`)) || [];
-    
-    // 添加新评论
     comments.push(newComment);
-    
-    // 保存到localStorage
     localStorage.setItem(`post_${postId}_comments`, JSON.stringify(comments));
 }
 
 // 设置评论表单
 function setupCommentForm() {
     const commentForm = document.querySelector('.comment-form form');
+    if (!commentForm) return;
     
-    if (commentForm) {
-        commentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // 获取URL参数中的帖子ID
-            const urlParams = new URLSearchParams(window.location.search);
-            const postId = parseInt(urlParams.get('id'));
-            
-            // 获取表单数据
-            const name = document.getElementById('name').value;
-            const comment = document.getElementById('comment').value;
-            
-            // 保存评论
-            saveComment(postId, name, comment);
-            
-            // 重新加载评论
-            loadComments(postId);
-            
-            // 清空表单
-            commentForm.reset();
-            
-            // 显示成功消息
-            alert('评论发表成功！');
-        });
-    }
+    commentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = parseInt(urlParams.get('id'));
+        
+        if (isNaN(postId)) {
+            alert('无法发表评论：无效的帖子ID');
+            return;
+        }
+        
+        const nameInput = document.getElementById('name');
+        const commentInput = document.getElementById('comment');
+        
+        const name = nameInput.value.trim();
+        const comment = commentInput.value.trim();
+        
+        if (!name) {
+            alert('请输入昵称');
+            nameInput.focus();
+            return;
+        }
+        
+        if (!comment) {
+            alert('请输入评论内容');
+            commentInput.focus();
+            return;
+        }
+        
+        saveComment(postId, name, comment);
+        loadComments(postId);
+        commentForm.reset();
+        alert('评论发表成功！');
+    });
 }
 
 // 设置平滑滚动
@@ -471,42 +480,59 @@ function setupFloatingAd() {
     const ad = document.querySelector('.floating-ad');
     if (!ad) return;
     
-    // 初始位置和速度
-    let x = 100;
-    let y = 100;
-    let dx = 1;
-    let dy = 1;
-    
-    // 动画函数
-    function animate() {
-        // 获取窗口尺寸
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const adWidth = ad.offsetWidth;
-        const adHeight = ad.offsetHeight;
+    // 3秒后显示浮窗广告
+    setTimeout(function() {
+        ad.style.display = 'block';
         
-        // 检查边界碰撞
-        if (x + adWidth >= windowWidth || x <= 0) {
-            dx = -dx;
+        let x = 100;
+        let y = 100;
+        let dx = 2;
+        let dy = 2;
+        let animationId = null;
+        
+        function animate() {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const adWidth = ad.offsetWidth;
+            const adHeight = ad.offsetHeight;
+            
+            if (x + adWidth >= windowWidth) {
+                x = windowWidth - adWidth;
+                dx = -Math.abs(dx);
+            } else if (x <= 0) {
+                x = 0;
+                dx = Math.abs(dx);
+            }
+            
+            if (y + adHeight >= windowHeight) {
+                y = windowHeight - adHeight;
+                dy = -Math.abs(dy);
+            } else if (y <= 0) {
+                y = 0;
+                dy = Math.abs(dy);
+            }
+            
+            x += dx;
+            y += dy;
+            
+            ad.style.left = x + 'px';
+            ad.style.top = y + 'px';
+            
+            animationId = requestAnimationFrame(animate);
         }
-        if (y + adHeight >= windowHeight || y <= 0) {
-            dy = -dy;
-        }
         
-        // 更新位置
-        x += dx;
-        y += dy;
+        animate();
         
-        // 应用位置
-        ad.style.left = x + 'px';
-        ad.style.top = y + 'px';
+        ad.addEventListener('mouseenter', function() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
         
-        // 继续动画
-        requestAnimationFrame(animate);
-    }
-    
-    // 开始动画
-    animate();
+        ad.addEventListener('mouseleave', function() {
+            animate();
+        });
+    }, 3000);
 }
 
 // 设置右下角弹窗广告
@@ -514,13 +540,21 @@ function setupPopupAd() {
     const popupAd = document.querySelector('.popup-ad');
     if (!popupAd) return;
     
-    // 关闭按钮功能
     const closeButton = popupAd.querySelector('.popup-close');
+    if (!closeButton) return;
+    
+    const leftCloseBtn = document.querySelector('.left-close-btn');
+    
+    // 5秒后显示弹窗广告和左侧假关闭按钮
+    setTimeout(function() {
+        popupAd.style.display = 'block';
+        if (leftCloseBtn) {
+            leftCloseBtn.style.display = 'block';
+        }
+    }, 5000);
+    
     closeButton.addEventListener('click', function() {
         popupAd.style.display = 'none';
-        
-        // 同时隐藏左侧的假关闭按钮
-        const leftCloseBtn = document.querySelector('.left-close-btn');
         if (leftCloseBtn) {
             leftCloseBtn.style.display = 'none';
         }

@@ -9,14 +9,15 @@ body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f5f5f5;
+    background-color: #e8e8e8;
 }
 
 /* 顶部导航栏 */
 .top-nav {
-    background-color: #0066cc;
+    background: linear-gradient(to bottom, #cc0000 0%, #ffcccc 100%);
     color: white;
-    padding: 10px 0;
+    padding: 8px 0;
+    border-bottom: 2px solid #990000;
 }
 
 .top-nav-container {
@@ -35,6 +36,13 @@ body {
     font-weight: bold;
 }
 
+.logo-sub {
+    display: block;
+    font-size: 11px;
+    color: #ffcccc;
+    font-weight: normal;
+}
+
 .top-links a {
     color: white;
     text-decoration: none;
@@ -42,22 +50,28 @@ body {
     font-size: 14px;
 }
 
+.top-links a:hover {
+    text-decoration: underline;
+}
+
 .search-box {
     display: flex;
 }
 
 .search-box input {
-    padding: 5px;
-    border: 1px solid #ccc;
-    width: 200px;
+    padding: 4px;
+    border: 1px solid #990000;
+    width: 220px;
+    font-size: 13px;
 }
 
 .search-box button {
-    padding: 5px 10px;
-    background-color: #ff6600;
-    color: white;
-    border: none;
+    padding: 4px 10px;
+    background-color: #e8e8e8;
+    color: #cc0000;
+    border: 1px solid #990000;
     cursor: pointer;
+    font-weight: bold;
 }
 
 .user-links a {
@@ -67,11 +81,15 @@ body {
     font-size: 14px;
 }
 
+.user-links a:hover {
+    text-decoration: underline;
+}
+
 /* 分类导航 */
 .category-nav {
-    background-color: white;
-    border-bottom: 1px solid #ddd;
-    padding: 5px 0;
+    background-color: #e8f4fc;
+    border-bottom: 1px solid #a8d8f0;
+    padding: 6px 0;
 }
 
 .category-nav-container {
@@ -80,13 +98,29 @@ body {
     margin: 0 auto;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .category-nav-container a {
-    color: #333;
+    color: #0066cc;
     text-decoration: none;
-    margin-right: 15px;
-    font-size: 14px;
+    padding: 2px 8px;
+    font-size: 13px;
+    background-color: #ffffff;
+    border: 1px solid #a8d8f0;
+    border-radius: 3px;
+}
+
+.category-nav-container a:hover {
+    background-color: #fff5e6;
+    border-color: #ff9933;
+}
+
+.category-nav-container a.active {
+    background-color: #cc0000;
+    color: white;
+    border-color: #990000;
 }
 
 .location {
@@ -94,10 +128,13 @@ body {
 }
 
 .location a {
-    color: #333;
+    color: #666;
     text-decoration: none;
-    margin-left: 15px;
-    font-size: 14px;
+    margin-left: 10px;
+    font-size: 13px;
+    background-color: transparent;
+    border: none;
+    padding: 0;
 }
 
 /* 主要内容区 */
@@ -114,24 +151,118 @@ body {
     width: 180px;
     background-color: white;
     border: 1px solid #ddd;
-    padding: 10px;
+    padding: 8px;
+}
+
+.scrollable-section {
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+    background-color: #fafafa;
+}
+
+.section-header {
+    background-color: #e8f4fc;
+    padding: 4px 8px 4px 18px;
+    border-bottom: 1px solid #a8d8f0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #333;
+    position: relative;
+}
+
+.section-header::before {
+    content: ">";
+    position: absolute;
+    left: 6px;
+    color: #cc0000;
+}
+
+.scrollable-content {
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+}
+
+.scrollable-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.scrollable-content ul li {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+.scrollable-content ul li:last-child {
+    border-bottom: none;
+}
+
+.scrollable-content ul li a {
+    color: #0066cc;
+    text-decoration: none;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.scrollable-content ul li a:hover {
+    text-decoration: underline;
+}
+
+.announcement {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+}
+
+.announcement h4 {
+    font-size: 12px;
+    font-weight: bold;
+    color: #cc0000;
+    margin: 0 0 5px 0;
+    padding-left: 2px;
+}
+
+.announcement ul {
+    padding-left: 5px;
+}
+
+.announcement ul li {
+    border-bottom: none;
+    margin-bottom: 3px;
+}
+
+.announcement ul li a {
+    color: #333;
 }
 
 .sidebar-section {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .sidebar-section h3 {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
-    margin-bottom: 10px;
-    color: #333;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 5px;
+    margin-bottom: 8px;
+    color: #cc0000;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 4px;
+    padding-left: 15px;
+    position: relative;
+}
+
+.sidebar-section h3::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: #cc0000;
 }
 
 .sidebar-section ul {
     list-style: none;
+    padding-left: 5px;
 }
 
 .sidebar-section ul li {
@@ -148,32 +279,77 @@ body {
     color: #0066cc;
 }
 
+.double-columns {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.double-columns ul {
+    width: 48%;
+}
+
 /* 主内容区 */
 .main-content {
     flex: 1;
     background-color: white;
     border: 1px solid #ddd;
-    padding: 15px;
+    padding: 10px;
+}
+
+.recent-viewers {
+    margin-bottom: 10px;
+    padding: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.recent-viewers span {
+    margin-right: 5px;
+}
+
+.recent-viewers a {
+    color: #0066cc;
+    text-decoration: none;
+    margin-right: 8px;
+}
+
+.recent-viewers a:hover {
+    text-decoration: underline;
 }
 
 .hot-topics {
     margin-bottom: 20px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    background-color: #fafafa;
 }
 
 .hot-topics h3 {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 10px;
-    color: #333;
+    color: #cc0000;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ccc;
 }
 
 .hot-topics ul {
     list-style: none;
     margin-bottom: 15px;
+    padding-left: 5px;
 }
 
 .hot-topics ul li {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+.hot-topics ul li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .hot-topics ul li a {
@@ -184,40 +360,58 @@ body {
 
 .hot-topics ul li a:hover {
     text-decoration: underline;
+    color: #cc0000;
 }
 
 .post-btn {
-    background-color: #ff6600;
+    background-color: #cc0000;
     color: white;
-    border: none;
-    padding: 5px 15px;
+    border: 1px solid #990000;
+    padding: 4px 12px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: bold;
 }
 
 .forum-posts h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     margin-bottom: 10px;
     color: #333;
+    padding-left: 15px;
+    position: relative;
+}
+
+.forum-posts h3::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: #cc0000;
 }
 
 .posts-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
+    border: 1px dashed #ccc;
 }
 
 .posts-table th {
     background-color: #f5f5f5;
-    padding: 8px;
+    padding: 6px 8px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px dashed #ccc;
+    font-weight: bold;
+    color: #666;
 }
 
 .posts-table td {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+    padding: 6px 8px;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+.posts-table tr:last-child td {
+    border-bottom: none;
 }
 
 .posts-table td a {
@@ -227,6 +421,7 @@ body {
 
 .posts-table td a:hover {
     text-decoration: underline;
+    color: #cc0000;
 }
 
 /* 右侧边栏 */
@@ -415,6 +610,30 @@ body {
     font-size: 13px;
 }
 
+/* 底部状态栏 */
+.status-bar {
+    background-color: #0066cc;
+    padding: 8px 0;
+}
+
+.status-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-bar span {
+    color: white;
+    font-size: 13px;
+}
+
+.status-right {
+    color: #ffcc00 !important;
+}
+
 /* 底部样式 */
 footer {
     background-color: #f5f5f5;
@@ -448,6 +667,7 @@ footer {
     padding: 0;
     box-shadow: none;
     z-index: 1000;
+    display: none;
 }
 
 .floating-ad img {
@@ -462,6 +682,7 @@ footer {
     right: 20px;
     z-index: 1001;
     animation: pulse 0.5s infinite ease-in-out;
+    display: none;
 }
 
 @keyframes pulse {
@@ -519,6 +740,7 @@ footer {
     z-index: 1002;
     transform: translate(-100%, 0);
     margin-right: 10px;
+    display: none;
 }
 
 .left-close-btn .popup-close {
