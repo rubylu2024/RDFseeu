@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - 解密游戏论坛</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 个人资料页面样式 */
+        .profile-container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .profile-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .success-message {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error-message {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #ffebee;
+            color: #d32f2f;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="top-nav">
+        <div class="top-nav-container">
+            <div class="logo">
+                <a href="index.html">解密游戏论坛</a>
+            </div>
+            <div class="top-links">
+                <a href="index.html">论坛</a>
+                <a href="#">博客</a>
+                <a href="#">问答</a>
+                <a href="#">游戏</a>
+                <a href="#">天崖客</a>
+                <a href="#">品牌</a>
+                <a href="#">更多</a>
+            </div>
+            <div class="search-box">
+                <input type="text" placeholder="搜索，找人，搜版块">
+                <button>搜索</button>
+            </div>
+            <div class="user-links">
+                <a href="#" id="mobile-toggle">手机</a>
+                <a href="#">服务</a>
+                <a href="profile.html">个人资料</a>
+                <a href="#" id="logout-btn">退出登录</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 个人资料容器 -->
+    <div class="profile-container">
+        <h2>个人资料</h2>
+        <form id="profile-form">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">邮箱</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">新密码</label>
+                <input type="password" id="password" name="password" placeholder="留空表示不修改密码">
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">确认新密码</label>
+                <input type="password" id="confirm-password" name="confirm-password" placeholder="留空表示不修改密码">
+            </div>
+            <div class="form-group">
+                <label for="bio">个人简介</label>
+                <textarea id="bio" name="bio" placeholder="介绍一下自己吧"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">保存修改</button>
+        </form>
+        <div id="success-message" class="success-message"></div>
+        <div id="error-message" class="error-message"></div>
+    </div>
+    
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="bottom-nav-container">
+            <a href="#">我的论坛</a>
+            <a href="#">足迹</a>
+            <a href="#">购物街</a>
+            <a href="#">论坛服务</a>
+            <a href="#">【热帖】手机拍摄美国人的众生相</a>
+            <a href="#">【热帖】曼城负赖斯锁定足球</a>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-container">
+            <p>&copy; 2026 解密游戏论坛. 保留所有权利.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // 页面加载完成后执行
+        window.addEventListener('DOMContentLoaded', function() {
+            // 检查用户是否登录
+            checkLoginStatus();
+            
+            // 加载用户资料
+            loadUserProfile();
+            
+            // 绑定表单提交事件
+            setupProfileForm();
+            
+            // 绑定退出登录按钮
+            setupLogoutButton();
+        });
+        
+        // 检查登录状态
+        function checkLoginStatus() {
+            const userLoggedIn = localStorage.getItem('userLoggedIn');
+            if (!userLoggedIn) {
+                // 未登录，跳转到登录页面
+                window.location.href = 'user-login.html';
+            }
+        }
+        
+        // 加载用户资料
+        function loadUserProfile() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) {
+                document.getElementById('username').value = currentUser.username;
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('bio').value = currentUser.bio || '';
+            }
+        }
+        
+        // 设置个人资料表单
+        function setupProfileForm() {
+            const profileForm = document.getElementById('profile-form');
+            
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    const bio = document.getElementById('bio').value;
+                    
+                    const successMessage = document.getElementById('success-message');
+                    const errorMessage = document.getElementById('error-message');
+                    
+                    // 验证密码
+                    if (password !== confirmPassword) {
+                        errorMessage.textContent = '两次输入的密码不一致';
+                        errorMessage.style.display = 'block';
+                        successMessage.style.display = 'none';
+                        return;
+                    }
+                    
+                    // 获取当前用户
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    
+                    // 更新用户资料
+                    const updatedUser = {
+                        ...currentUser,
+                        username: username,
+                        email: email,
+                        bio: bio
+                    };
+                    
+                    // 如果输入了新密码，则更新密码
+                    if (password) {
+                        updatedUser.password = password;
+                    }
+                    
+                    // 保存到localStorage
+                    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                    
+                    // 更新forumUsers中的用户资料
+                    updateForumUser(updatedUser);
+                    
+                    // 显示成功消息
+                    successMessage.textContent = '个人资料修改成功！';
+                    successMessage.style.display = 'block';
+                    errorMessage.style.display = 'none';
+                });
+            }
+        }
+        
+        // 更新forumUsers中的用户资料
+        function updateForumUser(updatedUser) {
+            // 从localStorage获取forumUsers
+            let forumUsers = JSON.parse(localStorage.getItem('forumUsers')) || [];
+            
+            // 查找并更新用户
+            const userIndex = forumUsers.findIndex(user => user.username === updatedUser.username);
+            
+            if (userIndex !== -1) {
+                // 更新现有用户
+                forumUsers[userIndex] = updatedUser;
+            } else {
+                // 添加新用户
+                updatedUser.id = forumUsers.length + 1;
+                updatedUser.joinDate = updatedUser.joinDate || new Date().toISOString().split('T')[0];
+                forumUsers.push(updatedUser);
+            }
+            
+            // 保存回localStorage
+            localStorage.setItem('forumUsers', JSON.stringify(forumUsers));
+        }
+        
+        // 设置退出登录按钮
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 清除登录状态
+                    localStorage.removeItem('userLoggedIn');
+                    localStorage.removeItem('currentUser');
+                    
+                    // 跳转到首页
+                    window.location.href = 'index.html';
+                });
+            }
+        }
+    </script>
+</body>
+</html>
