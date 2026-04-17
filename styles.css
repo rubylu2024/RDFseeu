@@ -5,49 +5,86 @@
     box-sizing: border-box;
 }
 
+img {
+    border: none;
+}
+
 body {
     font-family: Arial, sans-serif;
+    font-size: 16px;
     line-height: 1.6;
     color: #333;
-    background-color: #e8e8e8;
+    margin: 0;
+    padding: 0;
+    background: url('images/background.jpg') no-repeat center center;
+    background-size: cover;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.forum-frame-outer {
+    width: 98%;
+    max-width: 1208px;
+    height: 98vh;
+    background-color: #848484;
+    padding: 0 4px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.forum-frame {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    background-color: white;
+    border: 4px solid #B2B2B2;
+    box-shadow: inset 0 0 0 1px #000, inset 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow-y: auto;
+    padding: 0;
 }
 
 /* 顶部导航栏 */
 .top-nav {
-    background: linear-gradient(to bottom, #cc0000 0%, #ffcccc 100%);
-    color: white;
-    padding: 8px 0;
-    border-bottom: 2px solid #990000;
+    background: linear-gradient(to bottom, #DD5A60 0%, #E4ACAF 100%);
+    color: black;
+    padding: 4px 0;
+    border: 1px solid #000;
 }
 
 .top-nav-container {
-    width: 95%;
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0 10px;
 }
 
 .logo a {
-    color: white;
+    color: black;
     text-decoration: none;
     font-size: 18px;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .logo-sub {
     display: block;
     font-size: 11px;
-    color: #ffcccc;
+    color: black;
     font-weight: normal;
 }
 
 .top-links a {
-    color: white;
+    color: black;
     text-decoration: none;
     margin-right: 15px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .top-links a:hover {
@@ -62,23 +99,37 @@ body {
     padding: 4px;
     border: 1px solid #990000;
     width: 220px;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .search-box button {
     padding: 4px 10px;
     background-color: #e8e8e8;
-    color: #cc0000;
-    border: 1px solid #990000;
+    color: black;
+    border: 1px solid #C04A50;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: normal;
+}
+
+.user-links {
+    display: flex;
+    align-items: center;
 }
 
 .user-links a {
-    color: white;
+    color: black;
     text-decoration: none;
     margin-left: 15px;
-    font-size: 14px;
+    font-size: 16px;
+}
+
+#user-links-container {
+    display: flex;
+    align-items: center;
+}
+
+#user-links-container a {
+    margin-left: 10px;
 }
 
 .user-links a:hover {
@@ -87,86 +138,101 @@ body {
 
 /* 分类导航 */
 .category-nav {
-    background-color: #e8f4fc;
-    border-bottom: 1px solid #a8d8f0;
-    padding: 6px 0;
+    margin: 0;
+    background-color: #DEDCDD;
+    border: 1px solid #000;
+    padding: 0;
 }
 
 .category-nav-container {
-    width: 95%;
-    max-width: 1200px;
-    margin: 0 auto;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 0;
 }
 
 .category-nav-container a {
-    color: #0066cc;
+    color: #333;
     text-decoration: none;
-    padding: 2px 8px;
-    font-size: 13px;
-    background-color: #ffffff;
-    border: 1px solid #a8d8f0;
-    border-radius: 3px;
+    padding: 5px 10px;
+    font-size: 15px;
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+}
+
+.category-nav-container a:last-child {
+    border-right: none;
 }
 
 .category-nav-container a:hover {
-    background-color: #fff5e6;
-    border-color: #ff9933;
+    text-decoration: underline;
 }
 
 .category-nav-container a.active {
-    background-color: #cc0000;
-    color: white;
-    border-color: #990000;
-}
-
-.location {
-    margin-left: auto;
-}
-
-.location a {
-    color: #666;
-    text-decoration: none;
-    margin-left: 10px;
-    font-size: 13px;
-    background-color: transparent;
-    border: none;
-    padding: 0;
+    color: #cc0000;
+    font-weight: bold;
 }
 
 /* 主要内容区 */
 .main-container {
-    width: 95%;
+    width: 100%;
     max-width: 1200px;
-    margin: 10px auto;
+    margin: 0 auto;
     display: flex;
-    gap: 10px;
+    gap: 0;
 }
 
 /* 左侧边栏 */
 .left-sidebar {
-    width: 180px;
+    width: 325px;
+    background-color: white;
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    border-right: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+    padding: 8px;
+    margin: 0;
+}
+
+/* 右侧内容区（包含分类导航、主内容和右侧边栏） */
+.right-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+}
+
+/* 主内容和右侧边栏的容器 */
+.content-wrapper {
+    display: flex;
+    gap: 0;
+    flex: 1;
+}
+
+/* 右侧边栏 */
+.right-sidebar {
+    width: 220px;
     background-color: white;
     border: 1px solid #ddd;
     padding: 8px;
+    margin: 0;
 }
 
 .scrollable-section {
     border: 1px solid #ddd;
     margin-bottom: 15px;
-    background-color: #fafafa;
+    background-color: white;
 }
 
 .section-header {
-    background-color: #e8f4fc;
+    background-color: white;
     padding: 4px 8px 4px 18px;
-    border-bottom: 1px solid #a8d8f0;
-    font-size: 13px;
+    border-bottom: 1px solid #ddd;
+    font-size: 15px;
     font-weight: bold;
-    color: #333;
+    color: #cc0000;
     position: relative;
 }
 
@@ -182,6 +248,7 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 5px;
+    background-color: white;
 }
 
 .scrollable-content ul {
@@ -203,22 +270,61 @@ body {
 .scrollable-content ul li a {
     color: #0066cc;
     text-decoration: none;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
 }
 
 .scrollable-content ul li a:hover {
     text-decoration: underline;
 }
 
+/* 滚动条样式 */
+.scrollable-content::-webkit-scrollbar {
+    width: 24px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+    background: #003366;
+    border: 1px solid #002244;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: #002244;
+}
+
+.scrollable-content::-webkit-scrollbar-button {
+    background: #e0e0e0;
+    height: 24px;
+    border: 1px solid black;
+}
+
+.scrollable-content::-webkit-scrollbar-button:vertical:start:decrement {
+    background: #e0e0e0 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path d="M10 4L18 12H2L10 4z" fill="black"/></svg>') no-repeat center;
+    border: 1px solid black;
+}
+
+.scrollable-content::-webkit-scrollbar-button:vertical:end:increment {
+    background: #e0e0e0 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path d="M10 16L18 8H2L10 16z" fill="black"/></svg>') no-repeat center;
+    border: 1px solid black;
+}
+
 .announcement {
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px dashed #ccc;
 }
 
 .announcement h4 {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     color: #cc0000;
     margin: 0 0 5px 0;
@@ -243,7 +349,7 @@ body {
 }
 
 .sidebar-section h3 {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
     margin-bottom: 8px;
     color: #cc0000;
@@ -272,7 +378,7 @@ body {
 .sidebar-section ul li a {
     color: #333;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .sidebar-section ul li a:hover {
@@ -295,12 +401,13 @@ body {
     background-color: white;
     border: 1px solid #ddd;
     padding: 10px;
+    margin: 0;
 }
 
 .recent-viewers {
     margin-bottom: 10px;
     padding: 5px;
-    font-size: 12px;
+    font-size: 14px;
     color: #666;
 }
 
@@ -355,7 +462,7 @@ body {
 .hot-topics ul li a {
     color: #0066cc;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .hot-topics ul li a:hover {
@@ -369,12 +476,12 @@ body {
     border: 1px solid #990000;
     padding: 4px 12px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
 }
 
 .forum-posts h3 {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: bold;
     margin-bottom: 10px;
     color: #333;
@@ -392,7 +499,7 @@ body {
 .posts-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 15px;
     border: 1px dashed #ccc;
 }
 
@@ -431,7 +538,7 @@ body {
 
 .sidebar-ad {
     background-color: white;
-    border: 1px solid #ddd;
+    border: none;
     padding: 10px;
     margin-bottom: 10px;
 }
@@ -443,7 +550,7 @@ body {
 }
 
 .sidebar-ad p {
-    font-size: 12px;
+    font-size: 14px;
     text-align: center;
     color: #333;
 }
@@ -462,14 +569,14 @@ body {
 }
 
 .post-header h2 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     margin-bottom: 10px;
     color: #333;
 }
 
 .post-meta {
-    font-size: 12px;
+    font-size: 14px;
     color: #666;
 }
 
@@ -482,7 +589,7 @@ body {
 }
 
 .post-content h3 {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     margin: 20px 0 10px;
     color: #333;
@@ -491,7 +598,7 @@ body {
 .post-content p {
     margin-bottom: 15px;
     line-height: 1.6;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .post-content ol,
@@ -502,7 +609,7 @@ body {
 
 .post-content li {
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* 评论区 */
@@ -513,7 +620,7 @@ body {
 }
 
 .comments-section h3 {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     margin-bottom: 15px;
     color: #333;
@@ -531,7 +638,7 @@ body {
 
 .comment-header {
     margin-bottom: 8px;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .comment-author {
@@ -545,7 +652,7 @@ body {
 }
 
 .comment-content p {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
 }
 
@@ -555,7 +662,7 @@ body {
 }
 
 .comment-form h4 {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     margin-bottom: 10px;
     color: #333;
@@ -568,7 +675,7 @@ body {
 .form-group label {
     display: block;
     margin-bottom: 5px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     color: #333;
 }
@@ -578,7 +685,7 @@ body {
     width: 100%;
     padding: 5px;
     border: 1px solid #ddd;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .form-group textarea {
@@ -607,7 +714,7 @@ body {
 .bottom-nav-container a {
     color: #333;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 /* 底部状态栏 */
@@ -627,7 +734,7 @@ body {
 
 .status-bar span {
     color: white;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .status-right {
@@ -654,13 +761,13 @@ footer {
     font-size: 12px;
 }
 
-/* 浮窗广告样式 */
+/* 浮窗导航图标样式 */
 .floating-ad {
-    position: fixed;
+    position: absolute;
     left: 20px;
     top: 50%;
     transform: translateY(-50%);
-    width: 150px;
+    width: 50px;
     background-color: transparent;
     border: none;
     border-radius: 0;
@@ -678,8 +785,8 @@ footer {
 /* 右下角弹窗广告 */
 .popup-ad {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 0;
+    right: 0;
     z-index: 1001;
     animation: pulse 0.5s infinite ease-in-out;
     display: none;
@@ -718,7 +825,7 @@ footer {
     position: absolute;
     top: 0;
     right: 0;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: transparent;
     color: #666;
     border: none;
     padding: 2px 6px;
@@ -735,11 +842,9 @@ footer {
 /* 左侧关闭按钮 */
 .left-close-btn {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 10px;
+    right: 10px;
     z-index: 1002;
-    transform: translate(-100%, 0);
-    margin-right: 10px;
     display: none;
 }
 
@@ -747,7 +852,7 @@ footer {
     position: relative;
     top: 0;
     right: 0;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: transparent;
     color: #666;
     border: none;
     padding: 2px 6px;
@@ -940,132 +1045,4 @@ footer {
     }
 }
 
-/* 手机版布局 */
-.mobile-layout {
-    /* 顶部导航栏 */
-    .top-nav-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .top-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    
-    .top-links a {
-        margin-right: 0;
-    }
-    
-    .search-box {
-        width: 100%;
-    }
-    
-    .search-box input {
-        width: 100%;
-        flex: 1;
-    }
-    
-    .user-links {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-    }
-    
-    .user-links a {
-        margin-left: 0;
-    }
-    
-    /* 分类导航 */
-    .category-nav-container {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
-    .location {
-        width: 100%;
-        margin-left: 0;
-        margin-top: 5px;
-    }
-    
-    /* 主内容区 */
-    .main-container {
-        flex-direction: column;
-    }
-    
-    .left-sidebar,
-    .right-sidebar {
-        width: 100%;
-    }
-    
-    /* 帖子列表 */
-    .posts-table {
-        font-size: 12px;
-    }
-    
-    .posts-table th,
-    .posts-table td {
-        padding: 6px;
-    }
-    
-    /* 帖子详情 */
-    .post-header h2 {
-        font-size: 16px;
-    }
-    
-    .post-content h3 {
-        font-size: 14px;
-    }
-    
-    .post-content p,
-    .post-content li {
-        font-size: 13px;
-    }
-    
-    /* 评论区 */
-    .comments-section h3 {
-        font-size: 14px;
-    }
-    
-    .comment-content p {
-        font-size: 13px;
-    }
-    
-    /* 广告元素 */
-    .floating-ad {
-        width: 100px;
-    }
-    
-    .popup-ad {
-        bottom: 10px;
-        right: 10px;
-    }
-    
-    .popup-content {
-        width: 200px;
-    }
-    
-    /* 底部导航 */
-    .bottom-nav-container {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    
-    .bottom-nav-container a {
-        font-size: 12px;
-    }
-    
-    /* 登录和注册页面 */
-    .login-container,
-    .register-container {
-        margin: 20px auto;
-        padding: 20px;
-    }
-    
-    .login-container h2,
-    .register-container h2 {
-        font-size: 18px;
-    }
-}
+

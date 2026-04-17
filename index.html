@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="forum-frame-outer">
+    <div class="forum-frame">
     <!-- 顶部导航栏 -->
     <div class="top-nav">
         <div class="top-nav-container">
@@ -27,37 +29,11 @@
                 <button>搜索</button>
             </div>
             <div class="user-links">
-                <a href="#" id="mobile-toggle">手机</a>
                 <a href="#">服务</a>
                 <div id="user-links-container">
                     <a href="user-login.html">登录</a>
                     <a href="register.html">注册</a>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 分类导航 -->
-    <div class="category-nav">
-        <div class="category-nav-container">
-            <a href="#" class="active">聚焦</a>
-            <a href="#">人文</a>
-            <a href="#">旅游</a>
-            <a href="#">财经</a>
-            <a href="#">汽车</a>
-            <a href="#">数码</a>
-            <a href="#">时尚</a>
-            <a href="#">情感</a>
-            <a href="#">娱乐</a>
-            <a href="#">体育</a>
-            <a href="#">图片</a>
-            <a href="#">视频</a>
-            <a href="#">更多</a>
-            <div class="location">
-                <a href="#">北京</a>
-                <a href="#">上海</a>
-                <a href="#">广东</a>
-                <a href="#">更多</a>
             </div>
         </div>
     </div>
@@ -72,11 +48,7 @@
                 </div>
                 <div class="scrollable-content">
                     <div class="announcement">
-                        <h4>【公告】</h4>
-                        <ul>
-                            <li><a href="#">版主申请/招募</a></li>
-                            <li><a href="#">违规公示</a></li>
-                        </ul>
+                        <h4 style="font-size: 18px;">【公告】</h4>
                     </div>
                     <ul>
                         <li><a href="#">一个人去那个精品店买...（直播，慎入）</a></li>
@@ -122,132 +94,84 @@
             </div>
         </div>
         
-        <!-- 主内容区 -->
-        <div class="main-content">
-            <!-- 近期看客 -->
-            <div class="recent-viewers">
-                <span>近期看客：</span>
-                <a href="#">娱乐八卦</a>
-                <a href="#">蜻蜓杂谈</a>
-                <a href="#">胆小猫人</a>
-                <a href="#">情感天空</a>
+        <!-- 右侧内容区（包含分类导航、主内容和右侧边栏） -->
+        <div class="right-content-area">
+            <!-- 分类导航 -->
+            <div class="category-nav">
+                <div class="category-nav-container">
+                    <a href="#" class="active">聚焦</a>
+                    <a href="#">人文</a>
+                    <a href="#">旅游</a>
+                    <a href="#">财经</a>
+                    <a href="#">汽车</a>
+                    <a href="#">数码</a>
+                    <a href="#">时尚</a>
+                    <a href="#">情感</a>
+                    <a href="#">娱乐</a>
+                    <a href="#">体育</a>
+                    <a href="#">图片</a>
+                    <a href="#">视频</a>
+                    <a href="#">更多</a>
+                </div>
             </div>
             
-            <!-- 热帖榜 -->
-            <div class="hot-topics">
-                <h3>热帖榜</h3>
-                <ul>
-                    <li><a href="post.html?id=1">说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
-                    <li><a href="post.html?id=2">国产电脑、国产手机、国产汽车之比较</a></li>
-                    <li><a href="post.html?id=3">五月初五是外星人，麦田怪圈再现……</a></li>
-                    <li><a href="post.html?id=4">真实经历，谈谈我被唤醒后受尽折磨的五年</a></li>
-                    <li><a href="post.html?id=5">《十宗罪5》--中国十大恐怖凶杀案</a></li>
-                    <li><a href="post.html?id=6">《长篇》那些风情万种、风华绝代的男人，为你打开男人的所有秘密</a></li>
-                    <li><a href="post.html?id=7">《心理大师》：职业心理医生，告诉你这一行有多变态</a></li>
-                    <li><a href="#">结婚一年，老公攒钱待，我想离婚了，该怎么办……</a></li>
-                    <li><a href="#">让那些天天吹深圳太阳高工资的YY闭嘴！</a></li>
-                    <li><a href="#">来说说你们身边真实发生过的最诡异的事，胆小勿入！</a></li>
-                    <li><a href="#">【树洞】聊聊天吧</a></li>
-                </ul>
-                <button class="post-btn">发帖</button>
-            </div>
-            
-            <!-- 最新发帖 -->
-            <div class="forum-posts">
-                <h3>最新发帖</h3>
-                <table class="posts-table">
-                    <thead>
-                        <tr>
-                            <th>标题</th>
-                            <th>作者</th>
-                            <th>回复/浏览</th>
-                            <th>时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><a href="post.html?id=1">《逃离方块》系列全攻略</a></td>
-                            <td>解谜大师</td>
-                            <td>42/1234</td>
-                            <td>2026-04-15</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=2">推荐几款适合新手的解密游戏</a></td>
-                            <td>游戏达人</td>
-                            <td>27/876</td>
-                            <td>2026-04-14</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=3">解密游戏中的常见谜题类型</a></td>
-                            <td>谜题分析师</td>
-                            <td>18/654</td>
-                            <td>2026-04-13</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=4">《未上锁的房间》系列谜题分析</a></td>
-                            <td>解谜爱好者</td>
-                            <td>23/987</td>
-                            <td>2026-04-16</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=5">《纪念碑谷》中的视觉谜题</a></td>
-                            <td>视觉艺术师</td>
-                            <td>15/765</td>
-                            <td>2026-04-15</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=6">《Limbo》通关技巧分享</a></td>
-                            <td>游戏专家</td>
-                            <td>18/543</td>
-                            <td>2026-04-14</td>
-                        </tr>
-                        <tr>
-                            <td><a href="post.html?id=7">2026年必玩的解密游戏</a></td>
-                            <td>游戏评论家</td>
-                            <td>35/1098</td>
-                            <td>2026-04-13</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- 右侧边栏 -->
-        <div class="right-sidebar">
-            <div class="sidebar-section">
-                <h3>经济论坛</h3>
-                <ul>
-                    <li><a href="#">经济论坛</a></li>
-                    <li><a href="#">数码地带</a></li>
-                    <li><a href="#">蜻蜓杂谈</a></li>
-                    <li><a href="#">胆小猫人</a></li>
-                    <li><a href="#">人文历史</a></li>
-                    <li><a href="#">职业交流</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-section">
-                <h3>社区公告</h3>
-                <ul>
-                    <li><a href="#">- 论坛规则【新人必看】</a></li>
-                    <li><a href="#">- 新手帮助</a></li>
-                    <li><a href="#">- 版主申请/招募</a></li>
-                    <li><a href="#">- 违规公示</a></li>
-                    <li><a href="#">- 意见反馈</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-ad">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=forum%20advertisement%20banner&image_size=landscape_4_3" alt="广告">
-            </div>
-            <div class="sidebar-section">
-                <h3>情感天空</h3>
-                <ul>
-                    <li><a href="#">情感天空</a></li>
-                    <li><a href="#">吐槽八卦</a></li>
-                    <li><a href="#">胆小猫人</a></li>
-                    <li><a href="#">星斯卡</a></li>
-                    <li><a href="#">同名树洞</a></li>
-                    <li><a href="#">吃喝玩乐</a></li>
-                </ul>
+            <!-- 主内容和右侧边栏 -->
+            <div class="content-wrapper">
+                <!-- 主内容区 -->
+                <div class="main-content">
+                    <!-- 近期看客 -->
+                    <div class="recent-viewers">
+                        <span>近期看客：</span>
+                        <a href="#">娱乐八卦</a>
+                        <a href="#">蜻蜓杂谈</a>
+                        <a href="#">胆小猫人</a>
+                        <a href="#">情感天空</a>
+                    </div>
+                    
+                    <!-- 热帖榜 -->
+                    <div class="hot-topics">
+                        <h3>热帖榜</h3>
+                        <ul>
+                            <li><a href="post.html?id=1">说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
+                            <li><a href="post.html?id=2">国产电脑、国产手机、国产汽车之比较</a></li>
+                            <li><a href="post.html?id=3">五月初五是外星人，麦田怪圈再现……</a></li>
+                            <li><a href="post.html?id=4">真实经历，谈谈我被唤醒后受尽折磨的五年</a></li>
+                            <li><a href="post.html?id=5">《十宗罪5》--中国十大恐怖凶杀案</a></li>
+                            <li><a href="post.html?id=6">《长篇》那些风情万种、风华绝代的男人，为你打开男人的所有秘密</a></li>
+                            <li><a href="post.html?id=7">《心理大师》：职业心理医生，告诉你这一行有多变态</a></li>
+                            <li><a href="#">结婚一年，老公攒钱待，我想离婚了，该怎么办……</a></li>
+                            <li><a href="#">让那些天天吹深圳太阳高工资的YY闭嘴！</a></li>
+                            <li><a href="#">来说说你们身边真实发生过的最诡异的事，胆小勿入！</a></li>
+                            <li><a href="#">【树洞】聊聊天吧</a></li>
+                        </ul>
+                        <button class="post-btn">发帖</button>
+                    </div>
+                    
+                    <!-- 最新发帖 -->
+                    <div class="forum-posts">
+                        <h3>最新发帖</h3>
+                    </div>
+                </div>
+                
+                <!-- 右侧边栏 -->
+                <div class="right-sidebar">
+                    <div class="sidebar-ad">
+                        <img src="images/地球广告.png" alt="环保宣传">
+                    </div>
+                    <div class="sidebar-section">
+                        <h3>社区公告</h3>
+                        <ul>
+                            <li><a href="#">- 论坛规则【新人必看】</a></li>
+                            <li><a href="#">- 新手帮助</a></li>
+                            <li><a href="#">- 版主申请/招募</a></li>
+                            <li><a href="#">- 违规公示</a></li>
+                            <li><a href="#">- 意见反馈</a></li>
+                        </ul>
+                    </div>
+                    <div class="sidebar-ad">
+                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=forum%20bottom%20banner&image_size=landscape_4_3" alt="底部图片">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -277,11 +201,12 @@
             <p>&copy; 2026 红蜻蜓论坛. 保留所有权利.</p>
         </div>
     </footer>
+    </div>
     
     <script src="script.js"></script>
-    <!-- 浮窗广告 -->
+    <!-- 浮窗导航图标 -->
     <div class="floating-ad">
-        <img src="images/ads.jpg" alt="广告图片">
+        <img src="images/红蜻蜓.png" alt="红蜻蜓">
     </div>
     
     <!-- 右下角弹窗广告 -->
@@ -295,6 +220,7 @@
     <!-- 左侧假关闭按钮（实际是跳转链接） -->
     <div class="left-close-btn">
         <a href="https://www.bilibili.com/video/BV1UT42167xb?t=0" class="popup-close" target="_blank">关闭</a>
+    </div>
     </div>
 </body>
 </html>
