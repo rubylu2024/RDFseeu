@@ -20,6 +20,56 @@ function clearFlarumToken() {
     localStorage.removeItem('flarumUserId');
 }
 
+// Flarum 登录
+async function flarumLogin(username, password) {
+    try {
+        const json = await flarumRequest('/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identification: username, password })
+        });
+
+        if (json?.token) {
+            localStorage.setItem('flarumToken', json.token);
+            if (json.userId) localStorage.setItem('flarumUserId', String(json.userId));
+            updateUserLinks();
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error('Flarum login error:', e);
+        return false;
+    }
+}
+
+// Flarum 注册
+async function flarumRegister(username, email, password) {
+    try {
+        const json = await flarumRequest('/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data: {
+                    type: 'users',
+                    attributes: {
+                        username,
+                        email,
+                        password
+                    }
+                }
+            })
+        });
+
+        if (json?.data) {
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error('Flarum register error:', e);
+        throw e;
+    }
+}
+
 async function flarumRequest(path, options = {}) {
     const apiBase = getFlarumApiBase();
     const url = apiBase + (path.startsWith('/') ? path : '/' + path);
@@ -159,36 +209,7 @@ async function flarumLoadDiscussionList() {
     });
 }
 
-async function flarumLoginViaPrompt() {
-    if (!isFlarumConfigured()) {
-        alert('管理员尚未配置论坛后端地址，无法登录。');
-        return;
-    }
 
-    const identification = prompt('请输入用户名或邮箱：');
-    if (!identification) return;
-    const password = prompt('请输入密码：');
-    if (!password) return;
-
-    try {
-        const json = await flarumRequest('/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identification, password })
-        });
-
-        if (json?.token) {
-            localStorage.setItem('flarumToken', json.token);
-            if (json.userId) localStorage.setItem('flarumUserId', String(json.userId));
-            updateUserLinks();
-            alert('登录成功！');
-            return;
-        }
-        alert('登录失败：未返回 token');
-    } catch (e) {
-        alert('登录失败，请检查账号密码、论坛地址、或跨域配置。');
-    }
-}
 
 async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
     const token = getFlarumToken();
@@ -961,23 +982,9 @@ function updateUserLinks() {
         }
     } else {
         userLinksContainer.innerHTML = `
-            <a href="#" id="login-btn">登录</a>
-            <a href="#" id="register-btn">注册</a>
+            <a href="login.html" id="login-btn">登录</a>
+            <a href="register.html" id="register-btn">注册</a>
         `;
-        const loginBtn = document.getElementById('login-btn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                flarumLoginViaPrompt();
-            });
-        }
-        const registerBtn = document.getElementById('register-btn');
-        if (registerBtn) {
-            registerBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('请在论坛后端注册账号（或由管理员开通），再回到这里登录。');
-            });
-        }
     }
 }
 

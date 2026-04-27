@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 红蜻蜓论坛</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 登录页面样式 */
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ccc;
+        }
+        
+        .login-header h2 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .login-header p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .login-form .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .login-form .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .login-form .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #990000;
+            font-size: 16px;
+        }
+        
+        .login-form .form-group input:focus {
+            outline: none;
+            border-color: #cc0000;
+        }
+        
+        .login-btn {
+            width: 100%;
+            background-color: #cc0000;
+            color: white;
+            border: 1px solid #990000;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .login-btn:hover {
+            background-color: #990000;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #ccc;
+        }
+        
+        .login-footer p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .login-footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+            color: #cc0000;
+        }
+        
+        .error-message {
+            background-color: #ffe6e6;
+            color: #cc0000;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ffcccc;
+            font-size: 14px;
+        }
+        
+        .success-message {
+            background-color: #e6ffe6;
+            color: #006600;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccffcc;
+            font-size: 14px;
+        }
+        
+        /* 加载状态 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #cc0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+                <!-- 顶部导航栏 -->
+                <div class="top-nav">
+                    <div class="top-nav-container">
+                        <div class="logo">
+                            <div class="logo-image"></div>
+                            <a href="index.html">红蜻蜓论坛.Beta</a>
+                            <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
+                        </div>
+                        <div class="top-links">
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
+                        </div>
+                        <div class="search-box">
+                                <input type="text" placeholder="搜帖、找人、搜版块">
+                                <button>搜索</button>
+                            </div>
+                        <div class="user-links">
+                            <button id="audio-toggle" class="audio-toggle">
+                                <span class="audio-icon">♪</span>
+                            </button>
+                            <a href="#">服务</a>
+                            <div id="user-links-container">
+                                <a href="login.html" id="login-btn">登录</a>
+                                <a href="#" id="register-btn">注册</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 主要内容区 -->
+                <div class="main-container">
+                    <div class="main-content" style="display: flex; justify-content: center; align-items: center; min-height: 600px;">
+                        <div class="login-container">
+                            <div class="login-header">
+                                <h2>用户登录</h2>
+                                <p>登录后即可发帖、回复和参与讨论</p>
+                            </div>
+                            
+                            <form class="login-form" id="login-form">
+                                <div id="message-container"></div>
+                                
+                                <div class="form-group">
+                                    <label for="username">用户名</label>
+                                    <input type="text" id="username" name="username" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="password">密码</label>
+                                    <input type="password" id="password" name="password" required>
+                                </div>
+                                
+                                <button type="submit" class="login-btn">登录</button>
+                            </form>
+                            
+                            <div class="login-footer">
+                                <p>还没有账号？ <a href="register.html" id="register-link">立即注册</a></p>
+                                <p><a href="index.html">返回首页</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // 登录页面脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const messageContainer = document.getElementById('message-container');
+            const registerLink = document.getElementById('register-link');
+            
+
+            
+            // 处理登录表单提交
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    showMessage('请输入用户名和密码', 'error');
+                    return;
+                }
+                
+                // 显示加载状态
+                showLoading();
+                
+                try {
+                    const success = await flarumLogin(username, password);
+                    if (success) {
+                        showMessage('登录成功，正在跳转...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    } else {
+                        showMessage('登录失败，请检查账号密码、论坛地址、或跨域配置', 'error');
+                    }
+                } catch (error) {
+                    showMessage('登录失败：' + error.message, 'error');
+                } finally {
+                    hideLoading();
+                }
+            });
+            
+            // 显示消息
+            function showMessage(message, type) {
+                messageContainer.innerHTML = `
+                    <div class="${type === 'error' ? 'error-message' : 'success-message'}">
+                        ${message}
+                    </div>
+                `;
+            }
+            
+            // 显示加载状态
+            function showLoading() {
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'loading-overlay';
+                loadingOverlay.id = 'loading-overlay';
+                loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+                document.body.appendChild(loadingOverlay);
+            }
+            
+            // 隐藏加载状态
+            function hideLoading() {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
