@@ -35,7 +35,8 @@ body::before {
     background-color: #FAFAE9;
     mix-blend-mode: multiply;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 100;
+    display: block;
 }
 
 .forum-frame-outer {
@@ -162,25 +163,21 @@ body::before {
 }
 
 .audio-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
     background: transparent;
     border: none;
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
-    padding: 10px;
-    width: 40px;
-    height: 40px;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
-    color: #333;
+    color: black;
+    position: relative;
 }
 
 .audio-icon {
     display: block;
+    position: relative;
 }
 
 .audio-toggle.paused .audio-icon::after {
@@ -189,7 +186,9 @@ body::before {
     font-size: 16px;
     font-weight: bold;
     color: #cc0000;
-    transform: translate(2px, -2px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .user-links a {
@@ -266,6 +265,7 @@ body::before {
     border-top: 1px solid #ddd;
     padding: 8px;
     margin: 0;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 /* 右侧内容区（包含分类导航、主内容和右侧边栏） */
@@ -294,31 +294,28 @@ body::before {
 }
 
 .scrollable-section {
-    border: 1px solid #ddd;
     margin-bottom: 15px;
     background-color: white;
+    border-bottom: 1px solid black;
 }
 
 .section-header {
     background-color: white;
-    padding: 4px 8px 4px 18px;
-    border-bottom: 1px solid #ddd;
+    padding: 4px 8px 4px 8px;
     font-size: 18px;
     font-weight: bold;
-    color: #cc0000;
+    color: #000;
     position: relative;
+    border-bottom: 1px solid #ddd;
 }
 
 .section-header::before {
-    content: ">";
-    position: absolute;
-    left: 6px;
-    color: #cc0000;
+    content: none;
 }
 
 .scrollable-content {
     max-height: 250px;
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
     padding: 5px;
     background-color: white;
@@ -331,25 +328,24 @@ body::before {
 }
 
 .scrollable-content ul li {
-    margin-bottom: 5px;
-    padding-bottom: 3px;
-    border-bottom: 1px dashed #e0e0e0;
-}
-
-.scrollable-content ul li:last-child {
-    border-bottom: none;
-}
-
-.scrollable-content ul li a {
-    color: #0066cc;
-    text-decoration: none;
-    font-size: 14px;
-    line-height: 1.4;
+    margin-bottom: 2px;
+    padding-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: block;
-    width: 100%;
+}
+
+.scrollable-content ul li::before {
+    content: '▪';
+    margin-right: 4px;
+    color: black;
+}
+
+.scrollable-content ul li a {
+    color: black;
+    text-decoration: none;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .scrollable-content ul li a:hover {
@@ -392,16 +388,26 @@ body::before {
 }
 
 .announcement {
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 5px;
+    padding-top: 5px;
 }
 
 .announcement h4 {
     font-size: 18px;
     font-weight: bold;
-    color: #000;
+    color: #cc0000;
     margin: 0 0 5px 0;
-    padding-left: 2px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #ccc;
+    padding-left: 15px;
+    position: relative;
+}
+
+.announcement h4::before {
+    content: ">";
+    position: absolute;
+    left: 2px;
+    color: #cc0000;
 }
 
 .announcement ul {
@@ -471,7 +477,7 @@ body::before {
 /* 主内容区 */
 .main-content {
     flex: 1;
-    background-color: white;
+    background-color: #EEEEEE;
     border: 1px solid #ddd;
     padding: 10px;
     margin: 0;
@@ -482,14 +488,36 @@ body::before {
     padding: 5px;
     font-size: 14px;
     color: #666;
+    background-color: white;
+    border: 1px solid black;
+}
+
+.post-button-box {
+    background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
+    padding: 4px 8px;
+    border: 1px solid #6F6F6F;
+    margin-left: auto;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.new-post-btn {
+    background: transparent;
+    color: #333;
+    border: none;
+    padding: 6px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 .recent-viewers span {
-    margin-right: 5px;
+    margin-right: 0;
+    color: #3A439A;
 }
 
 .recent-viewers a {
-    color: #0066cc;
+    color: #3A439A;
     text-decoration: none;
     margin-right: 8px;
 }
@@ -499,10 +527,11 @@ body::before {
 }
 
 .hot-topics {
+    margin-top: 20px;
     margin-bottom: 20px;
     padding: 10px;
-    border: 1px dashed #ccc;
-    background-color: #fafafa;
+    border: 4px solid #FFA4A5;
+    background-color: white;
 }
 
 .hot-topics h3 {
@@ -523,17 +552,35 @@ body::before {
 .hot-topics ul li {
     margin-bottom: 6px;
     padding-bottom: 6px;
-    border-bottom: 1px dashed #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hot-topics ul li::before {
+    content: '▪';
+    margin-right: 4px;
+    color: #3A439A;
+}
+
+.hot-topics ul li:nth-child(4n) {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #ddd;
+}
+
+.hot-topics ul li:nth-child(4n+1):not(:first-child) {
+    margin-top: 8px;
 }
 
 .hot-topics ul li:last-child {
-    border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
+    border-bottom: none;
 }
 
 .hot-topics ul li a {
-    color: #0066cc;
+    color: #3A439A;
     text-decoration: none;
     font-size: 16px;
 }
@@ -815,6 +862,24 @@ body::before {
     color: #ffcc00 !important;
 }
 
+/* 未读消息红点 */
+.unread-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: #ff0000;
+    color: white !important;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 14px;
+    height: 14px;
+    line-height: 14px;
+    text-align: center;
+    border-radius: 50%;
+    padding: 0 2px;
+    box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
 /* 底部样式 */
 footer {
     background-color: #f5f5f5;
@@ -851,10 +916,31 @@ footer {
     box-shadow: none;
     z-index: 1000;
     display: none;
-    cursor: url('images/捕虫网.cur') 50 50, auto;
+    /* cursor: url('images/捕虫网.cur') 50 50, auto; */
 }
 
 .floating-ad img {
+    width: 100%;
+    height: auto;
+}
+
+/* 浮窗广告 */
+.floating-ad2 {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12vw;
+    max-width: 150px;
+    min-width: 80px;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    z-index: 1000;
+    /* cursor: url('images/捕虫网.cur') 50 50, auto; */
+}
+
+.floating-ad2 img {
     width: 100%;
     height: auto;
 }
@@ -864,7 +950,7 @@ footer {
     position: fixed;
     bottom: 0;
     right: 0;
-    z-index: 1001;
+    z-index: 10001;
     display: none;
 }
 
@@ -902,13 +988,14 @@ footer {
 .popup-close {
     position: absolute;
     top: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: rgba(255, 255, 255, 0.7);
     color: #666;
     border: none;
     padding: 2px 6px;
     border-radius: 0;
-    cursor: default;
+    cursor: pointer;
     font-size: 10px;
     z-index: 1;
 }
@@ -921,7 +1008,7 @@ footer {
 .left-close-btn {
     position: fixed;
     right: 0;
-    z-index: 1002;
+    z-index: 10002;
     display: none;
 }
 
@@ -932,10 +1019,10 @@ footer {
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
     border: none;
-    padding: 2px 6px;
+    padding: 1px 4px;
     border-radius: 0;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 7px;
     z-index: 1;
     text-decoration: none;
     display: inline-block;

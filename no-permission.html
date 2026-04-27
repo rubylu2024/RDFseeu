@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统提示 - 红蜻蜓论坛.Beta</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 叠加负片滤镜 */
+        html {
+            filter: invert(100%) hue-rotate(180deg);
+            height: 100%;
+            background-color: #000;
+        }
+
+        /* 覆盖层：显示提示信息 */
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* 让下方的按钮可点击 */
+        }
+
+        .permission-modal {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 10px 10px 0px #888;
+            max-width: 450px;
+            pointer-events: auto; /* 恢复模态框的点击 */
+        }
+
+        .permission-modal h1 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #cc0000;
+            border-bottom: 2px solid #cc0000;
+            padding-bottom: 10px;
+        }
+
+        .permission-modal p {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .back-link {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+                <!-- 顶部导航栏 (保持主页风格) -->
+                <div class="top-nav">
+                    <div class="top-nav-container">
+                        <div class="logo">
+                            <div class="logo-image"></div>
+                            <a href="index.html">红蜻蜓论坛.Beta</a>
+                            <a href="index.html" class="logo-sub">www.dihai.top</a>
+                        </div>
+                        <div class="top-links">
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
+                        </div>
+                        <div class="user-links">
+                            <button id="audio-toggle" class="audio-toggle">
+                                <span class="audio-icon">♪</span>
+                            </button>
+                            <a href="#">服务</a>
+                            <div id="user-links-container">
+                                <a href="javascript:void(0)" onclick="alert('此功能已被管理员禁用！')">登录</a>
+                                <a href="javascript:void(0)" onclick="alert('此功能已被管理员禁用！')">注册</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模拟主页内容区域 -->
+                <div class="main-container">
+                    <div class="left-sidebar">
+                        <div class="sidebar-section">
+                            <h3>系统状态</h3>
+                            <p style="padding: 10px; font-size: 12px; color: #666;">
+                                访问受限：ERROR_CODE_403
+                            </p>
+                        </div>
+                    </div>
+                    <div class="right-content-area">
+                        <div class="content-wrapper" style="min-height: 400px; background: #eee; display: flex; align-items: center; justify-content: center;">
+                            <p style="color: #999;">正在验证用户权限...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-container">
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 权限提示浮层 -->
+    <div class="permission-overlay">
+        <div class="permission-modal">
+            <h1>系统安全提示</h1>
+            <p>此链接内容当前您没有权限查看！<br>请确保您已登录并拥有足够的积分或权限等级。</p>
+            <a href="javascript:history.back()" class="back-link">返回上一页</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

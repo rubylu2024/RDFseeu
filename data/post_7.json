@@ -1,0 +1,87 @@
+{
+    "id": 7,
+    "title": "[测试]你的姓＋ta的姓＝你们的结局",
+    "author": "草莓小甜甜",
+    "authorLevel": "Lv.2 初级会员",
+    "authorAvatar": "草",
+    "publishTime": "2012-02-14 14:20:00",
+    "viewCount": 1256,
+    "allowComments": true,
+    "content": "<p>今天情人节，分享一个无聊的小测试~把你的姓和另一半的姓的首写字母拼在一起组词，然后对照下面的表，可能就是你们的结局哦~当然也可以自己另外组词，我和我老公测了一下，他是我的专属，哈哈~</p><p>Y+Y=永远 W+N=为难 H+H=和好 Y+X=用心 W+R=外人 Z+S=专属 G+G=尴尬</p><p>W+L-稳宁 G+K=赶快 Z+C=珍贵 W+W=玩玩 Z+W=指望 E+R=恩人 Q+R=亲人</p><p>Y+G=预感 W+H=挽回 Z+H=正好 W+Z=我走 Q+W=气我 J+P=绝配 Q+J=迁就</p><p>F+Y=敷衍 Y+Q=元气 Q+Q=亲亲 L+W=撩我 Z+F=致富 Z+X=真心 S+H=送回</p><p>W+H=挽回 F+X=福星 W+Y=唯一 L+Y=良缘 Z+Y=中意 H+N=怀念 C+G=成功</p><p>Z+L=终老 Z+G=珍贵 L+M=浪漫 W+D=忘掉 P+B=陪伴 Z+F=真烦 Z+S=专属</p><p>Q+W=娶我 E+R=恩人 Q+R=亲人 P+L=破裂 W+Q=无情 G+K=过客 B+S=摆设</p><p>Z+D=注定 H+H=和好 W+L=未来 D+Y=多余 K+M=苦命 K+X=可笑 G+K=过客</p><p>W+D=忘掉 Z+L=炸了 Z+Y=治愈 A+D=安定</p>",
+    "comments": [
+        {
+            "id": 1,
+            "author": "墨香四溢",
+            "authorLevel": "Lv.2 初级会员",
+            "authorAvatar": "墨",
+            "time": "2012-02-14 14:35:00",
+            "floor": 2,
+            "content": "<p>前排前排，帮我看看C+H是什么？</p>"
+        },
+        {
+            "id": 2,
+            "author": "笔墨纸砚",
+            "authorLevel": "Lv.3 中级会员",
+            "authorAvatar": "笔",
+            "time": "2012-02-14 14:42:00",
+            "floor": 3,
+            "content": "<p>回复墨香四溢：凑合</p>",
+            "replyTo": 1
+        },
+        {
+            "id": 3,
+            "author": "弈棋少年",
+            "authorLevel": "Lv.2 初级会员",
+            "authorAvatar": "弈",
+            "time": "2012-02-14 15:10:00",
+            "floor": 4,
+            "content": "<p>CL，初恋，我男朋友确实说我是他初恋，但他上学的时候老跟一个女生不清不楚的，我怀疑有猫腻！</p>"
+        },
+        {
+            "id": 4,
+            "author": "观海听涛",
+            "authorLevel": "Lv.1 新手上路",
+            "authorAvatar": "观",
+            "time": "2012-02-14 15:25:00",
+            "floor": 5,
+            "content": "<p>你们这些女生真无聊，L+H是啥？</p>"
+        },
+        {
+            "id": 5,
+            "author": "剑胆琴心",
+            "authorLevel": "Lv.3 中级会员",
+            "authorAvatar": "剑",
+            "time": "2012-02-14 15:40:00",
+            "floor": 6,
+            "content": "<p>回复观海听涛：切，无聊那你别测呗！</p>",
+            "replyTo": 4
+        },
+        {
+            "id": 6,
+            "author": "侠骨柔肠",
+            "authorLevel": "Lv.2 初级会员",
+            "authorAvatar": "侠",
+            "time": "2012-02-14 16:05:00",
+            "floor": 7,
+            "content": "<p>我的是稳宁，呵呵</p>"
+        },
+        {
+            "id": 7,
+            "author": "沧海一粟",
+            "authorLevel": "Lv.2 初级会员",
+            "authorAvatar": "沧",
+            "time": "2012-02-14 16:30:00",
+            "floor": 8,
+            "content": "<p>和好</p>"
+        },
+        {
+            "id": 8,
+            "author": "浮云孤帆",
+            "authorLevel": "Lv.4 高级会员",
+            "authorAvatar": "浮",
+            "time": "2012-02-14 17:15:00",
+            "floor": 9,
+            "content": "<p>Z+W，求解答，有没有懂的？</p>"
+        }
+    ]
+}

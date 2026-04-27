@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>红蜻蜓论坛v1.0</title>
+    <title>红蜻蜓论坛.Beta</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- 音频控制按钮 -->
-    <button id="audio-toggle" class="audio-toggle">
-        <span class="audio-icon">♪</span>
-    </button>
-    
     <!-- 音频元素 -->
     <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
         Your browser does not support the audio element.
@@ -30,26 +25,29 @@
                 <div class="top-nav-container">
                     <div class="logo">
                         <div class="logo-image"></div>
-                        <a href="index.html">红蜻蜓论坛v1.0</a>
-                        <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
+                        <a href="index.html">红蜻蜓论坛.Beta</a>
+                        <a href="index.html" class="logo-sub">www.dihai.top</a>
                     </div>
                     <div class="top-links">
                         <a href="index.html">论坛</a>
                         <a href="#">博客</a>
                         <a href="#">问答</a>
-                        <a href="#">游戏厅</a>
+                        <a href="https://www.4399.com" target="_blank">游戏厅</a>
                         <a href="#">品牌</a>
                         <a href="#">更多</a>
                     </div>
                     <div class="search-box">
-                        <input type="text" placeholder="搜帖、找人、搜版块">
-                        <button>搜索</button>
-                    </div>
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
+                        </div>
                     <div class="user-links">
+                        <button id="audio-toggle" class="audio-toggle">
+                            <span class="audio-icon">♪</span>
+                        </button>
                         <a href="#">服务</a>
                         <div id="user-links-container">
-                            <a href="user-login.html">登录</a>
-                            <a href="register.html">注册</a>
+                            <a href="#" id="login-btn">登录</a>
+                            <a href="#" id="register-btn">注册</a>
                         </div>
                     </div>
                 </div>
@@ -61,17 +59,17 @@
                 <div class="left-sidebar">
                     <div class="scrollable-section">
                         <div class="section-header">
-                            <span>近期热帖</span>
+                            <span>【公告】</span>
                         </div>
                         <div class="scrollable-content">
                             <div class="announcement">
-                                <h4>【公告】</h4>
+                                <h4>近期热帖</h4>
                             </div>
                             <ul>
-                                <li><a href="#">一个人去那个精品店买...（直播，慎入）</a></li>
+                                <li><a href="post.html?id=1">【城市论坛】说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
+                                <li><a href="post.html?id=2">关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知</a></li>
                                 <li><a href="#">如果穿越回古代，你能活几天？</a></li>
                                 <li><a href="#">南方人比北方人，睡觉更冷？</a></li>
-                                <li><a href="#">来扒个卦，楼主因缘于...，取吗？</a></li>
                                 <li><a href="#">来扒个卦，楼主因缘于...，取吗？</a></li>
                                 <li><a href="#">一年前，我做过的最蠢...的事。</a></li>
                                 <li><a href="#">有哪些不为外人知的秘密，看看你中了几条？</a></li>
@@ -82,29 +80,29 @@
                         <h3>版面推荐</h3>
                         <div class="double-columns">
                             <ul>
-                                <li><a href="#">- 红蜻蜓</a></li>
+                                <li><a href="#">- 与红蜻蜓</a></li>
+                                <li><a href="#">- 旅游论坛</a></li>
                                 <li><a href="#">- 蜻蜓主版</a></li>
+                                <li><a href="#">- 胆小勿入</a></li>
                                 <li><a href="#">- 蜻蜓之家</a></li>
+                                <li><a href="#">- 征婚交友</a></li>
                                 <li><a href="#">- 蜻蜓杂谈</a></li>
+                                <li><a href="#">- 影视动漫</a></li>
                                 <li><a href="#">- 城市论坛</a></li>
+                                <li><a href="#">- 体育运动</a></li>
                                 <li><a href="#">- 职业交流</a></li>
-                                <li><a href="#">- 大学校园</a></li>
-                                <li><a href="#">- 海外论坛</a></li>
-                                <li><a href="#">- 游戏公会</a></li>
-                                <li><a href="#">- 娱乐八卦</a></li>
-                                <li><a href="#">- 情感天空</a></li>
                             </ul>
                             <ul>
-                                <li><a href="#">- 经济论坛</a></li>
-                                <li><a href="#">- 数码地带</a></li>
-                                <li><a href="#">- 蜻蜓杂谈</a></li>
-                                <li><a href="#">- 胆小猫人</a></li>
-                                <li><a href="#">- 征婚交友</a></li>
-                                <li><a href="#">- 体育运动</a></li>
+                                <li><a href="#">- 家有儿女</a></li>
+                                <li><a href="#">- 大学校园</a></li>
                                 <li><a href="#">- 原创文学</a></li>
-                                <li><a href="#">- 星斯卡</a></li>
-                                <li><a href="#">- 同名树洞</a></li>
-                                <li><a href="#">- 吃喝玩乐</a></li>
+                                <li><a href="#">- 海外论坛</a></li>
+                                <li><a href="#">- 星座占卜</a></li>
+                                <li><a href="#">- 游戏公会</a></li>
+                                <li><a href="#">- 匿名树洞</a></li>
+                                <li><a href="#">- 娱乐八卦</a></li>
+                                <li><a href="#">- 吃货联盟</a></li>
+                                <li><a href="#">- 情感天空</a></li>
                                 <li><a href="#">- 宠物花草</a></li>
                             </ul>
                         </div>
@@ -136,37 +134,40 @@
                     <div class="content-wrapper">
                         <!-- 主内容区 -->
                         <div class="main-content">
-                            <!-- 近期看客 -->
+                            <!-- 近期常看 -->
                             <div class="recent-viewers">
-                                <span>近期看客：</span>
-                                <a href="#">娱乐八卦</a>
+                                <span>近期常看：</span><a href="#">娱乐八卦</a>
                                 <a href="#">蜻蜓杂谈</a>
-                                <a href="#">胆小猫人</a>
+                                <a href="#">胆小勿入</a>
                                 <a href="#">情感天空</a>
                             </div>
+                            
+                            <!-- 发帖按钮 -->
+                            <div class="post-button-box">
+                                    <button class="new-post-btn" onclick="window.location.href='new-post.html'">发帖</button>
+                                </div>
                             
                             <!-- 热帖榜 -->
                             <div class="hot-topics">
                                 <h3>热帖榜</h3>
                                 <ul>
+                                    <li><a href="violation.html">红蜻蜓论坛·版务公告</a></li>
                                     <li><a href="post.html?id=1">说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
-                                    <li><a href="post.html?id=2">国产电脑、国产手机、国产汽车之比较</a></li>
-                                    <li><a href="post.html?id=3">五月初五是外星人，麦田怪圈再现……</a></li>
-                                    <li><a href="post.html?id=4">真实经历，谈谈我被唤醒后受尽折磨的五年</a></li>
-                                    <li><a href="post.html?id=5">《十宗罪5》--中国十大恐怖凶杀案</a></li>
-                                    <li><a href="post.html?id=6">《长篇》那些风情万种、风华绝代的男人，为你打开男人的所有秘密</a></li>
-                                    <li><a href="post.html?id=7">《心理大师》：职业心理医生，告诉你这一行有多变态</a></li>
-                                    <li><a href="#">结婚一年，老公攒钱待，我想离婚了，该怎么办……</a></li>
-                                    <li><a href="#">让那些天天吹深圳太阳高工资的YY闭嘴！</a></li>
-                                    <li><a href="#">来说说你们身边真实发生过的最诡异的事，胆小勿入！</a></li>
-                                    <li><a href="#">【树洞】聊聊天吧</a></li>
+                                    <li><a href="post.html?id=2">关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知</a></li>
+                                    <li><a href="post.html?id=5">转！！！中国式骗局大全</a></li>
+                                    <li><a href="post.html?id=4">结婚两年，老公嫌我胖，我想离婚了，该怎么继续……</a></li>
+                                    <li><a href="post.html?id=6">怎么委婉地告诉婆婆不要帮我收拾东西？</a></li>
+                                    <li><a href="post.html?id=7">[测试]你的姓＋ta的姓＝你们的结局</a></li>
+                                    <li><a href="post.html?id=8">昆虫爱好者进~</a></li>
+                                    <li><a href="post.html?id=9">【树洞】聊聊天吧</a></li>
+                                    <li><a href="post.html?id=10">老家风平村的进</a></li>
+                                    <li><a href="post.html?id=11">求助帖，真实经历，感觉自己被脑控了</a></li>
+                                    <li><a href="post.html?id=12">有米有一起玩小花仙的姐姐呀？我今年9岁！</a></li>
                                 </ul>
-                                <button class="post-btn">发帖</button>
                             </div>
                             
                             <!-- 最新发帖 -->
                             <div class="forum-posts">
-                                <h3>最新发帖</h3>
                             </div>
                         </div>
                         
@@ -178,11 +179,11 @@
                             <div class="sidebar-section">
                                 <h3>社区公告</h3>
                                 <ul>
-                                    <li><a href="#">- 论坛规则【新人必看】</a></li>
-                                    <li><a href="#">- 新手帮助</a></li>
-                                    <li><a href="#">- 版主申请/招募</a></li>
-                                    <li><a href="#">- 违规公示</a></li>
-                                    <li><a href="#">- 意见反馈</a></li>
+                                    <li><a href="rules.html">- 论坛规则【新人必看】</a></li>
+                                    <li><a href="help.html">- 新手帮助</a></li>
+                                    <li><a href="javascript:alert('对不起，版主申请功能暂未开放！')">- 版主申请/招募</a></li>
+                                    <li><a href="violation.html">- 违规公示</a></li>
+                                    <li><a href="javascript:alert('如果有任何意见或建议，可以发送到backtothesky3849@dihai.top或联系QQ3853622361')">- 意见反馈</a></li>
                                 </ul>
                             </div>
                             <div class="sidebar-ad">
@@ -193,24 +194,13 @@
                 </div>
             </div>
             
-            <!-- 底部导航 -->
-            <div class="bottom-nav">
-                <div class="bottom-nav-container">
-                    <a href="#">我的论坛</a>
-                    <a href="#">足迹</a>
-                    <a href="#">购物街</a>
-                    <a href="#">论坛服务</a>
-                    <a href="#">【热帖】手机拍摄美国人的众生相</a>
-                    <a href="#">【热帖】曼城负赖斯锁定足球</a>
-                </div>
-            </div>
             </div>
             
             <!-- 底部状态栏 -->
             <div class="status-bar">
                 <div class="status-container">
                     <span>我的红蜻蜓</span>
-                    <span class="status-right">消息</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
                 </div>
             </div>
         </div>
@@ -218,13 +208,19 @@
     
     <script src="script.js"></script>
     <!-- 浮窗导航图标 -->
-    <div class="floating-ad">
+    <div class="floating-ad" onclick="window.location.href='no-permission.html'">
         <img src="images/红蜻蜓.png" alt="红蜻蜓">
+    </div>
+    
+    <!-- 浮窗广告 -->
+    <div class="floating-ad2" onclick="window.location.href='no-permission.html'">
+        <img src="images/浮窗广告.png" alt="广告">
     </div>
     
     <!-- 右下角弹窗广告 -->
     <div class="popup-ad">
-        <div class="popup-content">
+        <div class="popup-content" onclick="window.location.href='no-permission.html'">
+            <span class="fake-close-btn" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.3); color: white; padding: 0 4px; font-size: 10px; cursor: pointer; z-index: 10;">×</span>
             <img src="images/换脑广告.gif" alt="换脑广告">
             <button class="popup-close">关闭</button>
         </div>
@@ -232,8 +228,7 @@
     
     <!-- 左侧假关闭按钮（实际是跳转链接） -->
     <div class="left-close-btn">
-        <a href="https://www.bilibili.com/video/BV1UT42167xb?t=0" class="popup-close" target="_blank">关闭</a>
-    </div>
+        <span class="popup-close">关闭广告</span>
     </div>
 </body>
 </html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>站内消息 - 红蜻蜓论坛.Beta</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .message-container {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            min-height: 400px;
+        }
+        .message-header {
+            border-bottom: 2px solid #cc0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        .message-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fcfcfc;
+            position: relative;
+        }
+        .message-item.unread {
+            border-left: 4px solid #cc0000;
+        }
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .message-sender {
+            font-weight: bold;
+            color: #cc0000;
+        }
+        .message-body {
+            line-height: 1.6;
+            color: #333;
+            font-size: 15px;
+        }
+        .no-messages {
+            text-align: center;
+            color: #999;
+            margin-top: 100px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 5px 15px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+        }
+        .back-btn:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+                <!-- 顶部导航栏 -->
+                <div class="top-nav">
+                    <div class="top-nav-container">
+                        <div class="logo">
+                            <div class="logo-image"></div>
+                            <a href="index.html">红蜻蜓论坛.Beta</a>
+                            <a href="index.html" class="logo-sub">www.dihai.top</a>
+                        </div>
+                        <div class="top-links">
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
+                        </div>
+                        <div class="user-links">
+                            <button id="audio-toggle" class="audio-toggle">
+                                <span class="audio-icon">♪</span>
+                            </button>
+                            <a href="#">服务</a>
+                            <div id="user-links-container">
+                                <a href="javascript:void(0)" onclick="alert('此功能已被管理员禁用！')">登录</a>
+                                <a href="javascript:void(0)" onclick="alert('此功能已被管理员禁用！')">注册</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-container">
+
+
+                    <div class="message-container" style="width: 100%;">
+                        <div class="message-header">
+                            <h2>站内消息</h2>
+                            <span style="font-size: 13px; color: #666;">共 1 条消息</span>
+                        </div>
+
+                        <div class="message-item unread">
+                            <div class="message-meta">
+                                <span class="message-sender">发件人：论坛管理员</span>
+                                <span class="message-time">2026-04-25 10:30</span>
+                            </div>
+                            <div class="message-body">
+                                本论坛网页快照内容将于近期开放，感谢您的耐心等待！；)
+                            </div>
+                        </div>
+
+                        <a href="index.html" class="back-btn">&lt; 返回首页</a>
+                    </div>
+                </div>
+
+                <!-- 底部状态栏 -->
+                <div class="status-bar">
+                    <div class="status-container">
+                        <span>我的红蜻蜓</span>
+                        <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

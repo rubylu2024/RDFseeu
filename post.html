@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红蜻蜓论坛.Beta - 【城市论坛】说说你在的城市，一个月工资能买几平米？</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 论坛风格样式 */
+        .forum-thread {
+            background: #fff;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        .thread-header {
+            background: linear-gradient(to bottom, #E8F4FC, #D0E8F8);
+            padding: 8px 12px;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .thread-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 8px;
+        }
+
+        .post {
+            padding: 12px;
+            border-bottom: 1px dashed #ccc;
+        }
+
+        .post:last-child {
+            border-bottom: none;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .poster-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: #E8E8E8 url('images/用户头像.png') no-repeat center center;
+            background-size: cover;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0;
+            color: transparent;
+        }
+
+        .poster-name {
+            font-weight: bold;
+            color: #0066cc;
+        }
+
+        .poster-name.op {
+            color: #cc0000;
+        }
+
+        .poster-name.op::after {
+            content: ' [楼主]';
+            font-size: 10px;
+            color: #cc0000;
+            font-weight: normal;
+            margin-left: 4px;
+        }
+
+        .post-time {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .post-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+            padding-left: 58px;
+        }
+
+        .post-content h3 {
+            color: #cc0000;
+            font-size: 15px;
+            margin: 12px 0 8px 0;
+        }
+
+        .post-content p {
+            margin-bottom: 8px;
+        }
+
+        .post-content ol, .post-content ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .post-content li {
+            margin-bottom: 4px;
+        }
+
+        .floor-info {
+            background: #f9f9f9;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .floor-number {
+            color: #0066cc;
+            font-weight: bold;
+        }
+
+        .reply-link {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .reply-link:hover {
+            text-decoration: underline;
+        }
+
+        .reply-box {
+            background: #fafafa;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .reply-box h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .reply-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .reply-form input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+
+        .reply-form textarea {
+            padding: 8px;
+            border: 1px solid #ccc;
+            resize: vertical;
+            min-height: 100px;
+            font-family: Arial, sans-serif;
+        }
+
+        .reply-form button {
+            align-self: flex-start;
+            padding: 6px 16px;
+            background: #cc0000;
+            color: white;
+            border: 1px solid #990000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .forum-stats {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ccc;
+        }
+
+        .forum-stats span {
+            margin-right: 20px;
+        }
+
+        .quote-box {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            margin: 5px 0 10px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* 第一层：蓝色主题 */
+        .quote-level-0 {
+            background: #f9fbfd;
+            border-left: 3px solid #0066cc;
+        }
+        .quote-level-0 .quote-author { color: #0066cc; }
+
+        /* 第二层：绿色主题 */
+        .quote-level-1 {
+            background: #f8fcf8;
+            border-left: 3px solid #28a745;
+            margin: 5px 0;
+            padding: 5px 8px;
+        }
+        .quote-level-1 .quote-author { color: #28a745; }
+
+        /* 第三层：橙色主题 */
+        .quote-level-2 {
+            background: #fffdf9;
+            border-left: 3px solid #fd7e14;
+            margin: 5px 0;
+            padding: 5px 8px;
+        }
+        .quote-level-2 .quote-author { color: #fd7e14; }
+
+        .quote-box .quote-author {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .quote-box .quote-content {
+            color: #888;
+        }
+
+        .quote-box .quote-floor {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .reply-target {
+            font-size: 12px;
+            color: #cc0000;
+            margin-bottom: 8px;
+            padding-left: 58px;
+        }
+
+        .cancel-reply {
+            font-size: 12px;
+            color: #666;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        .cancel-reply:hover {
+            text-decoration: underline;
+        }
+
+        .quick-reply-area {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f8ff;
+            border: 1px solid #cce0ff;
+        }
+
+        .quick-reply-area.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 音频元素 -->
+    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
+        Your browser does not support the audio element.
+    </audio>
+    
+    <!-- 弹窗广告音频 -->
+    <audio id="popup-audio" src="audio/哥只是个传说.mp3" loop>
+        Your browser does not support the audio element.
+     </audio>
+
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+            <!-- 顶部导航栏 -->
+            <div class="top-nav">
+                <div class="top-nav-container">
+                    <div class="logo">
+                        <div class="logo-image"></div>
+                        <a href="index.html">红蜻蜓论坛.Beta</a>
+                        <a href="index.html" class="logo-sub">www.dihai.top</a>
+                    </div>
+                    <div class="top-links">
+                        <a href="index.html">论坛</a>
+                        <a href="#">博客</a>
+                        <a href="#">问答</a>
+                        <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                        <a href="#">品牌</a>
+                        <a href="#">更多</a>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="搜帖、找人、搜版块">
+                        <button>搜索</button>
+                    </div>
+                    <div class="user-links">
+                        <button id="audio-toggle" class="audio-toggle">
+                            <span class="audio-icon">♪</span>
+                        </button>
+                        <a href="#">服务</a>
+                        <div id="user-links-container">
+                            <a href="#" id="login-btn">登录</a>
+                            <a href="#" id="register-btn">注册</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分类导航 -->
+            <div class="category-nav">
+                <div class="category-nav-container">
+                    <a href="#" class="active">聚焦</a>
+                    <a href="#">人文</a>
+                    <a href="#">旅游</a>
+                    <a href="#">财经</a>
+                    <a href="#">汽车</a>
+                    <a href="#">数码</a>
+                    <a href="#">时尚</a>
+                    <a href="#">情感</a>
+                    <a href="#">娱乐</a>
+                    <a href="#">体育</a>
+                    <a href="#">图片</a>
+                    <a href="#">视频</a>
+                    <a href="#">更多</a>
+                </div>
+            </div>
+            
+            <!-- 主要内容区 -->
+            <div class="main-container">
+                <!-- 左侧边栏 -->
+                <div class="left-sidebar">
+                    <div class="scrollable-section">
+                        <div class="section-header">
+                            <span>【公告】</span>
+                        </div>
+                        <div class="scrollable-content">
+                            <div class="announcement">
+                                <h4>近期热帖</h4>
+                            </div>
+                            <ul>
+                                <li><a href="violation.html">红蜻蜓论坛·版务公告</a></li>
+                                <li><a href="post.html?id=1">说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
+                                <li><a href="post.html?id=2">关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知</a></li>
+                                <li><a href="post.html?id=5">转！！！中国式骗局大全</a></li>
+                                <li><a href="post.html?id=4">结婚两年，老公嫌我胖，我想离婚了，该怎么继续……</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3>版面推荐</h3>
+                        <div class="double-columns">
+                            <ul>
+                                <li><a href="#">- 与红蜻蜓</a></li>
+                                <li><a href="#">- 旅游论坛</a></li>
+                                <li><a href="#">- 蜻蜓主版</a></li>
+                                <li><a href="#">- 胆小勿入</a></li>
+                                <li><a href="#">- 蜻蜓之家</a></li>
+                                <li><a href="#">- 征婚交友</a></li>
+                                <li><a href="#">- 蜻蜓杂谈</a></li>
+                                <li><a href="#">- 影视动漫</a></li>
+                                <li><a href="#">- 城市论坛</a></li>
+                                <li><a href="#">- 体育运动</a></li>
+                                <li><a href="#">- 职业交流</a></li>
+                            </ul>
+                            <ul>
+                                <li><a href="#">- 家有儿女</a></li>
+                                <li><a href="#">- 大学校园</a></li>
+                                <li><a href="#">- 原创文学</a></li>
+                                <li><a href="#">- 海外论坛</a></li>
+                                <li><a href="#">- 星座占卜</a></li>
+                                <li><a href="#">- 游戏公会</a></li>
+                                <li><a href="#">- 匿名树洞</a></li>
+                                <li><a href="#">- 娱乐八卦</a></li>
+                                <li><a href="#">- 吃货联盟</a></li>
+                                <li><a href="#">- 情感天空</a></li>
+                                <li><a href="#">- 宠物花草</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧内容区 -->
+                <div class="right-content-area">
+                    <div class="content-wrapper">
+                        <div class="main-content">
+                            <!-- 论坛帖子区域 -->
+                            <div class="forum-thread" id="forum-thread">
+                                <!-- 帖子内容会通过JavaScript动态渲染 -->
+                            </div>
+
+                            <!-- 发帖表单 -->
+                            <div class="reply-box" id="reply-box">
+                                <h4>发表回复</h4>
+                                <form class="reply-form" id="reply-form">
+                                    <input type="text" id="reply-name" placeholder="您的昵称">
+                                    <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
+                                    <input type="hidden" id="reply-target" name="reply-target" value="">
+                                    <div>
+                                        <button type="submit">发表回复</button>
+                                        <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧边栏 -->
+                        <div class="right-sidebar">
+                            <div class="sidebar-ad">
+                                <img src="images/地球广告.png" alt="环保宣传">
+                            </div>
+                            <div class="sidebar-section">
+                                <h3>社区公告</h3>
+                                <ul>
+                                    <li><a href="rules.html">- 论坛规则【新人必看】</a></li>
+                                    <li><a href="help.html">- 新手帮助</a></li>
+                                    <li><a href="javascript:alert('对不起，版主申请功能暂未开放！')">- 版主申请/招募</a></li>
+                                    <li><a href="violation.html">- 违规公示</a></li>
+                                    <li><a href="javascript:alert('如果有任何意见或建议，可以发送到backtothesky3849@dihai.top或联系QQ3853622361')">- 意见反馈</a></li>
+                                </ul>
+                            </div>
+                            <div class="sidebar-ad">
+                                <img src="images/肯基基广告.jpg" alt="肯基基广告">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部状态栏 -->
+            <div class="status-bar">
+                <div class="status-container">
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    
+    <!-- 浮窗导航图标 -->
+    <div class="floating-ad" onclick="window.location.href='no-permission.html'">
+        <img src="images/红蜻蜓.png" alt="红蜻蜓">
+    </div>
+    
+    <!-- 浮窗广告 -->
+    <div class="floating-ad2" onclick="window.location.href='no-permission.html'">
+        <img src="images/浮窗广告.png" alt="广告">
+    </div>
+    
+    <!-- 右下角弹窗广告 -->
+    <div class="popup-ad">
+        <div class="popup-content" onclick="window.location.href='no-permission.html'">
+            <span class="fake-close-btn" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.3); color: white; padding: 0 4px; font-size: 10px; cursor: pointer; z-index: 10;">×</span>
+            <img src="images/换脑广告.gif" alt="换脑广告">
+            <button class="popup-close">关闭</button>
+        </div>
+    </div>
+    
+    <!-- 左侧假关闭按钮（实际是跳转链接） -->
+    <div class="left-close-btn">
+        <span class="popup-close">关闭广告</span>
+    </div>
+</body>
+</html>

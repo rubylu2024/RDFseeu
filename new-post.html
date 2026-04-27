@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红蜻蜓论坛.Beta - 发表新帖</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .new-post-container {
+            padding: 20px;
+            background: #fff;
+        }
+        
+        .breadcrumb {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+        }
+        
+        .breadcrumb a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .post-editor {
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        
+        .post-editor h2 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input[type="text"], 
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        
+        .editor-toolbar {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .toolbar-btn {
+            padding: 2px 8px;
+            background: #fff;
+            border: 1px solid #bbb;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .toolbar-btn:hover {
+            background: #e8e8e8;
+        }
+        
+        .post-content-area {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        .submit-area {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-submit {
+            padding: 8px 25px;
+            background: #cc0000;
+            color: #fff;
+            border: 1px solid #990000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-preview {
+            padding: 8px 20px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        
+        .notice-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff9e6;
+            border: 1px solid #ffe699;
+            font-size: 12px;
+            color: #664d00;
+        }
+    </style>
+</head>
+<body>
+    <!-- 音频元素 -->
+    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+                <!-- 顶部导航栏 -->
+                <div class="top-nav">
+                    <div class="top-nav-container">
+                        <div class="logo">
+                            <div class="logo-image"></div>
+                            <a href="index.html">红蜻蜓论坛.Beta</a>
+                            <a href="index.html" class="logo-sub">www.dihai.top</a>
+                        </div>
+                        <div class="top-links">
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
+                        </div>
+                        <div class="user-links">
+                            <button id="audio-toggle" class="audio-toggle">
+                                <span class="audio-icon">♪</span>
+                            </button>
+                            <a href="#">服务</a>
+                            <div id="user-links-container">
+                                <a href="#" id="login-btn">登录</a>
+                                <a href="#" id="register-btn">注册</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="new-post-container">
+
+
+                    <div class="post-editor">
+                        <h2>发表新帖子</h2>
+                        <form id="new-post-form">
+                            <div class="form-group">
+                                <label for="post-category">选择版块：</label>
+                                <select id="post-category">
+                                    <option value="1">城市论坛</option>
+                                    <option value="2">蜻蜓杂谈</option>
+                                    <option value="3">情感天空</option>
+                                    <option value="4">娱乐八卦</option>
+                                    <option value="5">匿名树洞</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="post-title">帖子标题：</label>
+                                <input type="text" id="post-title" placeholder="请输入标题（最多50个字符）" required maxlength="50">
+                            </div>
+
+                            <div class="form-group">
+                                <label>帖子内容：</label>
+                                <div class="editor-toolbar">
+                                    <button type="button" class="toolbar-btn"><b>B</b></button>
+                                    <button type="button" class="toolbar-btn"><i>I</i></button>
+                                    <button type="button" class="toolbar-btn"><u>U</u></button>
+                                    <button type="button" class="toolbar-btn">图片</button>
+                                    <button type="button" class="toolbar-btn">链接</button>
+                                    <button type="button" class="toolbar-btn">颜文字</button>
+                                </div>
+                                <textarea id="post-content" class="post-content-area" placeholder="分享你的故事..." required></textarea>
+                            </div>
+
+                            <div class="submit-area">
+                                <button type="submit" class="btn-submit">发表帖子</button>
+                                <button type="button" class="btn-preview">预览</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="notice-box">
+                        <strong>发帖守则：</strong><br>
+                        1. 请遵守国家法律法规，严禁发布违法违规内容。<br>
+                        2. 尊重他人，禁止人身攻击或恶意灌水。<br>
+                        3. 推荐使用文明用语，共建和谐社区。
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部状态栏 -->
+            <div class="status-bar">
+                <div class="status-container">
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

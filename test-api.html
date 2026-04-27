@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flarum API 测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Flarum API 连接测试</h1>
+    <div id="test-results"></div>
+    
+    <script>
+        const FLARUM_BASE_URL = 'https://www.reddragonfly.cyou/';
+        
+        function isFlarumConfigured() {
+            return typeof FLARUM_BASE_URL === 'string' && FLARUM_BASE_URL.trim().length > 0;
+        }
+        
+        function getFlarumApiBase() {
+            return FLARUM_BASE_URL.replace(/\/+$/, '') + '/api';
+        }
+        
+        async function flarumRequest(path, options = {}) {
+            const apiBase = getFlarumApiBase();
+            const url = apiBase + (path.startsWith('/') ? path : '/' + path);
+            
+            const headers = {
+                'Accept': 'application/vnd.api+json',
+                ...options.headers
+            };
+            
+            if (options.json !== undefined) {
+                headers['Content-Type'] = 'application/vnd.api+json';
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers,
+                    body: options.json !== undefined ? JSON.stringify(options.json) : options.body
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Flarum API 请求失败: ${response.status} ${response.statusText}`);
+                }
+                
+                if (response.status === 204) return null;
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        async function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+            
+            // 测试1: 检查配置
+            addResult('测试1: 检查Flarum配置', isFlarumConfigured() ? '成功' : '失败');
+            
+            if (!isFlarumConfigured()) {
+                addResult('错误', 'Flarum配置未完成');
+                return;
+            }
+            
+            // 测试2: 尝试获取讨论列表
+            try {
+                const discussions = await flarumRequest('/discussions?sort=-createdAt&page[limit]=5&include=user');
+                addResult('测试2: 获取讨论列表', '成功', discussions);
+            } catch (error) {
+                addResult('测试2: 获取讨论列表', '失败', error.message);
+            }
+            
+            // 测试3: 尝试获取API信息
+            try {
+                const info = await flarumRequest('/');
+                addResult('测试3: 获取API信息', '成功', info);
+            } catch (error) {
+                addResult('测试3: 获取API信息', '失败', error.message);
+            }
+        }
+        
+        function addResult(testName, status, details = null) {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${status === '成功' ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${testName}</strong>: ${status}`;
+            if (details) {
+                div.innerHTML += `<br><small>${typeof details === 'object' ? JSON.stringify(details, null, 2) : details}</small>`;
+            }
+            resultsDiv.appendChild(div);
+        }
+        
+        // 页面加载后运行测试
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>
