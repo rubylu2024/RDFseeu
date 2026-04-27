@@ -81,6 +81,8 @@ async function flarumRequest(path, options = {}) {
 
     if (options.json !== undefined) {
         headers['Content-Type'] = 'application/vnd.api+json';
+    } else if (options.body && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
     }
 
     const token = getFlarumToken();

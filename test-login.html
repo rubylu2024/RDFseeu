@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 3px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flarum 登录测试</h1>
+
+    <div class="test-section">
+        <h3>1. 测试 API 连通性</h3>
+        <button onclick="testApiConnectivity()">测试 API 连通性</button>
+        <pre id="connectivity-result">等待测试...</pre>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试获取 Token</h3>
+        <div>
+            <input type="text" id="test-username" placeholder="用户名或邮箱">
+            <input type="password" id="test-password" placeholder="密码">
+        </div>
+        <button onclick="testLogin()">测试登录</button>
+        <pre id="login-result">等待测试...</pre>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 检查 CORS 配置</h3>
+        <button onclick="checkCors()">检查 CORS</button>
+        <pre id="cors-result">等待测试...</pre>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        async function testApiConnectivity() {
+            const resultEl = document.getElementById('connectivity-result');
+            try {
+                const response = await fetch(API_BASE + '/discussions', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/vnd.api+json'
+                    }
+                });
+                resultEl.textContent = `状态: ${response.status} ${response.statusText}\n`;
+                resultEl.textContent += `CORS: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
+                const data = await response.json();
+                resultEl.textContent += `数据: ${JSON.stringify(data, null, 2).substring(0, 500)}...`;
+                resultEl.parentElement.className = 'test-section success';
+            } catch (error) {
+                resultEl.textContent = `错误: ${error.message}`;
+                resultEl.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('test-username').value;
+            const password = document.getElementById('test-password').value;
+            const resultEl = document.getElementById('login-result');
+
+            if (!username || !password) {
+                resultEl.textContent = '请输入用户名和密码';
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE + '/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.api+json'
+                    },
+                    body: JSON.stringify({
+                        identification: username,
+                        password: password
+                    })
+                });
+
+                resultEl.textContent = `状态: ${response.status} ${response.statusText}\n`;
+                resultEl.textContent += `CORS头: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
+
+                const text = await response.text();
+                resultEl.textContent += `响应内容: ${text.substring(0, 500)}\n`;
+
+                if (response.ok) {
+                    const data = JSON.parse(text);
+                    if (data.token) {
+                        resultEl.textContent += `\n✅ 登录成功! Token: ${data.token.substring(0, 20)}...`;
+                        resultEl.parentElement.className = 'test-section success';
+                    } else {
+                        resultEl.textContent += `\n❌ 响应中没有 token`;
+                        resultEl.parentElement.className = 'test-section error';
+                    }
+                } else {
+                    resultEl.parentElement.className = 'test-section error';
+                }
+            } catch (error) {
+                resultEl.textContent = `错误: ${error.message}\n这可能是 CORS 问题或网络问题`;
+                resultEl.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function checkCors() {
+            const resultEl = document.getElementById('cors-result');
+            try {
+                const response = await fetch(API_BASE + '/discussions', {
+                    method: 'OPTIONS'
+                });
+                resultEl.textContent = `预检请求状态: ${response.status}\n`;
+                resultEl.textContent += `Access-Control-Allow-Origin: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
+                resultEl.textContent += `Access-Control-Allow-Methods: ${response.headers.get('Access-Control-Allow-Methods') || '未配置'}\n`;
+                resultEl.textContent += `Access-Control-Allow-Headers: ${response.headers.get('Access-Control-Allow-Headers') || '未配置'}\n`;
+
+                if (!response.headers.get('Access-Control-Allow-Origin')) {
+                    resultEl.textContent += `\n⚠️ CORS 未配置！这可能导致跨域请求失败`;
+                    resultEl.parentElement.className = 'test-section error';
+                } else {
+                    resultEl.parentElement.className = 'test-section success';
+                }
+            } catch (error) {
+                resultEl.textContent = `错误: ${error.message}`;
+                resultEl.parentElement.className = 'test-section error';
+            }
+        }
+    </script>
+</body>
+</html>
