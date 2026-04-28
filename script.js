@@ -174,6 +174,15 @@ function flarumDiscussionToPostData(apiJson) {
     .filter((p) => relationshipPostIds.includes(String(p.id)))
     .sort((a, b) => (a.attributes?.number || 0) - (b.attributes?.number || 0));
 
+    // 创建帖子ID到楼层号的映射
+    const postIdToFloor = new Map();
+    posts.forEach((p) => {
+        const number = p.attributes?.number;
+        if (typeof number === 'number') {
+            postIdToFloor.set(String(p.id), number);
+        }
+    });
+
     const firstPost = posts.find((p) => p.attributes?.number === 1) || posts[0];
     const firstUserId = firstPost?.relationships?.user?.data?.id || discussion.relationships?.user?.data?.id;
     const firstUser = firstUserId ? pickIncluded(included, 'users', firstUserId) : null;
@@ -197,6 +206,14 @@ function flarumDiscussionToPostData(apiJson) {
                 const userId = p.relationships?.user?.data?.id;
                 const user = userId ? pickIncluded(included, 'users', userId) : null;
                 const number = p.attributes?.number;
+                
+                // 获取回复关系
+                let replyTo = null;
+                const replyPostId = p.relationships?.reply?.data?.id;
+                if (replyPostId) {
+                    replyTo = postIdToFloor.get(String(replyPostId));
+                }
+                
                 return {
                     id: Number(p.id),
                     author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
@@ -205,7 +222,7 @@ function flarumDiscussionToPostData(apiJson) {
                     time: formatFlarumTime(p.attributes?.createdAt),
                     floor: typeof number === 'number' ? number : 0,
                     content: p.attributes?.contentHtml || p.attributes?.content || '',
-                    replyTo: null
+                    replyTo
                 };
             })
     };
@@ -272,11 +289,20 @@ async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
     return json?.data?.id ? String(json.data.id) : null;
 }
 
-async function flarumCreatePost({ discussionId, content }) {
+async function flarumCreatePost({ discussionId, content, replyTo }) {
     const token = getFlarumToken();
     if (!token) {
         alert('请先登录后再回帖。');
         return null;
+    }
+
+    const relationships = {
+        discussion: { data: { type: 'discussions', id: String(discussionId) } }
+    };
+    
+    // 如果是回复某个楼层，添加 replyTo 关系
+    if (replyTo) {
+        relationships.reply = { data: { type: 'posts', id: String(replyTo) } };
     }
 
     const json = await flarumRequest('/posts', {
@@ -285,9 +311,7 @@ async function flarumCreatePost({ discussionId, content }) {
             data: {
                 type: 'posts',
                 attributes: { content },
-                relationships: {
-                    discussion: { data: { type: 'discussions', id: String(discussionId) } }
-                }
+                relationships
             }
         }
     });
@@ -1169,7 +1193,7 @@ function setupReplyForm() {
         if (isFlarumConfigured()) {
             const raw = content.replace(/^回复\s+.*?\n/, '').trim();
             try {
-                await flarumCreatePost({ discussionId: postData.id, content: raw || content });
+                await flarumCreatePost({ discussionId: postData.id, content: raw || content, replyTo });
                 const refreshed = await loadPostData(postId);
                 if (refreshed) renderForumThread(refreshed);
 
