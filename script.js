@@ -681,6 +681,9 @@ window.addEventListener('DOMContentLoaded', function() {
         loadPostDetailsFromJson();
         // 表单事件只绑定一次
         setupReplyForm();
+        
+        // 页面加载时检查登录状态，修改回复表单
+        updateReplyFormForLoginStatus();
     }
 
     if (document.querySelector('.forum-posts')) {
@@ -836,9 +839,10 @@ function renderForumThread(postData) {
             if (replyBox.querySelector('.comments-disabled-msg')) {
                 const isLoggedIn = !!getFlarumToken();
                 
-                replyBox.innerHTML = `
-                    <h4>发表回复</h4>
-                    ${isLoggedIn ? `
+                if (isLoggedIn) {
+                    // 已登录：显示用户信息和表单
+                    replyBox.innerHTML = `
+                        <h4>发表回复</h4>
                         <div class="current-user-info" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
                             <img src="images/用户头像.png" alt="头像" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                             <div>
@@ -846,19 +850,29 @@ function renderForumThread(postData) {
                                 <div style="font-size: 12px; color: #999;">Lv.1 新手上路</div>
                             </div>
                         </div>
-                    ` : ''}
-                    <form class="reply-form" id="reply-form">
-                        ${!isLoggedIn ? '<input type="text" id="reply-name" placeholder="您的昵称">' : ''}
-                        <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
-                        <input type="hidden" id="reply-target" name="reply-target" value="">
-                        <div>
-                            <button type="submit">发表回复</button>
-                            <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                        <form class="reply-form" id="reply-form">
+                            <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
+                            <input type="hidden" id="reply-target" name="reply-target" value="">
+                            <div>
+                                <button type="submit">发表回复</button>
+                                <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                            </div>
+                        </form>
+                    `;
+                } else {
+                    // 未登录：显示登录提示
+                    replyBox.innerHTML = `
+                        <h4>发表回复</h4>
+                        <div class="login-prompt" style="padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <p style="margin-bottom: 10px;">未登录用户不可回复</p>
+                            <a href="login.html" style="color: #0066cc; text-decoration: none;">立即登录</a>
                         </div>
-                    </form>
-                `;
+                    `;
+                }
                 // 重新绑定提交事件（因为 innerHTML 会移除事件监听）
-                setupReplyForm();
+                if (isLoggedIn) {
+                    setupReplyForm();
+                }
             }
         }
     }
@@ -1062,6 +1076,49 @@ async function getCurrentUser() {
     }
     
     return null;
+}
+
+// 更新回复表单以反映登录状态
+function updateReplyFormForLoginStatus() {
+    const isLoggedIn = !!getFlarumToken();
+    const replyBox = document.getElementById('reply-box');
+    
+    if (!replyBox) return;
+    
+    if (isLoggedIn) {
+        // 已登录：显示用户信息和回复表单
+        const username = localStorage.getItem('flarumUsername') || '已登录用户';
+        
+        replyBox.innerHTML = `
+            <h4>发表回复</h4>
+            <div class="current-user-info" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                <img src="images/用户头像.png" alt="头像" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                <div>
+                    <div style="font-weight: bold; color: #333;">${username}</div>
+                    <div style="font-size: 12px; color: #999;">Lv.1 新手上路</div>
+                </div>
+            </div>
+            <form class="reply-form" id="reply-form">
+                <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
+                <input type="hidden" id="reply-target" name="reply-target" value="">
+                <div>
+                    <button type="submit">发表回复</button>
+                    <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                </div>
+            </form>
+        `;
+        // 重新绑定表单事件
+        setupReplyForm();
+    } else {
+        // 未登录：直接显示登录提示，替换整个回复区域
+        replyBox.innerHTML = `
+            <h4>发表回复</h4>
+            <div style="padding: 20px; background: #fff3f3; border: 1px solid #ffcccc; border-radius: 4px; text-align: center;">
+                <div style="font-size: 16px; color: #cc0000; margin-bottom: 10px;">未登录用户不可回复</div>
+                <a href="login.html" style="color: #0066cc; text-decoration: none;">点击登录</a>
+            </div>
+        `;
+    }
 }
 
 // 设置回复表单事件（只绑定一次）
