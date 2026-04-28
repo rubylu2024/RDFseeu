@@ -919,6 +919,9 @@ async function loadPostDetailsFromJson() {
 function renderForumThread(postData) {
     const threadContainer = document.querySelector('.forum-thread');
     if (!threadContainer) return;
+    
+    // 保存帖子数据到全局变量，供后续使用（避免重复加载）
+    window.currentPostData = postData;
 
     // 更新页面标题
     document.title = `红蜻蜓论坛 - ${postData.title}`;
@@ -1264,11 +1267,23 @@ function setupReplyForm() {
 
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('id') || '1';
-        let postData = await loadPostData(postId);
+        
+        // 获取当前帖子数据（从内存或缓存，避免重新加载）
+        let postData = window.currentPostData;
         if (!postData) {
-            alert('无法获取帖子数据');
-            return;
+            postData = await loadPostData(postId);
+            if (!postData) {
+                alert('无法获取帖子数据');
+                return;
+            }
+            window.currentPostData = postData;
         }
+
+        // 显示提交中状态
+        const submitBtn = replyForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.textContent = '提交中...';
+        submitBtn.disabled = true;
 
         if (isFlarumConfigured()) {
             const replyToFloor = replyTo ? Number(replyTo) : null;
@@ -1283,18 +1298,56 @@ function setupReplyForm() {
                 if (replyToFloor && newPostId) {
                     storeFlarumReplyToFloor(postData.id, newPostId, replyToFloor);
                 }
-                const refreshed = await loadPostData(postId);
-                if (refreshed) renderForumThread(refreshed);
+                
+                // 获取当前用户信息
+                const currentUser = await getCurrentUser();
+                const username = currentUser?.displayName || currentUser?.username || localStorage.getItem('flarumUsername') || '用户';
+                const avatarUrl = currentUser?.avatar || 'images/用户头像.png';
+                
+                // 创建新评论对象
+                const newFloor = postData.comments.length + 2;
+                const newComment = {
+                    id: newPostId || Date.now(),
+                    author: username,
+                    authorLevel: 'Lv.1 新手上路',
+                    authorAvatar: avatarUrl,
+                    time: new Date().toLocaleString('zh-CN', { 
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit',
+                        hour12: false 
+                    }).replace(/\//g, '-'),
+                    floor: newFloor,
+                    content: `<p>${contentToSend.replace(/\n/g, '</p><p>')}</p>`,
+                    replyTo: replyToFloor
+                };
+                
+                // 添加到评论列表
+                postData.comments.push(newComment);
+                
+                // 直接插入新评论到页面，不需要重新渲染整个帖子
+                insertNewCommentToPage(newComment, postData);
 
                 replyForm.reset();
                 replyTargetInput.value = '';
                 replyBoxTitle.textContent = '发表回复';
                 cancelReply.style.display = 'none';
-                alert('回复发表成功！');
+                
+                // 滚动到新评论
+                const newPostElement = document.getElementById(`post-${newFloor}`);
+                if (newPostElement) {
+                    newPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    newPostElement.style.backgroundColor = '#ffffcc';
+                    setTimeout(() => {
+                        newPostElement.style.backgroundColor = '';
+                    }, 2000);
+                }
             } catch (error) {
                 console.error('回帖失败:', error);
                 console.error('回帖失败详情:', error.detail);
                 alert('回复发表失败：' + (error.detail || error.message));
+            } finally {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
             }
             return;
         }
@@ -1302,16 +1355,23 @@ function setupReplyForm() {
         // 非Flarum模式需要昵称
         if (!name) {
             alert('请输入昵称');
+            submitBtn.textContent = originalBtnText;
+            submitBtn.disabled = false;
             return;
         }
 
+        const newFloor = postData.comments.length + 2;
         const newComment = {
             id: Date.now(),
             author: name,
             authorLevel: 'Lv.1 新手上路',
             authorAvatar: 'images/用户头像.png',
-            time: "2010-04-25 " + new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-            floor: postData.comments.length + 2,
+            time: new Date().toLocaleString('zh-CN', { 
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false 
+            }).replace(/\//g, '-'),
+            floor: newFloor,
             content: `<p>${content.replace(/\n/g, '</p><p>')}</p>`,
             replyTo: replyTo ? parseInt(replyTo) : null
         };
@@ -1320,14 +1380,122 @@ function setupReplyForm() {
         
         localStorage.setItem(`post_${postData.id}_new_comments`, JSON.stringify(postData.comments));
         
-        renderForumThread(postData);
+        // 直接插入新评论到页面
+        insertNewCommentToPage(newComment, postData);
         
         replyForm.reset();
         replyTargetInput.value = '';
         replyBoxTitle.textContent = '发表回复';
         cancelReply.style.display = 'none';
         
-        alert('回复发表成功！');
+        // 滚动到新评论并高亮
+        const newPostElement = document.getElementById(`post-${newFloor}`);
+        if (newPostElement) {
+            newPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            newPostElement.style.backgroundColor = '#ffffcc';
+            setTimeout(() => {
+                newPostElement.style.backgroundColor = '';
+            }, 2000);
+        }
+        
+        submitBtn.textContent = originalBtnText;
+        submitBtn.disabled = false;
+    }
+}
+
+// 将新评论直接插入到页面中（无需重新渲染整个帖子）
+function insertNewCommentToPage(comment, postData) {
+    const threadContainer = document.querySelector('.forum-thread');
+    if (!threadContainer) return;
+    
+    // 更新评论计数
+    const commentCountElement = document.querySelector('.post-stats span:last-child');
+    if (commentCountElement) {
+        const currentCount = postData.comments.length;
+        commentCountElement.textContent = `评论: ${currentCount}`;
+    }
+    
+    // 生成新评论的HTML
+    const allPosts = [{
+        id: 0,
+        author: postData.author,
+        authorLevel: postData.authorLevel,
+        authorAvatar: postData.authorAvatar,
+        time: postData.publishTime,
+        floor: 1,
+        content: postData.content,
+        isOp: true,
+        replyTo: null
+    }, ...postData.comments];
+    
+    // 递归生成引用 HTML
+    function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
+        if (!replyToFloor || depth >= 3) return '';
+        const target = allPosts.find(p => p.floor === replyToFloor);
+        if (!target) return '';
+
+        const parentQuote = generateQuoteHTML(target.replyTo, allPosts, depth + 1);
+        const plainContent = target.content.replace(/<[^>]*>/g, '').substring(0, 100);
+        
+        return `
+            <div class="quote-box quote-level-${depth}">
+                ${parentQuote}
+                <div class="quote-author">引用 ${target.author}(<a href="#post-${target.floor}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}楼</a>) 的发言：</div>
+                <div class="quote-content">${plainContent}${target.content.replace(/<[^>]*>/g, '').length > 100 ? '...' : ''}</div>
+            </div>
+        `;
+    }
+    
+    const quoteHTML = generateQuoteHTML(comment.replyTo, allPosts);
+    
+    const commentHTML = `
+        <div class="post" id="post-${comment.floor}">
+            <div class="post-header">
+                <div class="post-author">
+                    <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
+                    <div class="author-info">
+                        <div class="author-name">${comment.author}</div>
+                        <div class="author-level">${comment.authorLevel}</div>
+                    </div>
+                </div>
+                <div class="post-meta">
+                    <span class="post-time">${comment.time}</span>
+                    <span class="post-floor">${comment.floor}楼</span>
+                </div>
+            </div>
+            <div class="post-content">
+                ${quoteHTML}
+                ${comment.content}
+            </div>
+            <div class="post-actions">
+                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${comment.author}" data-content="${comment.content.replace(/"/g, '&quot;')}">回复</a>
+            </div>
+        </div>
+    `;
+    
+    // 插入到帖子列表末尾
+    threadContainer.insertAdjacentHTML('beforeend', commentHTML);
+    
+    // 为新插入的回复按钮绑定事件
+    const newReplyLink = threadContainer.querySelector(`#post-${comment.floor} .reply-link`);
+    if (newReplyLink) {
+        newReplyLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const floor = this.dataset.floor;
+            const author = this.dataset.author;
+            
+            const replyTargetInput = document.getElementById('reply-target');
+            const replyContent = document.getElementById('reply-content');
+            const replyBoxTitle = document.querySelector('.reply-box h4');
+            
+            if (replyTargetInput && replyContent && replyBoxTitle) {
+                replyTargetInput.value = floor;
+                replyContent.value = `回复 ${author}(${floor}楼)：\n\n`;
+                replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
+                document.getElementById('cancel-reply').style.display = 'inline';
+                replyContent.focus();
+            }
+        });
     }
 }
 
