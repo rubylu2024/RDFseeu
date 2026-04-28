@@ -939,8 +939,10 @@ function setupReplyButtons(postData) {
                 replyBoxTitle.textContent = '发表回复';
                 cancelReply.style.display = 'none';
                 alert('回复发表成功！');
-            } catch {
-                alert('回复发表失败，请检查登录状态、论坛地址、或跨域配置。');
+            } catch (error) {
+            console.error('回帖失败:', error);
+            console.error('回帖失败详情:', error.detail);
+            alert('回复发表失败：' + (error.detail || error.message));
             }
             return;
         }
