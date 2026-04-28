@@ -126,9 +126,21 @@ function pickIncluded(included, type, id) {
     return included.find((x) => x && x.type === type && String(x.id) === String(id)) || null;
 }
 
+function resolveFlarumUrlMaybeRelative(url) {
+    if (typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('//')) return 'https:' + trimmed;
+    const base = FLARUM_BASE_URL.replace(/\/+$/, '');
+    if (!base) return trimmed;
+    if (trimmed.startsWith('/')) return base + trimmed;
+    return base + '/' + trimmed;
+}
+
 function getUserAvatarUrl(user) {
     const url = user?.attributes?.avatarUrl;
-    if (typeof url === 'string' && url.trim().length > 0) return url;
+    if (typeof url === 'string' && url.trim().length > 0) return resolveFlarumUrlMaybeRelative(url);
     return 'images/用户头像.png';
 }
 
@@ -139,11 +151,10 @@ function flarumDiscussionToPostData(apiJson) {
     const included = apiJson.included || [];
     const posts = included
         .filter((x) => x && x.type === 'posts')
-        .filter((p) => String(p.relationships?.discussion?.data?.id) === String(discussion.id))
         .sort((a, b) => (a.attributes?.number || 0) - (b.attributes?.number || 0));
 
     const firstPost = posts.find((p) => p.attributes?.number === 1) || posts[0];
-    const firstUserId = firstPost?.relationships?.user?.data?.id;
+    const firstUserId = firstPost?.relationships?.user?.data?.id || discussion.relationships?.user?.data?.id;
     const firstUser = firstUserId ? pickIncluded(included, 'users', firstUserId) : null;
 
     const viewCount = discussion.attributes?.viewCount;
@@ -158,7 +169,7 @@ function flarumDiscussionToPostData(apiJson) {
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
         viewCount: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0),
         allowComments: true,
-        content: firstPost?.attributes?.contentHtml || '',
+        content: firstPost?.attributes?.contentHtml || firstPost?.attributes?.content || '',
         comments: posts
             .filter((p) => p !== firstPost)
             .map((p) => {
@@ -172,7 +183,7 @@ function flarumDiscussionToPostData(apiJson) {
                     authorAvatar: getUserAvatarUrl(user),
                     time: formatFlarumTime(p.attributes?.createdAt),
                     floor: typeof number === 'number' ? number : 0,
-                    content: p.attributes?.contentHtml || '',
+                    content: p.attributes?.contentHtml || p.attributes?.content || '',
                     replyTo: null
                 };
             })
