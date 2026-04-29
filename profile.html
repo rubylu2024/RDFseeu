@@ -52,6 +52,43 @@
             justify-content: center;
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .avatar-container:hover .avatar-upload-overlay {
+            opacity: 1;
+        }
+        
+        .avatar-upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 50%;
+        }
+        
+        .avatar-upload-overlay span {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .avatar-upload-icon {
+            font-size: 24px;
+            color: white;
+        }
+        
+        #avatar-upload-input {
+            display: none;
         }
         
         .avatar-container img {
@@ -370,9 +407,14 @@
                             <div class="profile-container">
                                 <!-- 个人资料头部 -->
                                 <div class="profile-header">
-                                    <div class="avatar-container">
+                                    <div class="avatar-container" onclick="document.getElementById('avatar-upload-input').click();">
                                         <div id="user-avatar" class="avatar-placeholder"></div>
+                                        <div class="avatar-upload-overlay">
+                                            <span class="avatar-upload-icon">📷</span>
+                                            <span>更换头像</span>
+                                        </div>
                                     </div>
+                                    <input type="file" id="avatar-upload-input" accept="image/*" onchange="handleAvatarUpload(this)">
                                     <h2 id="user-name">用户名<span id="user-group-badge"></span></h2>
                                     <p id="user-title">用户头衔</p>
                                     <div id="user-signature" style="display: none;" class="signature"></div>
@@ -792,6 +834,70 @@
         function stripHtml(html) {
             if (!html) return '';
             return html.replace(/<[^>]*>/g, '').trim();
+        }
+        
+        // 处理头像上传
+        async function handleAvatarUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件！');
+                return;
+            }
+            
+            // 验证文件大小（限制在2MB以内）
+            if (file.size > 2 * 1024 * 1024) {
+                alert('图片大小不能超过2MB！');
+                return;
+            }
+            
+            const userId = localStorage.getItem('flarumUserId');
+            const token = localStorage.getItem('flarumToken');
+            
+            try {
+                // 显示加载状态
+                const avatarContainer = document.querySelector('.avatar-container');
+                avatarContainer.style.opacity = '0.5';
+                avatarContainer.style.cursor = 'wait';
+                
+                // 创建FormData
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                // 发送请求
+                const response = await fetch('/api/users/' + userId + '/avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Token ' + token + '; userId=' + userId
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // 更新头像显示
+                    const avatarUrl = data.data?.attributes?.avatarUrl;
+                    if (avatarUrl) {
+                        document.getElementById('user-avatar').innerHTML = `<img src="${avatarUrl}" alt="头像">`;
+                    }
+                    alert('头像上传成功！');
+                } else {
+                    const errorData = await response.json();
+                    alert('上传失败: ' + (errorData.errors?.[0]?.detail || '未知错误'));
+                }
+            } catch (error) {
+                console.error('上传头像失败:', error);
+                alert('上传头像失败，请重试');
+            } finally {
+                // 恢复状态
+                const avatarContainer = document.querySelector('.avatar-container');
+                avatarContainer.style.opacity = '1';
+                avatarContainer.style.cursor = 'pointer';
+                // 重置input
+                input.value = '';
+            }
         }
     </script>
 </body>
