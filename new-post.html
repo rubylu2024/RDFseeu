@@ -9,15 +9,17 @@
         .new-post-container {
             padding: 20px;
             background: #fff;
+            min-height: 400px;
         }
         
         .breadcrumb {
             font-size: 13px;
             color: #666;
             margin-bottom: 15px;
-            padding: 8px;
+            padding: 8px 12px;
             background: #f9f9f9;
             border: 1px solid #eee;
+            border-radius: 4px;
         }
         
         .breadcrumb a {
@@ -25,67 +27,126 @@
             text-decoration: none;
         }
         
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
         .post-editor {
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .post-editor-header {
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .post-editor-header h2 {
+            font-size: 16px;
+            margin: 0;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .post-editor-body {
             padding: 20px;
         }
         
-        .post-editor h2 {
-            font-size: 16px;
-            margin-bottom: 20px;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         .form-group label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 14px;
+            color: #333;
         }
         
         .form-group input[type="text"], 
         .form-group select {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-size: 14px;
+            transition: border-color 0.2s;
         }
         
-        .editor-toolbar {
-            background: #f0f0f0;
-            border: 1px solid #ccc;
-            border-bottom: none;
+        .form-group input[type="text"]:focus, 
+        .form-group select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+        }
+        
+        .toolbar {
+            margin-bottom: 10px;
             padding: 5px;
-            display: flex;
-            gap: 5px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         
         .toolbar-btn {
-            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: 1px solid #ddd;
             background: #fff;
-            border: 1px solid #bbb;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            color: #333;
+            margin: 0 2px;
+            transition: all 0.2s;
+            vertical-align: middle;
         }
         
         .toolbar-btn:hover {
-            background: #e8e8e8;
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        
+        .toolbar-btn:active {
+            background: #e0e0e0;
+        }
+        
+        .toolbar-divider {
+            display: inline-block;
+            width: 1px;
+            height: 20px;
+            background: #ddd;
+            margin: 0 5px;
+            vertical-align: middle;
         }
         
         .post-content-area {
             width: 100%;
-            height: 300px;
-            padding: 10px;
-            border: 1px solid #ccc;
+            height: 350px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-family: Arial, sans-serif;
             font-size: 14px;
             resize: vertical;
+            line-height: 1.6;
+            transition: border-color 0.2s;
+        }
+        
+        .post-content-area:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
         }
         
         .submit-area {
@@ -93,23 +154,45 @@
             padding-top: 15px;
             border-top: 1px solid #eee;
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: center;
         }
         
         .btn-submit {
-            padding: 8px 25px;
+            padding: 10px 30px;
             background: #cc0000;
             color: #fff;
             border: 1px solid #990000;
+            border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .btn-submit:hover {
+            background: #d63030;
+        }
+        
+        .btn-submit:disabled {
+            background: #ccc;
+            border-color: #999;
+            cursor: not-allowed;
         }
         
         .btn-preview {
-            padding: 8px 20px;
-            background: #f0f0f0;
-            border: 1px solid #ccc;
+            padding: 10px 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: background 0.2s;
+        }
+        
+        .btn-preview:hover {
+            background: #f5f5f5;
         }
         
         .notice-box {
@@ -117,13 +200,93 @@
             padding: 15px;
             background: #fff9e6;
             border: 1px solid #ffe699;
+            border-radius: 4px;
             font-size: 12px;
             color: #664d00;
+        }
+        
+        .emoji-picker {
+            display: none;
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+        
+        .emoji-item {
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            text-align: center;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        
+        .emoji-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .login-prompt {
+            padding: 40px 20px;
+            text-align: center;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .login-prompt h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .login-prompt p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+        
+        .login-prompt a {
+            display: inline-block;
+            padding: 10px 25px;
+            background: #cc0000;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .login-prompt a:hover {
+            background: #d63030;
+        }
+        
+        .char-count {
+            text-align: right;
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .char-count.warning {
+            color: #cc0000;
+        }
+        
+        #image-upload {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- 音频元素 -->
     <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
         Your browser does not support the audio element.
     </audio>
@@ -131,7 +294,6 @@
     <div class="forum-frame-outer">
         <div class="forum-content">
             <div class="forum-frame">
-                <!-- 顶部导航栏 -->
                 <div class="top-nav">
                     <div class="top-nav-container">
                         <div class="logo">
@@ -157,7 +319,7 @@
                             </button>
                             <a href="#">服务</a>
                             <div id="user-links-container">
-                                <a href="login.html" id="login-btn">登录</a>
+                                <a href="login.html?redirect=new-post.html" id="login-btn">登录</a>
                                 <a href="register.html" id="register-btn">注册</a>
                             </div>
                         </div>
@@ -165,45 +327,16 @@
                 </div>
 
                 <div class="new-post-container">
+                    <div class="breadcrumb">
+                        <a href="index.html">首页</a> > <a href="index.html">论坛</a> > 发表新帖
+                    </div>
 
-
-                    <div class="post-editor">
-                        <h2>发表新帖子</h2>
-                        <form id="new-post-form">
-                            <div class="form-group">
-                                <label for="post-category">选择版块：</label>
-                                <select id="post-category">
-                                    <option value="1">城市论坛</option>
-                                    <option value="2">蜻蜓杂谈</option>
-                                    <option value="3">情感天空</option>
-                                    <option value="4">娱乐八卦</option>
-                                    <option value="5">匿名树洞</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="post-title">帖子标题：</label>
-                                <input type="text" id="post-title" placeholder="请输入标题（最多50个字符）" required maxlength="50">
-                            </div>
-
-                            <div class="form-group">
-                                <label>帖子内容：</label>
-                                <div class="editor-toolbar">
-                                    <button type="button" class="toolbar-btn"><b>B</b></button>
-                                    <button type="button" class="toolbar-btn"><i>I</i></button>
-                                    <button type="button" class="toolbar-btn"><u>U</u></button>
-                                    <button type="button" class="toolbar-btn">图片</button>
-                                    <button type="button" class="toolbar-btn">链接</button>
-                                    <button type="button" class="toolbar-btn">颜文字</button>
-                                </div>
-                                <textarea id="post-content" class="post-content-area" placeholder="分享你的故事..." required></textarea>
-                            </div>
-
-                            <div class="submit-area">
-                                <button type="submit" class="btn-submit">发表帖子</button>
-                                <button type="button" class="btn-preview">预览</button>
-                            </div>
-                        </form>
+                    <div id="editor-container">
+                        <div class="login-prompt">
+                            <h3>发表新帖</h3>
+                            <p>请先登录后再发帖</p>
+                            <a href="login.html?redirect=new-post.html">立即登录</a>
+                        </div>
                     </div>
 
                     <div class="notice-box">
@@ -215,7 +348,6 @@
                 </div>
             </div>
             
-            <!-- 底部状态栏 -->
             <div class="status-bar">
                 <div class="status-container">
                     <span>我的红蜻蜓</span>
@@ -226,5 +358,340 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initNewPostPage();
+        });
+
+        async function initNewPostPage() {
+            const isLoggedIn = checkLoginStatus();
+            const editorContainer = document.getElementById('editor-container');
+            
+            if (!isLoggedIn) {
+                return;
+            }
+
+            editorContainer.innerHTML = `
+                <div class="post-editor">
+                    <div class="post-editor-header">
+                        <h2>发表新帖子</h2>
+                        <span style="font-size: 12px; color: #999;">当前登录：${localStorage.getItem('flarumUsername') || '用户'}</span>
+                    </div>
+                    <div class="post-editor-body">
+                        <form id="new-post-form">
+                            <div class="form-group">
+                                <label for="post-category">选择版块：</label>
+                                <select id="post-category" required>
+                                    <option value="">请选择版块</option>
+                                    <option value="1">城市论坛</option>
+                                    <option value="2">蜻蜓杂谈</option>
+                                    <option value="3">情感天空</option>
+                                    <option value="4">娱乐八卦</option>
+                                    <option value="5">匿名树洞</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="post-title">帖子标题：</label>
+                                <input type="text" id="post-title" placeholder="请输入标题（最多50个字符）" required maxlength="50">
+                                <div id="title-char-count" class="char-count">0/50</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>帖子内容：</label>
+                                <div class="toolbar">
+                                    <button type="button" class="toolbar-btn" data-action="bold" title="粗体 (Ctrl+B)">
+                                        <b>B</b>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-action="italic" title="斜体 (Ctrl+I)">
+                                        <i>I</i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-action="underline" title="下划线 (Ctrl+U)">
+                                        <u>U</u>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-action="strike" title="删除线">
+                                        <s>S</s>
+                                    </button>
+                                    <span class="toolbar-divider"></span>
+                                    <button type="button" class="toolbar-btn" data-action="quote" title="引用">
+                                        "
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-action="code" title="代码">
+                                        &lt;/&gt;
+                                    </button>
+                                    <span class="toolbar-divider"></span>
+                                    <button type="button" class="toolbar-btn emoji-btn" data-action="emoji" title="表情">
+                                        😊
+                                    </button>
+                                    <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
+                                        🖼️
+                                    </button>
+                                </div>
+                                <div class="emoji-picker" id="emoji-picker">
+                                    <div class="emoji-grid">
+                                        ${['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮‍💨','😥','😢','😭','😱','😨','😰','😥','🤯','😲','😳','🥵','🤤','🥴','😵','💫','🤢','🤮','🤒','🤕','😷','🤧','🥶','🥵','😴','😪','🤫','🤭','🤗','🤑','🤤','😋','😛','😜','🤪','😝','🤐','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','🧐','🤓','😎','🥸','🥳','🤠','🥰','😍','🤩','😘','😗','😚','😙','🙂','😊','😇','🤣','😂','😅','😆','😁','😄','😃','😀'].map(e => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <input type="file" id="image-upload" accept="image/*">
+                                <textarea id="post-content" class="post-content-area" placeholder="分享你的故事..." required></textarea>
+                            </div>
+
+                            <div class="submit-area">
+                                <button type="submit" class="btn-submit" id="submit-btn">发表帖子</button>
+                                <button type="button" class="btn-preview" id="preview-btn">预览</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            setupNewPostForm();
+            await checkImagePermissionForNewPost();
+        }
+
+        function setupNewPostForm() {
+            const form = document.getElementById('new-post-form');
+            const titleInput = document.getElementById('post-title');
+            const contentInput = document.getElementById('post-content');
+            const charCount = document.getElementById('title-char-count');
+            const submitBtn = document.getElementById('submit-btn');
+
+            titleInput.addEventListener('input', function() {
+                const count = this.value.length;
+                charCount.textContent = `${count}/50`;
+                charCount.className = 'char-count' + (count >= 45 ? ' warning' : '');
+            });
+
+            setupToolbar(contentInput);
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const category = document.getElementById('post-category').value;
+                const title = titleInput.value.trim();
+                const content = contentInput.value.trim();
+
+                if (!category) {
+                    alert('请选择版块');
+                    return;
+                }
+                
+                if (!title) {
+                    alert('请输入标题');
+                    return;
+                }
+                
+                if (!content) {
+                    alert('请输入内容');
+                    return;
+                }
+
+                submitBtn.textContent = '发布中...';
+                submitBtn.disabled = true;
+
+                try {
+                    const response = await flarumRequest('/discussions', {
+                        method: 'POST',
+                        json: {
+                            data: {
+                                type: 'discussions',
+                                attributes: {
+                                    title: title,
+                                    content: content
+                                }
+                            }
+                        }
+                    });
+
+                    if (response && response.data?.id) {
+                        alert('发帖成功！');
+                        window.location.href = `post.html?id=${response.data.id}`;
+                    } else {
+                        alert('发帖失败，请重试');
+                    }
+                } catch (error) {
+                    console.error('发帖失败:', error);
+                    alert('发帖失败：' + (error.message || '未知错误'));
+                } finally {
+                    submitBtn.textContent = '发表帖子';
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+
+        function setupToolbar(textarea) {
+            const toolbar = document.querySelector('.toolbar');
+            const emojiPicker = document.getElementById('emoji-picker');
+            const imageUpload = document.getElementById('image-upload');
+
+            toolbar.addEventListener('click', function(e) {
+                const target = e.target.closest('.toolbar-btn');
+                if (!target) return;
+                
+                const action = target.dataset.action;
+                if (!action) return;
+
+                switch (action) {
+                    case 'bold':
+                        wrapSelection(textarea, '**', '**');
+                        break;
+                    case 'italic':
+                        wrapSelection(textarea, '*', '*');
+                        break;
+                    case 'underline':
+                        wrapSelection(textarea, '__', '__');
+                        break;
+                    case 'strike':
+                        wrapSelection(textarea, '~~', '~~');
+                        break;
+                    case 'quote':
+                        wrapSelection(textarea, '> ', '', true);
+                        break;
+                    case 'code':
+                        wrapSelection(textarea, '`', '`');
+                        break;
+                    case 'emoji':
+                        emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+                        break;
+                    case 'image':
+                        imageUpload.click();
+                        break;
+                }
+            });
+
+            emojiPicker.addEventListener('click', function(e) {
+                const emojiItem = e.target.closest('.emoji-item');
+                if (emojiItem) {
+                    insertAtCursor(textarea, emojiItem.dataset.emoji);
+                    emojiPicker.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (emojiPicker.style.display === 'block') {
+                    const isInsideToolbar = e.target.closest('.toolbar');
+                    const isInsidePicker = e.target.closest('.emoji-picker');
+                    if (!isInsideToolbar && !isInsidePicker) {
+                        emojiPicker.style.display = 'none';
+                    }
+                }
+            });
+
+            imageUpload.addEventListener('change', async function(e) {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    alert('请选择图片文件');
+                    return;
+                }
+                
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('图片大小不能超过2MB');
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await flarumRequest('/api/files', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response && response.data?.attributes?.url) {
+                        insertAtCursor(textarea, `![${file.name}](${response.data.attributes.url})`);
+                    }
+                } catch (error) {
+                    console.error('图片上传失败:', error);
+                    alert('图片上传失败，请重试');
+                }
+
+                imageUpload.value = '';
+            });
+
+            textarea.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key.toLowerCase()) {
+                        case 'b':
+                            e.preventDefault();
+                            wrapSelection(textarea, '**', '**');
+                            break;
+                        case 'i':
+                            e.preventDefault();
+                            wrapSelection(textarea, '*', '*');
+                            break;
+                        case 'u':
+                            e.preventDefault();
+                            wrapSelection(textarea, '__', '__');
+                            break;
+                    }
+                }
+            });
+        }
+
+        function insertAtCursor(textarea, text) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = textarea.value.substring(0, start);
+            const after = textarea.value.substring(end);
+            textarea.value = before + text + after;
+            textarea.selectionStart = textarea.selectionEnd = start + text.length;
+            textarea.focus();
+        }
+
+        function wrapSelection(textarea, before, after, newLine = false) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const beforeText = textarea.value.substring(0, start);
+            const afterText = textarea.value.substring(end);
+            
+            let newText;
+            if (newLine) {
+                const lineStart = beforeText.lastIndexOf('\n') + 1;
+                const lineBefore = beforeText.substring(0, lineStart);
+                const lineAfter = beforeText.substring(lineStart);
+                newText = lineBefore + before + lineAfter + selectedText + after + '\n' + afterText;
+                textarea.value = newText;
+                textarea.selectionStart = lineStart + before.length + lineAfter.length;
+                textarea.selectionEnd = textarea.selectionStart + selectedText.length;
+            } else {
+                newText = beforeText + before + selectedText + after + afterText;
+                textarea.value = newText;
+                textarea.selectionStart = start + before.length;
+                textarea.selectionEnd = end + before.length;
+            }
+            
+            textarea.focus();
+        }
+
+        async function checkImagePermissionForNewPost() {
+            const insertImageBtn = document.getElementById('insert-image-btn');
+            if (!insertImageBtn) return;
+
+            const token = getFlarumToken();
+            if (!token) {
+                insertImageBtn.style.display = 'none';
+                return;
+            }
+
+            const currentUserId = localStorage.getItem('flarumUserId');
+            if (!currentUserId) {
+                insertImageBtn.style.display = 'none';
+                return;
+            }
+
+            try {
+                const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`);
+                const groups = userJson?.data?.relationships?.groups?.data || [];
+                const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id));
+                insertImageBtn.style.display = isAdminOrMod ? 'inline-flex' : 'none';
+            } catch {
+                insertImageBtn.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
