@@ -282,6 +282,7 @@ function flarumDiscussionToPostData(apiJson) {
 
                 return {
                     id: Number(p.id),
+                    userId: userId ? Number(userId) : null,
                     author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
                     authorLevel: 'Lv.1 新手上路',
                     authorAvatar: getUserAvatarUrl(user),
@@ -549,6 +550,50 @@ async function flarumCreatePost({ discussionId, content }) {
     });
 
     return json?.data?.id ? String(json.data.id) : null;
+}
+
+// 删除帖子
+async function flarumDeletePost(postId) {
+    const token = getFlarumToken();
+    if (!token) {
+        alert('请先登录后再操作。');
+        return false;
+    }
+
+    try {
+        await flarumRequest(`/posts/${postId}`, {
+            method: 'DELETE'
+        });
+        return true;
+    } catch (error) {
+        console.error('删除帖子失败:', error);
+        alert('删除帖子失败，可能是权限不足或网络问题。');
+        return false;
+    }
+}
+
+// 检查用户是否有权限删除帖子
+async function canDeletePost(post) {
+    const token = getFlarumToken();
+    if (!token) return false;
+    
+    const currentUserId = localStorage.getItem('flarumUserId');
+    
+    // 如果是自己的帖子，可以删除
+    if (post.userId && currentUserId && String(post.userId) === String(currentUserId)) {
+        return true;
+    }
+    
+    // 检查是否是管理员或版主（简化处理）
+    try {
+        const userJson = await flarumRequest(`/users/${currentUserId}`);
+        const groups = userJson?.data?.relationships?.groups?.data || [];
+        // 检查是否在管理员或版主组
+        const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id)); // 1=管理员, 2=版主
+        return isAdminOrMod;
+    } catch {
+        return false;
+    }
 }
 
 // 动态加载帖子数据
@@ -1157,6 +1202,7 @@ function renderForumThread(postData) {
 
     const allPosts = [{
         id: 0,
+        userId: null,
         author: postData.author,
         authorLevel: postData.authorLevel,
         authorAvatar: postData.authorAvatar,
@@ -1253,7 +1299,7 @@ function renderForumThread(postData) {
             const plainContent = post.content.replace(/<[^>]*>/g, '').substring(0, 50) + (post.content.replace(/<[^>]*>/g, '').length > 50 ? '...' : '');
             
             return `
-                <div class="post" id="post-${post.floor}">
+                <div class="post" id="post-${post.floor}" data-post-id="${post.id}">
                     ${quoteHTML}
                     <div class="post-header">
                         <div class="poster-info">
@@ -1274,6 +1320,7 @@ function renderForumThread(postData) {
                     <div class="floor-info">
                         <span class="floor-number">${post.floor}楼</span>
                         ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${post.author}" data-content="${plainContent}">回复</a>` : ''}
+                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; margin-left: 10px; color: #cc0000;">删除</a>
                     </div>
                 </div>
             `;
@@ -1289,6 +1336,7 @@ function renderForumThread(postData) {
     `;
 
     setupReplyButtons(postData);
+    setupDeleteButtons(allPosts);
     
     // 页面加载后检查URL锚点，进行高亮
     setTimeout(() => {
@@ -1328,6 +1376,41 @@ function setupReplyButtons(postData) {
             replyContent.focus();
         });
     });
+}
+
+// 设置删除按钮
+async function setupDeleteButtons(allPosts) {
+    const deleteLinks = document.querySelectorAll('.delete-link');
+    
+    for (const link of deleteLinks) {
+        const postId = Number(link.dataset.postId);
+        const floor = Number(link.dataset.floor);
+        
+        // 找到对应的帖子
+        const post = allPosts.find(p => p.id === postId || p.floor === floor);
+        
+        // 检查是否有权限删除
+        if (post && await canDeletePost(post)) {
+            link.style.display = 'inline';
+            
+            link.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                // 二次确认
+                if (!confirm(`确定要删除第 ${floor} 楼的帖子吗？此操作不可撤销。`)) {
+                    return;
+                }
+                
+                // 执行删除
+                const success = await flarumDeletePost(postId);
+                if (success) {
+                    alert('删除成功！');
+                    // 刷新页面
+                    window.location.reload();
+                }
+            });
+        }
+    }
 }
 
 // 获取当前登录用户信息
@@ -1595,6 +1678,7 @@ function insertNewCommentToPage(comment, postData) {
     // 生成新评论的HTML
     const allPosts = [{
         id: 0,
+        userId: null,
         author: postData.author,
         authorLevel: postData.authorLevel,
         authorAvatar: postData.authorAvatar,
