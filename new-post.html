@@ -364,7 +364,7 @@
         });
 
         async function initNewPostPage() {
-            const isLoggedIn = checkLoginStatus();
+            const isLoggedIn = !!getFlarumToken();
             const editorContainer = document.getElementById('editor-container');
             
             if (!isLoggedIn) {
