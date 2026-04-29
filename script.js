@@ -1317,10 +1317,11 @@ function renderForumThread(postData) {
                         <div class="post-time">${post.time}</div>
                     </div>
                     <div class="post-content">${post.content}</div>
-                    <div class="floor-info">
-                        <span class="floor-number">${post.floor}楼</span>
+                    <div class="floor-info" style="display: flex; justify-content: flex-end; align-items: center;">
+                        <span class="floor-number" style="margin-right: auto;">${post.floor}楼</span>
                         ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${post.author}" data-content="${plainContent}">回复</a>` : ''}
-                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; margin-left: 10px; color: #cc0000;">删除</a>
+                        <span style="margin: 0 5px; color: #ccc; display: none;" class="reply-divider">|</span>
+                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">删除</a>
                     </div>
                 </div>
             `;
@@ -1392,6 +1393,12 @@ async function setupDeleteButtons(allPosts) {
         // 检查是否有权限删除
         if (post && await canDeletePost(post)) {
             link.style.display = 'inline';
+            
+            // 显示分隔符
+            const divider = link.parentElement.querySelector('.reply-divider');
+            if (divider) {
+                divider.style.display = 'inline';
+            }
             
             link.addEventListener('click', async function(e) {
                 e.preventDefault();
