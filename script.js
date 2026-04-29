@@ -825,24 +825,33 @@ function renderPostListIntoIndex(recentReplies) {
 
     const safeList = Array.isArray(recentReplies) ? recentReplies : [];
 
+    // 截取字符串函数
+    const truncate = (str, maxLength) => {
+        if (!str) return '';
+        const text = str.replace(/<[^>]*>/g, '').trim(); // 移除HTML标签
+        return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+    };
+
     container.innerHTML = `
         <h3>最新回复</h3>
         <table class="posts-table">
             <thead>
                 <tr>
-                    <th style="width: 50%;">帖子标题</th>
-                    <th style="width: 20%;">回复者</th>
-                    <th style="width: 30%;">时间</th>
+                    <th style="width: 35%;">帖子标题</th>
+                    <th style="width: 30%;">回复内容</th>
+                    <th style="width: 18%;">回帖人</th>
+                    <th style="width: 17%;">时间</th>
                 </tr>
             </thead>
             <tbody>
                 ${safeList.length > 0 ? safeList.map((r) => `
                     <tr>
-                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${r.title || ''}</a></td>
+                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 10)}</a></td>
+                        <td>${truncate(r.content || '', 20)}</td>
                         <td>${r.author || ''}</td>
                         <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
                     </tr>
-                `).join('') : `<tr><td colspan="3" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
+                `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
             </tbody>
         </table>
     `;
