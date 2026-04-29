@@ -58,21 +58,17 @@ async function flarumLogin(username, password) {
 // Flarum 注册
 async function flarumRegister(username, email, password) {
     try {
-        const json = await flarumRequest('/users', {
+        const json = await flarumRequest('/register', {
             method: 'POST',
-            json: {
-                data: {
-                    type: 'users',
-                    attributes: {
-                        username,
-                        email,
-                        password
-                    }
-                }
-            }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                email,
+                password
+            })
         });
 
-        if (json?.data) {
+        if (json?.user) {
             return true;
         }
         return false;
