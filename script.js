@@ -366,10 +366,58 @@ async function renderDynamicHomeLinks() {
         const hotTopicsList = document.getElementById('hot-topics-list');
         const recentHotList = document.getElementById('recent-hot-list');
         
-        if (hotTopicsList && discussions.length > 0) {
-            hotTopicsList.innerHTML = discussions.slice(0, 10).map(p => 
-                `<li><a href="post.html?id=${p.id}">${p.title}</a></li>`
-            ).join('');
+        if (hotTopicsList) {
+            // 固定置顶帖标题
+            const pin1Title = '红蜻蜓论坛·版务公告';
+            const pin2Title = '关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知';
+            const hotTitle = '求助帖，真实经历，感觉自己被脑控了';
+            
+            // 从API数据中找到对应的帖子
+            const pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
+            const hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
+            
+            // 过滤掉已固定的帖子，用于填充其他位置
+            const remainingDiscussions = discussions.filter(d => 
+                !d.title.includes(pin2Title) && !d.title.includes('拒绝黄赌毒') &&
+                !d.title.includes(hotTitle) && !d.title.includes('脑控') && !d.title.includes('脑控了')
+            );
+            
+            // 构建热帖榜（共12条）
+            const hotTopics = [];
+            
+            // 第1条：固定链接到违规公示
+            hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="violation.html">${pin1Title}</a></li>`);
+            
+            // 第2条：固定置顶帖
+            if (pin2Post) {
+                hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="post.html?id=${pin2Post.id}">${pin2Post.title}</a></li>`);
+            }
+            
+            // 第3-6条：按热度排序的普通帖子
+            const normalPosts = remainingDiscussions.slice(0, 4);
+            normalPosts.forEach(p => {
+                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+            });
+            
+            // 第7条：固定HOT帖
+            if (hotPost) {
+                hotTopics.push(`<li><span class="hot-badge">HOT</span><a href="post.html?id=${hotPost.id}">${hotPost.title}</a></li>`);
+            }
+            
+            // 第8-12条：按热度排序的普通帖子
+            const remainingPosts = remainingDiscussions.slice(4, 9);
+            remainingPosts.forEach(p => {
+                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+            });
+            
+            // 如果总数不足12条，用剩余帖子补齐
+            if (hotTopics.length < 12 && remainingDiscussions.length > 9) {
+                remainingDiscussions.slice(9, 12 - hotTopics.length + 9).forEach(p => {
+                    hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+                });
+            }
+            
+            hotTopicsList.innerHTML = hotTopics.join('');
         }
         
         if (recentHotList && discussions.length > 0) {
