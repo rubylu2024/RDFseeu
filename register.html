@@ -225,6 +225,22 @@
     
     <script src="script.js"></script>
     <script>
+        async function customRegister(username, email, password) {
+            const response = await fetch('/custom-register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                const error = new Error('注册失败');
+                error.result = result;
+                throw error;
+            }
+            return result;
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('register-form');
             const messageContainer = document.getElementById('message-container');
@@ -244,7 +260,7 @@
                 showLoading();
 
                 try {
-                    await flarumRegister(username, email, password);
+                    await customRegister(username, email, password);
                     showMessage('注册成功，请登录', 'success');
                     setTimeout(() => {
                         window.location.href = 'login.html';
@@ -252,18 +268,13 @@
                 } catch (error) {
                     console.error('注册失败:', error);
                     let errorMsg = '注册失败';
-                    if (error.detail) {
-                        try {
-                            const errors = JSON.parse(error.detail);
-                            if (errors.errors && Array.isArray(errors.errors)) {
-                                errorMsg = errors.errors.map(e => e.detail || e.title || JSON.stringify(e)).join('; ');
-                            } else if (errors.message) {
-                                errorMsg = errors.message;
-                            } else {
-                                errorMsg = JSON.stringify(errors);
-                            }
-                        } catch {
-                            errorMsg = error.detail;
+                    if (error.result) {
+                        if (error.result.errors && error.result.errors.length > 0) {
+                            errorMsg = error.result.errors.map(e => e.code || e.detail || e.title || JSON.stringify(e)).join('; ');
+                        } else if (error.result.message) {
+                            errorMsg = error.result.message;
+                        } else {
+                            errorMsg = JSON.stringify(error.result);
                         }
                     } else if (error.message) {
                         errorMsg = error.message;
