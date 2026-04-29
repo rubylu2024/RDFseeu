@@ -567,18 +567,7 @@
         // 获取用户信息
         async function fetchUserData(userId) {
             try {
-                const response = await fetch('/api/users/' + userId + '?include=groups', {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken') + '; userId=' + userId
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('获取用户信息失败');
-                }
-                
-                const data = await response.json();
+                const data = await flarumRequest('/users/' + userId + '?include=groups');
                 return data;
             } catch (error) {
                 console.error('获取用户信息失败:', error);
@@ -592,41 +581,17 @@
             
             try {
                 // 获取发帖数
-                const discussionsResponse = await fetch('/api/discussions?filter[author]=' + userId, {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken')
-                    }
-                });
-                if (discussionsResponse.ok) {
-                    const discussionsData = await discussionsResponse.json();
-                    stats.posts = discussionsData.data?.length || 0;
-                }
+                const discussionsData = await flarumRequest('/discussions?filter[author]=' + userId);
+                stats.posts = discussionsData.data?.length || 0;
                 
                 // 获取评论数
-                const postsResponse = await fetch('/api/posts?filter[author]=' + userId, {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken')
-                    }
-                });
-                if (postsResponse.ok) {
-                    const postsData = await postsResponse.json();
-                    stats.comments = (postsData.data?.length || 0) - stats.posts;
-                }
+                const postsData = await flarumRequest('/posts?filter[author]=' + userId);
+                stats.comments = (postsData.data?.length || 0) - stats.posts;
                 
-                // 获取声望
-                const userResponse = await fetch('/api/users/' + userId, {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken')
-                    }
-                });
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    stats.reputation = userData.data?.attributes?.reputation || 0;
-                    stats.likes = userData.data?.attributes?.likesCount || 0;
-                }
+                // 获取声望和获赞数
+                const userData = await flarumRequest('/users/' + userId);
+                stats.reputation = userData.data?.attributes?.reputation || 0;
+                stats.likes = userData.data?.attributes?.likesCount || 0;
                 
             } catch (error) {
                 console.error('获取用户统计失败:', error);
@@ -638,18 +603,7 @@
         // 获取用户最近帖子
         async function fetchUserDiscussions(userId) {
             try {
-                const response = await fetch('/api/discussions?filter[author]=' + userId + '&page[limit]=5&include=user', {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken')
-                    }
-                });
-                
-                if (!response.ok) {
-                    return [];
-                }
-                
-                const data = await response.json();
+                const data = await flarumRequest('/discussions?filter[author]=' + userId + '&page[limit]=5&include=user');
                 return data.data || [];
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
@@ -660,18 +614,7 @@
         // 获取用户最近回复
         async function fetchUserComments(userId) {
             try {
-                const response = await fetch('/api/posts?filter[author]=' + userId + '&page[limit]=5&include=discussion', {
-                    headers: {
-                        'Accept': 'application/vnd.api+json',
-                        'Authorization': 'Token ' + localStorage.getItem('flarumToken')
-                    }
-                });
-                
-                if (!response.ok) {
-                    return [];
-                }
-                
-                const data = await response.json();
+                const data = await flarumRequest('/posts?filter[author]=' + userId + '&page[limit]=5&include=discussion');
                 // 过滤掉主题帖，只保留回复
                 const comments = data.data?.filter(p => p.attributes?.number !== 1) || [];
                 return comments.slice(0, 5);

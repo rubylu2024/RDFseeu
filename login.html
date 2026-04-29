@@ -248,7 +248,10 @@
                     if (success) {
                         showMessage('登录成功，正在跳转...', 'success');
                         setTimeout(() => {
-                            window.location.href = 'index.html';
+                            // 获取跳转目标页面，默认返回首页
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const redirectUrl = urlParams.get('redirect') || 'index.html';
+                            window.location.href = redirectUrl;
                         }, 1500);
                     } else {
                         showMessage('登录失败，请检查账号密码、论坛地址、或跨域配置', 'error');

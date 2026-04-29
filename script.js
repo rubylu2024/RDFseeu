@@ -410,7 +410,8 @@ async function flarumLoadRecentReplies() {
             
             results.push({
                 discussionId: Number(discussionId),
-                postId: Number(post.id), // 添加帖子ID用于锚点跳转
+                postId: Number(post.id),
+                floor: post.attributes?.number, // 添加楼层号用于锚点跳转
                 title: discussion?.attributes?.title || '',
                 author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
                 time: post.attributes?.createdAt || '',
@@ -937,7 +938,7 @@ function renderPostListIntoIndex(recentReplies) {
             <tbody>
                 ${safeList.length > 0 ? safeList.map((r) => `
                     <tr>
-                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}#reply-${r.postId}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
+                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}#post-${r.floor}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
                         <td>${r.author || ''}</td>
                         <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
                         <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 20)}</a></td>
@@ -1209,7 +1210,7 @@ function renderForumThread(postData) {
                         <h4>发表回复</h4>
                         <div class="login-prompt" style="padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 10px;">
                             <p style="margin-bottom: 10px;">未登录用户不可回复</p>
-                            <a href="login.html" style="color: #0066cc; text-decoration: none;">立即登录</a>
+                            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">立即登录</a>
                         </div>
                     `;
                 }
@@ -1640,7 +1641,7 @@ async function updateReplyFormForLoginStatus() {
             <h4>发表回复</h4>
             <div style="padding: 20px; background: #fff3f3; border: 1px solid #ffcccc; border-radius: 4px; text-align: center;">
                 <div style="font-size: 16px; color: #cc0000; margin-bottom: 10px;">未登录用户不可回复</div>
-                <a href="login.html" style="color: #0066cc; text-decoration: none;">点击登录</a>
+                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">点击登录</a>
             </div>
         `;
     }
@@ -1937,7 +1938,7 @@ function updateUserLinks() {
         }
     } else {
         userLinksContainer.innerHTML = `
-            <a href="login.html" id="login-btn">登录</a>
+            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" id="login-btn">登录</a>
             <a href="register.html" id="register-btn">注册</a>
         `;
     }
