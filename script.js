@@ -1232,6 +1232,43 @@ function renderForumThread(postData) {
                             </div>
                         </div>
                         <form class="reply-form" id="reply-form">
+                            <!-- 富文本工具栏 -->
+                            <div class="toolbar" style="margin-bottom: 10px; padding: 5px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
+                                <button type="button" class="toolbar-btn" data-action="bold" title="粗体 (Ctrl+B)">
+                                    <b>B</b>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-action="italic" title="斜体 (Ctrl+I)">
+                                    <i>I</i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-action="underline" title="下划线 (Ctrl+U)">
+                                    <u>U</u>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-action="strike" title="删除线">
+                                    <s>S</s>
+                                </button>
+                                <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
+                                <button type="button" class="toolbar-btn" data-action="quote" title="引用">
+                                    "
+                                </button>
+                                <button type="button" class="toolbar-btn" data-action="code" title="代码">
+                                    &lt;/&gt;
+                                </button>
+                                <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
+                                <button type="button" class="toolbar-btn emoji-btn" data-action="emoji" title="表情">
+                                    😊
+                                </button>
+                                <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
+                                    🖼️
+                                </button>
+                            </div>
+                            <!-- emoji选择器 -->
+                            <div class="emoji-picker" id="emoji-picker" style="display: none; position: absolute; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
+                                <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;">
+                                    ${['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮‍💨','😥','😢','😭','😱','😨','😰','😥','🤯','😲','😳','🥵','🤤','🥴','😵','💫','🤢','🤮','🤒','🤕','😷','🤧','🥶','🥵','😴','😪','🤫','🤭','🤗','🤑','🤤','😋','😛','😜','🤪','😝','🤐','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','🧐','🤓','😎','🥸','🥳','🤠','🥰','😍','🤩','😘','😗','😚','😙','🙂','😊','😇','🤣','😂','😅','😆','😁','😄','😃','😀'].map(e => `<span class="emoji-item" style="font-size: 18px; cursor: pointer; padding: 4px; text-align: center;" data-emoji="${e}">${e}</span>`).join('')}
+                                </div>
+                            </div>
+                            <!-- 隐藏的图片上传输入 -->
+                            <input type="file" id="image-upload" accept="image/*" style="display: none;">
                             <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
                             <input type="hidden" id="reply-target" name="reply-target" value="">
                             <div>
@@ -1714,6 +1751,12 @@ function setupReplyForm() {
     const replyForm = document.getElementById('reply-form');
     const replyNameInput = document.getElementById('reply-name');
 
+    // 初始化工具栏
+    initToolbar();
+    
+    // 检查用户权限，显示/隐藏图片按钮
+    checkImagePermission();
+
     // 取消回复按钮
     cancelReply.removeEventListener('click', cancelReplyHandler);
     cancelReply.addEventListener('click', cancelReplyHandler);
@@ -1760,6 +1803,262 @@ function setupReplyForm() {
         const submitBtn = replyForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.textContent;
         submitBtn.textContent = '提交中...';
+
+        try {
+            const contentToSend = replyTo 
+                ? `回复 ${replyTo}：\n${content}`
+                : content;
+
+            const response = await flarumRequest('/posts', {
+                method: 'POST',
+                json: {
+                    data: {
+                        type: 'posts',
+                        attributes: {
+                            content: contentToSend
+                        },
+                        relationships: {
+                            discussion: {
+                                data: { type: 'discussions', id: String(postId) }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (response) {
+                replyContent.value = '';
+                replyTargetInput.value = '';
+                cancelReply.style.display = 'none';
+                replyBoxTitle.textContent = '发表回复';
+                
+                // 重新加载帖子数据并更新UI
+                const newPostData = await loadPostData(postId);
+                if (newPostData) {
+                    window.currentPostData = newPostData;
+                    renderForumThread(newPostData);
+                }
+                
+                // 滚动到最新回复
+                setTimeout(() => {
+                    const posts = document.querySelectorAll('.post');
+                    if (posts.length > 0) {
+                        posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            console.error('提交失败:', error);
+            alert('提交失败，请重试');
+        } finally {
+            submitBtn.textContent = originalBtnText;
+        }
+    }
+}
+
+// 初始化工具栏
+function initToolbar() {
+    const toolbar = document.querySelector('.toolbar');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const emojiBtn = document.querySelector('.emoji-btn');
+    const imageBtn = document.getElementById('insert-image-btn');
+    const imageUpload = document.getElementById('image-upload');
+    const replyContent = document.getElementById('reply-content');
+
+    if (!toolbar) return;
+
+    // 工具栏按钮点击事件
+    toolbar.addEventListener('click', function(e) {
+        const target = e.target.closest('.toolbar-btn');
+        if (!target) return;
+        
+        const action = target.dataset.action;
+        if (!action) return;
+
+        switch (action) {
+            case 'bold':
+                wrapSelection(replyContent, '**', '**');
+                break;
+            case 'italic':
+                wrapSelection(replyContent, '*', '*');
+                break;
+            case 'underline':
+                wrapSelection(replyContent, '__', '__');
+                break;
+            case 'strike':
+                wrapSelection(replyContent, '~~', '~~');
+                break;
+            case 'quote':
+                wrapSelection(replyContent, '> ', '', true);
+                break;
+            case 'code':
+                wrapSelection(replyContent, '`', '`');
+                break;
+            case 'emoji':
+                toggleEmojiPicker();
+                break;
+            case 'image':
+                imageUpload.click();
+                break;
+        }
+    });
+
+    // emoji选择
+    emojiPicker?.addEventListener('click', function(e) {
+        const emojiItem = e.target.closest('.emoji-item');
+        if (emojiItem) {
+            insertAtCursor(replyContent, emojiItem.dataset.emoji);
+            emojiPicker.style.display = 'none';
+        }
+    });
+
+    // 点击外部关闭emoji选择器
+    document.addEventListener('click', function(e) {
+        if (emojiPicker && emojiPicker.style.display === 'block') {
+            const isInsideToolbar = e.target.closest('.toolbar');
+            const isInsidePicker = e.target.closest('.emoji-picker');
+            if (!isInsideToolbar && !isInsidePicker) {
+                emojiPicker.style.display = 'none';
+            }
+        }
+    });
+
+    // 图片上传
+    imageUpload?.addEventListener('change', async function(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // 文件验证
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件');
+            return;
+        }
+        
+        if (file.size > 2 * 1024 * 1024) {
+            alert('图片大小不能超过2MB');
+            return;
+        }
+
+        // 上传图片
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await flarumRequest('/api/files', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response && response.data?.attributes?.url) {
+                // 插入图片Markdown
+                insertAtCursor(replyContent, `![${file.name}](${response.data.attributes.url})`);
+            }
+        } catch (error) {
+            console.error('图片上传失败:', error);
+            alert('图片上传失败，请重试');
+        }
+
+        // 清空文件选择
+        imageUpload.value = '';
+    });
+
+    // 快捷键支持
+    replyContent?.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key.toLowerCase()) {
+                case 'b':
+                    e.preventDefault();
+                    wrapSelection(replyContent, '**', '**');
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    wrapSelection(replyContent, '*', '*');
+                    break;
+                case 'u':
+                    e.preventDefault();
+                    wrapSelection(replyContent, '__', '__');
+                    break;
+            }
+        }
+    });
+}
+
+// 切换emoji选择器显示
+function toggleEmojiPicker() {
+    const emojiPicker = document.getElementById('emoji-picker');
+    if (emojiPicker) {
+        emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+// 在光标位置插入文本
+function insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+    textarea.value = before + text + after;
+    
+    // 设置光标位置
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+}
+
+// 包裹选中的文本
+function wrapSelection(textarea, before, after, newLine = false) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const beforeText = textarea.value.substring(0, start);
+    const afterText = textarea.value.substring(end);
+    
+    let newText;
+    if (newLine) {
+        // 引用需要在新行开始
+        const lineStart = beforeText.lastIndexOf('\n') + 1;
+        const lineBefore = beforeText.substring(0, lineStart);
+        const lineAfter = beforeText.substring(lineStart);
+        newText = lineBefore + before + lineAfter + selectedText + after + '\n' + afterText;
+        textarea.value = newText;
+        textarea.selectionStart = lineStart + before.length + lineAfter.length;
+        textarea.selectionEnd = textarea.selectionStart + selectedText.length;
+    } else {
+        newText = beforeText + before + selectedText + after + afterText;
+        textarea.value = newText;
+        textarea.selectionStart = start + before.length;
+        textarea.selectionEnd = end + before.length;
+    }
+    
+    textarea.focus();
+}
+
+// 检查用户是否有图片上传权限
+async function checkImagePermission() {
+    const insertImageBtn = document.getElementById('insert-image-btn');
+    if (!insertImageBtn) return;
+
+    const token = getFlarumToken();
+    if (!token) {
+        insertImageBtn.style.display = 'none';
+        return;
+    }
+
+    const currentUserId = localStorage.getItem('flarumUserId');
+    if (!currentUserId) {
+        insertImageBtn.style.display = 'none';
+        return;
+    }
+
+    try {
+        const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`);
+        const groups = userJson?.data?.relationships?.groups?.data || [];
+        // 检查是否在管理员或版主组
+        const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id));
+        insertImageBtn.style.display = isAdminOrMod ? 'inline-block' : 'none';
+    } catch {
+        insertImageBtn.style.display = 'none';
+    }
+}
         submitBtn.disabled = true;
 
         if (isFlarumConfigured()) {
