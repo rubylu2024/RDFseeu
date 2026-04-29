@@ -358,6 +358,49 @@ async function flarumLoadDiscussionList() {
     });
 }
 
+// 获取最新回复列表
+async function flarumLoadRecentReplies() {
+    try {
+        const json = await flarumRequest('/posts?sort=-createdAt&page[limit]=20&include=discussion,user');
+        const posts = Array.isArray(json?.data) ? json.data : [];
+        const included = json?.included || [];
+        
+        const results = [];
+        const seenDiscussionIds = new Set();
+        
+        for (const post of posts) {
+            // 跳过帖子的第一条（主题帖），只显示回复
+            if (post.attributes?.number === 1) continue;
+            
+            const discussionId = post.relationships?.discussion?.data?.id;
+            if (!discussionId || seenDiscussionIds.has(discussionId)) continue;
+            
+            // 找到对应的讨论
+            const discussion = included.find(i => i.type === 'discussions' && i.id === discussionId);
+            const userId = post.relationships?.user?.data?.id;
+            const user = userId ? included.find(i => i.type === 'users' && i.id === userId) : null;
+            
+            seenDiscussionIds.add(discussionId);
+            
+            results.push({
+                discussionId: Number(discussionId),
+                title: discussion?.attributes?.title || '',
+                author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
+                time: post.attributes?.createdAt || '',
+                content: post.attributes?.content || ''
+            });
+            
+            // 只取5条不重复的回复
+            if (results.length >= 5) break;
+        }
+        
+        return results;
+    } catch (error) {
+        console.error('获取最新回复失败:', error);
+        return [];
+    }
+}
+
 // 动态加载首页热帖和近期帖子链接
 async function renderDynamicHomeLinks() {
     try {
@@ -420,8 +463,9 @@ async function renderDynamicHomeLinks() {
             hotTopicsList.innerHTML = hotTopics.join('');
         }
         
+        // 最新发帖：显示最新20个帖子，按日期顺序
         if (recentHotList && discussions.length > 0) {
-            recentHotList.innerHTML = discussions.slice(0, 3).map(p => 
+            recentHotList.innerHTML = discussions.slice(0, 20).map(p => 
                 `<li><a href="post.html?id=${p.id}">${p.title}</a></li>`
             ).join('');
         }
@@ -775,32 +819,30 @@ async function loadPostList() {
     return postList;
 }
 
-function renderPostListIntoIndex(postList) {
+function renderPostListIntoIndex(recentReplies) {
     const container = document.querySelector('.forum-posts');
     if (!container) return;
 
-    const safeList = Array.isArray(postList) ? postList : [];
+    const safeList = Array.isArray(recentReplies) ? recentReplies : [];
 
     container.innerHTML = `
-        <h3>最新发帖</h3>
+        <h3>最新回复</h3>
         <table class="posts-table">
             <thead>
                 <tr>
-                    <th style="width: 60%;">标题</th>
-                    <th style="width: 16%;">作者</th>
-                    <th style="width: 14%;">日期</th>
-                    <th style="width: 10%;">热度</th>
+                    <th style="width: 50%;">帖子标题</th>
+                    <th style="width: 20%;">回复者</th>
+                    <th style="width: 30%;">时间</th>
                 </tr>
             </thead>
             <tbody>
-                ${safeList.length > 0 ? safeList.map((p) => `
+                ${safeList.length > 0 ? safeList.map((r) => `
                     <tr>
-                        <td><a href="post.html?id=${encodeURIComponent(p.id)}">${p.title || ''}</a></td>
-                        <td>${p.author || ''}</td>
-                        <td>${p.date || ''}</td>
-                        <td>${typeof p.views === 'number' ? p.views : ''}</td>
+                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${r.title || ''}</a></td>
+                        <td>${r.author || ''}</td>
+                        <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
                     </tr>
-                `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无帖子</td></tr>`}
+                `).join('') : `<tr><td colspan="3" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
             </tbody>
         </table>
     `;
@@ -886,8 +928,8 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 
     if (document.querySelector('.forum-posts')) {
-        loadPostList().then(renderPostListIntoIndex).catch((error) => {
-            console.error('加载帖子列表失败:', error);
+        flarumLoadRecentReplies().then(renderPostListIntoIndex).catch((error) => {
+            console.error('加载最新回复失败:', error);
         });
     }
 
