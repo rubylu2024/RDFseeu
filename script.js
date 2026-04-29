@@ -57,33 +57,21 @@ async function flarumLogin(username, password) {
 
 // Flarum 注册
 async function flarumRegister(username, email, password) {
-    try {
-        const apiBase = getFlarumApiBase();
-        const url = apiBase + '/register';
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                username,
-                email,
-                password
-            })
-        });
-
-        const json = await response.json();
-
-        if (json?.user || json?.success || response.ok) {
-            return true;
+    const json = await flarumRequest('/users', {
+        method: 'POST',
+        json: {
+            data: {
+                type: 'users',
+                attributes: {
+                    username,
+                    email,
+                    password
+                }
+            }
         }
-        return false;
-    } catch (e) {
-        console.error('Flarum register error:', e);
-        throw e;
-    }
+    });
+
+    return !!json?.data?.id;
 }
 
 async function flarumRequest(path, options = {}) {

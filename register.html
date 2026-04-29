@@ -257,7 +257,9 @@
                         showMessage('注册失败，请稍后重试', 'error');
                     }
                 } catch (error) {
-                    showMessage('注册失败：' + error.message, 'error');
+                    console.error('注册失败:', error);
+                    console.error('错误详情:', error.detail);
+                    showMessage('注册失败：' + (error.detail || error.message), 'error');
                 } finally {
                     hideLoading();
                 }
