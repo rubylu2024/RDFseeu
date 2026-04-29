@@ -181,7 +181,7 @@ function extractReplyMetaFromContentHtml(contentHtml) {
     const original = typeof contentHtml === 'string' ? contentHtml : '';
 
     if (typeof DOMParser === 'undefined') {
-        const m = original.match(/^\s*<p>\s*回复[\s\S]*?\((\d+)楼\)：\s*<\/p>\s*/);
+        const m = original.match(/^\s*<p>\s*回复\s+(?:.*?\()?(\d+)楼\)?：\s*<\/p>\s*/);
         if (m) {
             return { replyToFloor: Number(m[1]), cleanedHtml: original.replace(m[0], '') };
         }
@@ -193,7 +193,7 @@ function extractReplyMetaFromContentHtml(contentHtml) {
         const first = doc.body.firstElementChild;
         if (first && first.tagName === 'P') {
             const text = (first.textContent || '').trim();
-            const m = text.match(/^回复\s+.*?\((\d+)楼\)：\s*$/);
+            const m = text.match(/^回复\s+(?:.*?\()?(\d+)楼\)?：\s*$/);
             if (m) {
                 first.remove();
                 return { replyToFloor: Number(m[1]), cleanedHtml: doc.body.innerHTML };
