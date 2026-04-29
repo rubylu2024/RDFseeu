@@ -32,12 +32,26 @@ app.post('/custom-register', async (req, res) => {
       });
     }
 
-    // Call Flarum API to create user
+    // Get admin credentials from environment variables
+    const FLARUM_ADMIN_TOKEN = process.env.FLARUM_ADMIN_TOKEN;
+    const FLARUM_ADMIN_USER_ID = process.env.FLARUM_ADMIN_USER_ID || 1;
+
+    if (!FLARUM_ADMIN_TOKEN) {
+      return res.status(500).json({
+        errors: [{
+          code: 'server_config_error',
+          detail: '服务器未配置管理员 Token'
+        }]
+      });
+    }
+
+    // Call Flarum API to create user with admin token
     const flarumResponse = await fetch(`${FLARUM_BASE_URL}/api/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/vnd.api+json',
-        'Accept': 'application/vnd.api+json'
+        'Accept': 'application/vnd.api+json',
+        'Authorization': `Token ${FLARUM_ADMIN_TOKEN}; userId=${FLARUM_ADMIN_USER_ID}`
       },
       body: JSON.stringify({
         data: {
