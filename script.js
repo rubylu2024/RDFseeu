@@ -421,7 +421,7 @@ async function renderDynamicHomeLinks() {
         }
         
         if (recentHotList && discussions.length > 0) {
-            recentHotList.innerHTML = discussions.slice(0, 8).map(p => 
+            recentHotList.innerHTML = discussions.slice(0, 3).map(p => 
                 `<li><a href="post.html?id=${p.id}">${p.title}</a></li>`
             ).join('');
         }
