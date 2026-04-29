@@ -60,8 +60,7 @@ async function flarumRegister(username, email, password) {
     try {
         const json = await flarumRequest('/users', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            json: {
                 data: {
                     type: 'users',
                     attributes: {
@@ -70,7 +69,7 @@ async function flarumRegister(username, email, password) {
                         password
                     }
                 }
-            })
+            }
         });
 
         if (json?.data) {
