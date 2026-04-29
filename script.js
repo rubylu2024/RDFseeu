@@ -850,7 +850,7 @@ function renderPostListIntoIndex(recentReplies) {
                         <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}#reply-${r.postId}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
                         <td>${r.author || ''}</td>
                         <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
-                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 10)}</a></td>
+                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 20)}</a></td>
                     </tr>
                 `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
             </tbody>
