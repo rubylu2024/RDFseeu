@@ -322,6 +322,12 @@
                                 <a href="login.html?redirect=new-post.html" id="login-btn">登录</a>
                                 <a href="register.html" id="register-btn">注册</a>
                             </div>
+                            <div id="logged-in-user" style="display: none; align-items: center; gap: 8px;">
+                                <img src="images/用户头像.png" alt="头像" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                                <span id="current-username">用户</span>
+                                <a href="profile.html" id="profile-link">个人中心</a>
+                                <a href="#" id="logout-link">退出</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -363,9 +369,33 @@
             initNewPostPage();
         });
 
+        function updateTopNavLoginStatus(isLoggedIn) {
+            const userLinksContainer = document.getElementById('user-links-container');
+            const loggedInUser = document.getElementById('logged-in-user');
+            const currentUsername = document.getElementById('current-username');
+            const logoutLink = document.getElementById('logout-link');
+
+            if (isLoggedIn) {
+                userLinksContainer.style.display = 'none';
+                loggedInUser.style.display = 'flex';
+                currentUsername.textContent = localStorage.getItem('flarumUsername') || '用户';
+                
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    clearFlarumToken();
+                    window.location.href = 'index.html';
+                });
+            } else {
+                userLinksContainer.style.display = 'block';
+                loggedInUser.style.display = 'none';
+            }
+        }
+
         async function initNewPostPage() {
             const isLoggedIn = !!getFlarumToken();
             const editorContainer = document.getElementById('editor-container');
+            
+            updateTopNavLoginStatus(isLoggedIn);
             
             if (!isLoggedIn) {
                 return;
@@ -379,18 +409,6 @@
                     </div>
                     <div class="post-editor-body">
                         <form id="new-post-form">
-                            <div class="form-group">
-                                <label for="post-category">选择版块：</label>
-                                <select id="post-category" required>
-                                    <option value="">请选择版块</option>
-                                    <option value="1">城市论坛</option>
-                                    <option value="2">蜻蜓杂谈</option>
-                                    <option value="3">情感天空</option>
-                                    <option value="4">娱乐八卦</option>
-                                    <option value="5">匿名树洞</option>
-                                </select>
-                            </div>
-
                             <div class="form-group">
                                 <label for="post-title">帖子标题：</label>
                                 <input type="text" id="post-title" placeholder="请输入标题（最多50个字符）" required maxlength="50">
@@ -427,7 +445,7 @@
                                         🖼️
                                     </button>
                                 </div>
-                                <div class="emoji-picker" id="emoji-picker">
+                                <div class="emoji-picker" id="emoji-picker" style="display: none; position: relative;">
                                     <div class="emoji-grid">
                                         ${['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮‍💨','😥','😢','😭','😱','😨','😰','😥','🤯','😲','😳','🥵','🤤','🥴','😵','💫','🤢','🤮','🤒','🤕','😷','🤧','🥶','🥵','😴','😪','🤫','🤭','🤗','🤑','🤤','😋','😛','😜','🤪','😝','🤐','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','🧐','🤓','😎','🥸','🥳','🤠','🥰','😍','🤩','😘','😗','😚','😙','🙂','😊','😇','🤣','😂','😅','😆','😁','😄','😃','😀'].map(e => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('')}
                                     </div>
@@ -467,15 +485,9 @@
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const category = document.getElementById('post-category').value;
                 const title = titleInput.value.trim();
                 const content = contentInput.value.trim();
 
-                if (!category) {
-                    alert('请选择版块');
-                    return;
-                }
-                
                 if (!title) {
                     alert('请输入标题');
                     return;
