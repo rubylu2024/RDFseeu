@@ -1110,14 +1110,34 @@ footer {
     /* 主内容区 */
     .main-container {
         flex-direction: column;
+        order: 2; /* 整体主内容区显示在header之后 */
+    }
+    
+    .right-content-area {
+        order: 1; /* 主体内容显示在最前面 */
+        width: 100%;
     }
     
     .content-wrapper {
         flex-direction: column;
     }
     
-    .left-sidebar,
+    .main-content {
+        order: 0;
+    }
+    
+    /* 热帖榜在移动端显示在主内容的最前面 */
+    .hot-topics {
+        order: -1;
+    }
+    
+    .left-sidebar {
+        order: 2; /* 左侧边栏显示在主体内容之后 */
+        width: 100%;
+    }
+    
     .right-sidebar {
+        order: 3; /* 右侧边栏显示在左侧边栏之后 */
         width: 100%;
     }
     
