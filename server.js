@@ -37,8 +37,7 @@ app.post('/custom-register', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/vnd.api+json',
-        'Accept': 'application/vnd.api+json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Accept': 'application/vnd.api+json'
       },
       body: JSON.stringify({
         data: {
