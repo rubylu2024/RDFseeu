@@ -48,8 +48,13 @@
             color: #333;
         }
         
+        .register-form .form-group .input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+        
         .register-form .form-group input {
-            width: 100%;
+            flex: 1;
             padding: 8px;
             border: 1px solid #990000;
             font-size: 16px;
@@ -64,6 +69,20 @@
         .register-form .form-group input:focus {
             outline: none;
             border-color: #cc0000;
+        }
+        
+        .register-form .form-group .toggle-btn {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #990000;
+            color: #333;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .register-form .form-group .toggle-btn:hover {
+            background-color: #e0e0e0;
         }
         
         .register-btn {
@@ -217,7 +236,18 @@
                                 
                                 <div class="form-group">
                                     <label for="password">密码</label>
-                                    <input type="password" id="password" name="password" required>
+                                    <div class="input-wrapper">
+                                        <input type="password" id="password" name="password" required>
+                                        <button type="button" class="toggle-btn" id="toggle-password">显示</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confirm-password">确认密码</label>
+                                    <div class="input-wrapper">
+                                        <input type="password" id="confirm-password" name="confirm-password" required>
+                                        <button type="button" class="toggle-btn" id="toggle-confirm-password">显示</button>
+                                    </div>
                                 </div>
                                 
                                 <button type="submit" class="register-btn" id="register-btn-submit">注册</button>
@@ -267,7 +297,31 @@
             const usernameInput = document.getElementById('username');
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
             const submitBtn = document.getElementById('register-btn-submit');
+            const togglePasswordBtn = document.getElementById('toggle-password');
+            const toggleConfirmPasswordBtn = document.getElementById('toggle-confirm-password');
+
+            // 密码明文切换
+            togglePasswordBtn.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    togglePasswordBtn.textContent = '隐藏';
+                } else {
+                    passwordInput.type = 'password';
+                    togglePasswordBtn.textContent = '显示';
+                }
+            });
+
+            toggleConfirmPasswordBtn.addEventListener('click', function() {
+                if (confirmPasswordInput.type === 'password') {
+                    confirmPasswordInput.type = 'text';
+                    toggleConfirmPasswordBtn.textContent = '隐藏';
+                } else {
+                    confirmPasswordInput.type = 'password';
+                    toggleConfirmPasswordBtn.textContent = '显示';
+                }
+            });
 
             registerForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -275,12 +329,13 @@
                 const username = usernameInput.value;
                 const email = emailInput.value;
                 const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
 
                 // 重置输入框状态
-                [usernameInput, emailInput, passwordInput].forEach(input => input.classList.remove('error'));
+                [usernameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => input.classList.remove('error'));
 
                 // 前端校验
-                const validationError = validateForm(username, email, password);
+                const validationError = validateForm(username, email, password, confirmPassword);
                 if (validationError) {
                     showMessage(validationError.message, 'error');
                     if (validationError.field) {
@@ -328,7 +383,7 @@
                 }
             });
 
-            function validateForm(username, email, password) {
+            function validateForm(username, email, password, confirmPassword) {
                 // 用户名校验
                 if (!username || !username.trim()) {
                     return { message: '用户名不能为空', field: usernameInput };
@@ -369,6 +424,14 @@
                 }
                 if (password.length < 8) {
                     return { message: '密码长度至少 8 位', field: passwordInput };
+                }
+
+                // 确认密码校验
+                if (!confirmPassword) {
+                    return { message: '请再次输入密码', field: confirmPasswordInput };
+                }
+                if (confirmPassword !== password) {
+                    return { message: '两次输入的密码不一致', field: confirmPasswordInput };
                 }
 
                 return null;
