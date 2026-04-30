@@ -302,69 +302,30 @@ async function flarumLoadDiscussion(postId) {
     const id = String(postId);
 
     try {
-        console.log('flarumLoadDiscussion: 开始加载讨论，id:', id);
-        
-        // 先尝试使用匿名请求加载
-        let discussionJson;
-        try {
-            discussionJson = await flarumRequest(
-                `/discussions/${encodeURIComponent(id)}?include=user`,
-                { anonymous: true }
-            );
-            console.log('flarumLoadDiscussion: 使用匿名请求获取讨论数据成功');
-        } catch (anonError) {
-            console.warn('flarumLoadDiscussion: 匿名请求失败，尝试使用认证请求:', anonError);
-            // 匿名请求失败，尝试使用认证请求
-            discussionJson = await flarumRequest(
-                `/discussions/${encodeURIComponent(id)}?include=user`
-            );
-        }
-        
-        console.log('flarumLoadDiscussion: 获取讨论数据成功:', discussionJson?.data?.id);
+        // 获取 discussion 基本信息
+        const discussionJson = await flarumRequest(
+            `/discussions/${encodeURIComponent(id)}?include=user`,
+            { anonymous: true }
+        );
 
         if (!discussionJson?.data) {
-            console.log('flarumLoadDiscussion: 讨论数据为空');
             return null;
         }
 
-        let allPosts = [];
-        let allIncluded = discussionJson.included || [];
-        let offset = 0;
-        const limit = 50;
+        // 只加载前30条帖子（核心优化点）
+        const limit = 30;
 
-        while (true) {
-            console.log('flarumLoadDiscussion: 正在获取帖子，offset:', offset);
-            let postsJson;
-            try {
-                // 尝试使用匿名请求加载帖子
-                postsJson = await flarumRequest(
-                    `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=${offset}&include=user`,
-                    { anonymous: true }
-                );
-            } catch (anonError) {
-                console.warn('flarumLoadDiscussion: 匿名请求帖子失败，尝试使用认证请求:', anonError);
-                // 匿名请求失败，尝试使用认证请求
-                postsJson = await flarumRequest(
-                    `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=${offset}&include=user`
-                );
-            }
+        const postsJson = await flarumRequest(
+            `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=0&include=user`,
+            { anonymous: true }
+        );
 
-            const posts = Array.isArray(postsJson.data) ? postsJson.data : [];
-            console.log('flarumLoadDiscussion: 获取到', posts.length, '条帖子');
-            allPosts = allPosts.concat(posts);
+        const allPosts = Array.isArray(postsJson.data) ? postsJson.data : [];
 
-            if (Array.isArray(postsJson.included)) {
-                allIncluded = allIncluded.concat(postsJson.included);
-            }
-
-            if (posts.length < limit) break;
-            offset += limit;
-        }
-
-        console.log('flarumLoadDiscussion: 总共获取到', allPosts.length, '条帖子');
-
+        // 合并数据结构（保持兼容）
         discussionJson.included = [
-            ...allIncluded,
+            ...(discussionJson.included || []),
+            ...(postsJson.included || []),
             ...allPosts
         ];
 
@@ -373,13 +334,11 @@ async function flarumLoadDiscussion(postId) {
             data: allPosts.map(p => ({ type: 'posts', id: String(p.id) }))
         };
 
-        const result = flarumDiscussionToPostData(discussionJson);
-        console.log('flarumLoadDiscussion: 转换后的数据:', result ? '成功' : '失败');
-        return result;
+        return flarumDiscussionToPostData(discussionJson);
     } catch (error) {
         console.error('flarumLoadDiscussion: 加载帖子失败:', error);
-        console.error('flarumLoadDiscussion: 错误详情:', error.detail);
-        throw error; // 抛出错误让 loadPostData 处理
+        console.error('错误详情:', error.detail);
+        throw error;
     }
 }
 
