@@ -1085,11 +1085,9 @@ window.addEventListener('DOMContentLoaded', function() {
 
     cleanupLegacyLocalStorage();
     
-    // 测试Flarum API连接
+    // 测试Flarum API连接和动态加载首页热帖（合并为一个调用，避免重复请求）
     if (isFlarumConfigured()) {
-        console.log('Flarum API 配置已完成，正在测试连接...');
-        testFlarumConnection();
-        // 动态加载首页热帖和近期帖子链接
+        console.log('Flarum API 配置已完成，正在加载首页内容...');
         renderDynamicHomeLinks();
     } else {
         console.log('Flarum API 未配置');
