@@ -1045,6 +1045,8 @@ window.addEventListener('DOMContentLoaded', function() {
     
     // 检查是否是帖子详情页面
     if (window.location.pathname.includes('post.html')) {
+        // 更新用户链接状态（登录/注册按钮）
+        updateUserLinks();
         loadPostDetailsFromJson();
         // 表单事件只绑定一次
         setupReplyForm();
