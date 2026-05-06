@@ -32,6 +32,20 @@ function buildPostFloorLink(discussionId, floor) {
     return `post.html?id=${encodeURIComponent(discussionId)}&page=${targetPage}#post-${safeFloor}`;
 }
 
+function isOriginalPosterReply(post, postData) {
+    if (!post || !postData) return false;
+    if (post.isOp) return true;
+
+    const postUserId = post.userId;
+    const originalPosterUserId = postData.userId;
+
+    if (postUserId != null && originalPosterUserId != null) {
+        return String(postUserId) === String(originalPosterUserId);
+    }
+
+    return !!(post.author && postData.author && post.author === postData.author);
+}
+
 // Flarum 登录
 async function flarumLogin(username, password) {
     try {
@@ -1325,7 +1339,10 @@ function renderForumThread(postData) {
         content: postData.content,
         isOp: true,
         replyTo: null
-    }, ...postData.comments];
+    }, ...postData.comments.map((comment) => ({
+        ...comment,
+        isOp: isOriginalPosterReply(comment, postData)
+    }))];
 
     // 分页配置
     const PAGE_SIZE = POST_PAGE_SIZE;
@@ -1447,7 +1464,7 @@ function renderForumThread(postData) {
                                 }
                             </div>
                             <div>
-                                <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}</div>
+                                <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
                                 <div style="font-size: 11px; color: #999;">${post.authorLevel}</div>
                             </div>
                         </div>
@@ -2103,7 +2120,10 @@ function insertNewCommentToPage(comment, postData) {
         content: postData.content,
         isOp: true,
         replyTo: null
-    }, ...postData.comments];
+    }, ...postData.comments.map((item) => ({
+        ...item,
+        isOp: isOriginalPosterReply(item, postData)
+    }))];
     
     // 递归生成引用 HTML
     function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
@@ -2136,13 +2156,15 @@ function insertNewCommentToPage(comment, postData) {
     
     const quoteHTML = generateQuoteHTML(comment.replyTo, allPosts);
     
+    const isOpReply = isOriginalPosterReply(comment, postData);
+
     const commentHTML = `
         <div class="post" id="post-${comment.floor}">
             <div class="post-header">
                 <div class="post-author">
                     <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
                     <div class="author-info">
-                        <div class="author-name">${comment.author}</div>
+                        <div class="author-name">${comment.author}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
                         <div class="author-level">${comment.authorLevel}</div>
                     </div>
                 </div>
