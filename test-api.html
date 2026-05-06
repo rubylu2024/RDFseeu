@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flarum API 测试</title>
+    <title>Flarum API 测试<</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
         .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
         .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-    </style>
+    <</style>
 </head>
 <body>
     <h1>Flarum API 连接测试</h1>
-    <div id="test-results"></div>
+    <div id="test-results"><</div>
     
     <script>
         const FLARUM_BASE_URL = 'https://www.reddragonfly.cyou/';
@@ -61,10 +61,10 @@
             const resultsDiv = document.getElementById('test-results');
             resultsDiv.innerHTML = '';
             
-            // 测试1: 检查配�?            addResult('测试1: 检查Flarum配置', isFlarumConfigured() ? '成功' : '失败');
+            // 测试1: 检查配?            addResult('测试1: 检查Flarum配置', isFlarumConfigured() ? '成功' : '失败');
             
             if (!isFlarumConfigured()) {
-                addResult('错误', 'Flarum配置未完�?);
+                addResult('错误', 'Flarum配置未完?);
                 return;
             }
             
@@ -96,7 +96,7 @@
             resultsDiv.appendChild(div);
         }
         
-        // 页面加载后运行测�?        window.addEventListener('DOMContentLoaded', runTests);
-    </script>
+        // 页面加载后运行测?        window.addEventListener('DOMContentLoaded', runTests);
+    <</script>
 </body>
 </html>
