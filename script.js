@@ -2206,6 +2206,11 @@ function refreshAuthDependentUI() {
 
 window.addEventListener('flarum-auth-changed', refreshAuthDependentUI);
 
+// 浏览器从 bfcache 恢复页面时，DOMContentLoaded 不会再次触发。
+// 在 pageshow/focus 阶段主动刷新登录态，避免顶部导航显示旧状态。
+window.addEventListener('pageshow', refreshAuthDependentUI);
+window.addEventListener('focus', refreshAuthDependentUI);
+
 window.addEventListener('storage', function(e) {
     if (!e || e.key === null || e.key === 'flarumToken' || e.key === 'flarumUserId' || e.key === 'flarumUsername') {
         refreshAuthDependentUI();
