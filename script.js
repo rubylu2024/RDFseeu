@@ -120,7 +120,7 @@ async function flarumRequest(path, options = {}) {
     const token = getFlarumToken();
     const userId = localStorage.getItem('flarumUserId');
 
-    const shouldAttachAuthHeader = !!(token && options.auth === true && !headers.Authorization);
+    const shouldAttachAuthHeader = !!(token && options.auth !== false && !headers.Authorization);
 
     if (shouldAttachAuthHeader) {
         headers.Authorization = userId
@@ -1199,6 +1199,7 @@ function renderForumThread(postData) {
     
     // 保存帖子数据到全局变量，供后续使用（避免重复加载）
     window.currentPostData = postData;
+    const isLoggedIn = !!getFlarumToken();
 
     // 更新页面标题
     document.title = `红蜻蜓论坛 - ${postData.title}`;
@@ -1211,8 +1212,6 @@ function renderForumThread(postData) {
         } else {
             // 恢复回帖表单（如果之前被禁用了）
             if (replyBox.querySelector('.comments-disabled-msg')) {
-                const isLoggedIn = !!getFlarumToken();
-                
                 if (isLoggedIn) {
                     // 已登录：显示用户信息和表单
                     replyBox.innerHTML = `
@@ -1286,6 +1285,23 @@ function renderForumThread(postData) {
                 }
             }
         }
+    }
+
+    if (!isLoggedIn) {
+        threadContainer.innerHTML = `
+            <div class="thread-header">
+                <div class="thread-title">${postData.title}</div>
+                <span>作者：<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
+                <span>发表于：${postData.publishTime}</span> | 
+                <span>浏览：${postData.viewCount}次</span>
+            </div>
+            <div class="post" style="padding: 30px 20px; text-align: center;">
+                <div style="font-size: 16px; color: #cc0000; margin-bottom: 12px;">本帖内容仅限登录后查看</div>
+                <div style="color: #666; margin-bottom: 12px;">请先登录后查看正文和回帖内容</div>
+                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">立即登录</a>
+            </div>
+        `;
+        return;
     }
 
     const allPosts = [{
