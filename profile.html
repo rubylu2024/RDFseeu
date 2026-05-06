@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人资料 - 红蜻蜓论�?/title>
-    <link rel="stylesheet" href="styles.css?v=20260506-4">
+    <title>个人资料 - 红蜻蜓论坛/title>
+    <link rel="stylesheet" href="styles.css?v=20260506-5">
     <style>
         /* 个人资料页面样式 */
         .profile-container {
@@ -368,7 +368,7 @@
                     <div class="top-nav-container">
                         <div class="logo">
                             <div class="logo-image"></div>
-                            <a href="index.html">红蜻蜓论�?/a>
+                            <a href="index.html">红蜻蜓论坛/a>
                             <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
                         </div>
                         <div class="top-links">
@@ -415,7 +415,7 @@
                                         </div>
                                     </div>
                                     <input type="file" id="avatar-upload-input" accept="image/*" onchange="handleAvatarUpload(this)">
-                                    <h2 id="user-name">用户�?span id="user-group-badge"></span></h2>
+                                    <h2 id="user-name">用户span id="user-group-badge"></span></h2>
                                     <p id="user-title">用户头衔</p>
                                     <div id="user-signature" style="display: none;" class="signature"></div>
                                     <button class="btn-logout" id="logout-btn" style="display: none;">退出登�?/button>
@@ -429,7 +429,7 @@
                                     </div>
                                     <div class="stat-item">
                                         <div class="stat-number" id="stat-comments">0</div>
-                                        <div class="stat-label">评论�?/div>
+                                        <div class="stat-label">评论坛/div>
                                     </div>
                                     <div class="stat-item">
                                         <div class="stat-number" id="stat-likes">0</div>
@@ -446,7 +446,7 @@
                                     <div class="profile-info">
                                         <h3>基本信息</h3>
                                         <div class="info-row">
-                                            <span class="info-label">用户�?/span>
+                                            <span class="info-label">用户/span>
                                             <span class="info-value" id="info-username">-</span>
                                         </div>
                                         <div class="info-row">
@@ -474,7 +474,7 @@
                                             <span class="info-value" id="info-lastActive">-</span>
                                         </div>
                                         <div class="info-row">
-                                            <span class="info-label">用户�?/span>
+                                            <span class="info-label">用户/span>
                                             <span class="info-value" id="info-group">-</span>
                                         </div>
                                         <div class="info-row">
@@ -486,7 +486,7 @@
                                 
                                 <!-- 最近帖�?-->
                                 <div class="recent-posts">
-                                    <h3>最近发�?/h3>
+                                    <h3>最近发布/h3>
                                     <ul class="post-list" id="recent-posts-list">
                                         <li class="no-data">暂无帖子</li>
                                     </ul>
@@ -512,7 +512,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260506-4"></script>
+    <script src="script.js?v=20260506-5"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             const token = localStorage.getItem('flarumToken');
@@ -580,7 +580,7 @@
                 // 获取发帖�?                const discussionsData = await flarumRequest('/discussions?filter[author]=' + userId);
                 stats.posts = discussionsData.data?.length || 0;
                 
-                // 获取评论�?                const postsData = await flarumRequest('/posts?filter[author]=' + userId);
+                // 获取评论坛                const postsData = await flarumRequest('/posts?filter[author]=' + userId);
                 stats.comments = (postsData.data?.length || 0) - stats.posts;
                 
                 // 获取声望和获赞数
@@ -624,7 +624,7 @@
             const user = userData.data;
             const included = userData.included || [];
             
-            // 用户�?            const username = user.attributes?.username || '未设�?;
+            // 用户            const username = user.attributes?.username || '未设�?;
             const displayName = user.attributes?.displayName || username;
             
             document.getElementById('user-name').textContent = displayName;
@@ -649,7 +649,7 @@
                 document.getElementById('info-lastActive').textContent = formatDate(user.attributes.lastActivityAt);
             }
             
-            // 用户�?            const groups = user.relationships?.groups?.data || [];
+            // 用户            const groups = user.relationships?.groups?.data || [];
             let groupNames = [];
             let badgeHTML = '';
             
@@ -659,7 +659,7 @@
                     const groupName = group.attributes?.name || group.attributes?.singularName || '未知';
                     groupNames.push(groupName);
                     
-                    // 添加组标�?                    if (groupRef.id === '1') {
+                    // 添加组标题                    if (groupRef.id === '1') {
                         badgeHTML = '<span class="group-badge admin">[管]</span>';
                     } else if (groupRef.id === '2') {
                         badgeHTML = '<span class="group-badge mod">[版]</span>';
@@ -717,7 +717,7 @@
             }
             
             list.innerHTML = posts.map(post => {
-                const title = post.attributes?.title || '无标�?;
+                const title = post.attributes?.title || '无标题;
                 const createdAt = post.attributes?.createdAt ? formatDate(post.attributes.createdAt) : '';
                 return `
                     <li class="post-item">
@@ -744,7 +744,7 @@
                 
                 return `
                     <li class="post-item">
-                        <a href="post.html?id=${discussionId}#post-${comment.attributes?.number}" class="post-title" title="${preview}">${preview || '无内�?}</a>
+                        <a href="post.html?id=${discussionId}#post-${comment.attributes?.number}" class="post-title" title="${preview}">${preview || '无内容}</a>
                         <span class="post-meta">${createdAt}</span>
                     </li>
                 `;
@@ -776,7 +776,7 @@
                 return;
             }
             
-            // 验证文件大小（限制在2MB以内�?            if (file.size > 2 * 1024 * 1024) {
+            // 验证文件大小（限制在2MB以内容            if (file.size > 2 * 1024 * 1024) {
                 alert('图片大小不能超过2MB�?);
                 return;
             }
@@ -785,7 +785,7 @@
             const token = localStorage.getItem('flarumToken');
             
             try {
-                // 显示加载状�?                const avatarContainer = document.querySelector('.avatar-container');
+                // 显示加载状态                const avatarContainer = document.querySelector('.avatar-container');
                 avatarContainer.style.opacity = '0.5';
                 avatarContainer.style.cursor = 'wait';
                 
@@ -817,7 +817,7 @@
                 console.error('上传头像失败:', error);
                 alert('上传头像失败，请重试');
             } finally {
-                // 恢复状�?                const avatarContainer = document.querySelector('.avatar-container');
+                // 恢复状态                const avatarContainer = document.querySelector('.avatar-container');
                 avatarContainer.style.opacity = '1';
                 avatarContainer.style.cursor = 'pointer';
                 // 重置input
