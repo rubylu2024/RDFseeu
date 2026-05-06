@@ -2,6 +2,7 @@
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
+const AD_TARGET_URL = 'https://www.dihai.wiki/';
 
 function isFlarumConfigured() {
     return true;
@@ -2488,7 +2489,7 @@ function setupPopupAd() {
     if (fakeCloseBtn) {
         fakeCloseBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            window.location.href = 'https://www.bilibili.com/video/BV1UT42167xb?t=0';
+            window.location.href = AD_TARGET_URL;
         });
     }
 
@@ -2497,7 +2498,7 @@ function setupPopupAd() {
         if (sideFakeBtn) {
             sideFakeBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                window.location.href = 'https://www.bilibili.com/video/BV1UT42167xb?t=0';
+                window.location.href = AD_TARGET_URL;
             });
         }
     }
