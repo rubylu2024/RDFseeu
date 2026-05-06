@@ -348,7 +348,8 @@ async function flarumLoadDiscussion(postId) {
     try {
         // 获取 discussion 基本信息
         const discussionJson = await flarumRequest(
-            `/discussions/${encodeURIComponent(id)}?include=user`
+            `/discussions/${encodeURIComponent(id)}?include=user`,
+            { auth: false }
         );
 
         if (!discussionJson?.data) {
@@ -359,7 +360,8 @@ async function flarumLoadDiscussion(postId) {
         const limit = 30;
 
         const postsJson = await flarumRequest(
-            `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=0&include=user`
+            `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=0&include=user`,
+            { auth: false }
         );
 
         const allPosts = Array.isArray(postsJson.data) ? postsJson.data : [];
@@ -386,7 +388,7 @@ async function flarumLoadDiscussion(postId) {
 
 async function flarumLoadDiscussionList() {
     try {
-        const json = await flarumRequest('/discussions?sort=-createdAt&page[limit]=20&include=user');
+        const json = await flarumRequest('/discussions?sort=-createdAt&page[limit]=20&include=user', { auth: false });
         const discussions = Array.isArray(json?.data) ? json.data : [];
         const included = json?.included || [];
 
@@ -412,7 +414,7 @@ async function flarumLoadDiscussionList() {
 // 获取最新回复列表
 async function flarumLoadRecentReplies() {
     try {
-        const json = await flarumRequest('/posts?sort=-createdAt&page[limit]=20&include=discussion,user');
+        const json = await flarumRequest('/posts?sort=-createdAt&page[limit]=20&include=discussion,user', { auth: false });
         const posts = Array.isArray(json?.data) ? json.data : [];
         const included = json?.included || [];
         
