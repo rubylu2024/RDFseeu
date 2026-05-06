@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新手帮助 - 红蜻蜓论�?/title>
+    <title>新手帮助 - 红蜻蜓论坛</title>
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
+        .page-shell {
+            width: 100%;
+        }
+
         .help-content {
             background: #fff;
             padding: 20px;
             border: 1px solid #ccc;
             line-height: 1.8;
         }
+
         .help-content h2 {
             color: #0066cc;
             border-bottom: 2px solid #0066cc;
@@ -19,9 +24,11 @@
             margin-bottom: 20px;
             text-align: center;
         }
+
         .help-section {
             margin-bottom: 30px;
         }
+
         .help-section h3 {
             color: #333;
             background: #eef5ff;
@@ -30,22 +37,26 @@
             margin-bottom: 15px;
             font-size: 18px;
         }
+
         .faq-item {
             margin-bottom: 15px;
             padding-left: 10px;
         }
+
         .faq-question {
             font-weight: bold;
             color: #d32f2f;
             display: block;
             margin-bottom: 5px;
         }
+
         .faq-answer {
             color: #444;
             display: block;
             padding-left: 20px;
             border-left: 2px solid #eee;
         }
+
         .tip-box {
             background: #fff9c4;
             border: 1px solid #fbc02d;
@@ -53,25 +64,35 @@
             margin: 20px 0;
             border-radius: 4px;
         }
+
+        .help-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
     </style>
 </head>
 <body>
+    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
+        Your browser does not support the audio element.
+    </audio>
+
     <div class="forum-frame-outer">
         <div class="forum-content">
             <div class="forum-frame">
-                <!-- 顶部导航�?-->
                 <div class="top-nav">
                     <div class="top-nav-container">
                         <div class="logo">
                             <div class="logo-image"></div>
-                            <a href="index.html">红蜻蜓论�?/a>
+                            <a href="index.html">红蜻蜓论坛</a>
                             <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
                         </div>
                         <div class="top-links">
                             <a href="index.html">论坛</a>
                             <a href="#">博客</a>
                             <a href="#">问答</a>
-                            <a href="https://www.4399.com" target="_blank">游戏�?/a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
                             <a href="#">品牌</a>
                             <a href="#">更多</a>
                         </div>
@@ -81,7 +102,7 @@
                         </div>
                         <div class="user-links">
                             <button id="audio-toggle" class="audio-toggle">
-                                <span class="audio-icon">�?/span>
+                                <span class="audio-icon">♪</span>
                             </button>
                             <a href="#">服务</a>
                             <div id="user-links-container">
@@ -93,59 +114,70 @@
                 </div>
 
                 <div class="main-container">
+                    <div class="right-content-area page-shell">
+                        <div class="content-wrapper">
+                            <div class="main-content" style="width:100%; padding: 20px;">
+                                <div class="help-content">
+                                    <h2>红蜻蜓论坛 · 新手上路指南</h2>
 
+                                    <div class="help-section">
+                                        <h3>一、如何快速融入社区？</h3>
+                                        <div class="faq-item">
+                                            <span class="faq-question">Q：注册后第一件事应该做什么？</span>
+                                            <span class="faq-answer">A：建议先去“蜻蜓杂谈”版块发一篇自我介绍，让大家认识你。同时请务必阅读 <a href="rules.html">《论坛规则》</a>，避免误踩红线。</span>
+                                        </div>
+                                        <div class="faq-item">
+                                            <span class="faq-question">Q：什么是“蜻蜓币”？如何获取？</span>
+                                            <span class="faq-answer">A：蜻蜓币是本站的虚拟积分。每日签到、发帖、回帖、参加活动都可能获得。积分可用于兑换勋章或解锁部分功能。</span>
+                                        </div>
+                                    </div>
 
-                    <div class="help-content" style="width: 100%;">
-                        <h2>红蜻蜓论坛·新手上路指�?/h2>
-                        
-                        <div class="help-section">
-                            <h3>一�?如何快速融入社区？</h3>
-                            <div class="faq-item">
-                                <span class="faq-question">Q: 注册后第一件事应该做什么？</span>
-                                <span class="faq-answer">A: 建议先前往“蜻蜓杂谈”版块发布一个自我介绍帖子，让大家认识你。同时请务必阅读<a href="rules.html">《论坛规则�?/a>以免违规�?/span>
+                                    <div class="help-section">
+                                        <h3>二、发帖技巧</h3>
+                                        <div class="faq-item">
+                                            <span class="faq-question">Q：怎样让帖子更容易被回复？</span>
+                                            <span class="faq-answer">A：标题尽量准确清晰，正文说明背景、问题和诉求，必要时配图，通常更容易获得高质量回复。</span>
+                                        </div>
+                                        <div class="faq-item">
+                                            <span class="faq-question">Q：帖子发错版块了怎么办？</span>
+                                            <span class="faq-answer">A：可以在帖子里补充说明，或通过“意见反馈”联系版主，说明需要移动到哪个版块。</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="tip-box">
+                                        <strong>小贴士：</strong>
+                                        <p>善用收藏和搜索功能，许多常见问题其实已经有很详细的历史讨论。</p>
+                                    </div>
+
+                                    <div class="help-section">
+                                        <h3>三、账号安全</h3>
+                                        <ul>
+                                            <li>请勿将密码告诉任何人，管理员和版主不会主动索要密码。</li>
+                                            <li>建议绑定常用邮箱，便于忘记密码时找回账号。</li>
+                                            <li>在公共设备登录后，请务必点击“退出登录”。</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="help-footer">
+                                        <p>还有疑问？欢迎通过 <a href="javascript:alert('如果有任何意见或建议，可以发送到 backtothesky3849@reddragonfly.cyou 或联系 QQ3853622361')">意见反馈</a> 联系我们。</p>
+                                        <button onclick="window.location.href='index.html'" style="padding: 10px 30px; background: #0066cc; color: #fff; border: none; cursor: pointer; font-weight: bold;">返回首页</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="faq-item">
-                                <span class="faq-question">Q: 什么是“蜻蜓币”？如何获取�?/span>
-                                <span class="faq-answer">A: 蜻蜓币是本站的虚拟积分。通过每日签到、发帖、被他人回帖、参与社区活动均可获得。蜻蜓币可用于购买勋章、下载附件或进入部分高权限版块�?/span>
-                            </div>
-                        </div>
-
-                        <div class="help-section">
-                            <h3>二�?发帖技�?/h3>
-                            <div class="faq-item">
-                                <span class="faq-question">Q: 如何让我的帖子更受欢迎？</span>
-                                <span class="faq-answer">A: 好的标题是成功的关键！尽量使用吸引人的标题，并在内容中加入图片（通过编辑器上传）�?/span>
-                            </div>
-                            <div class="faq-item">
-                                <span class="faq-question">Q: 帖子发错版块了怎么办？</span>
-                                <span class="faq-answer">A: 请点击帖子下方的“举报”功能，留言“错版请求移动”，版主看到后会帮你处理�?/span>
-                            </div>
-                        </div>
-
-                        <div class="tip-box">
-                            <strong>💡 小贴士：</strong>
-                            <p>�?<strong>Ctrl + D</strong> 可以快速收藏本论坛，下次访问更方便哦！</p>
-                        </div>
-
-                        <div class="help-section">
-                            <h3>三�?账号安全</h3>
-                            <ul>
-                                <li>请勿将密码告诉任何人，版主和管理员不会主动询问你的密码�?/li>
-                                <li>建议绑定邮箱，以便在忘记密码时快速找回�?/li>
-                                <li>在网吧等公共场合登录后，请务必点击“退出登录”�?/li>
-                            </ul>
-                        </div>
-
-                        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ccc;">
-                            <p>还有疑问？欢迎在<a href="javascript:alert('如果有任何意见或建议，可以发送到backtothesky3849@reddragonfly.cyou或联系QQ3853622361')">“意见反馈�?/a>版块发帖求助�?/p>
-                            <button onclick="window.location.href='index.html'" style="padding: 10px 30px; background: #0066cc; color: #fff; border: none; cursor: pointer; font-weight: bold;">返回首页</button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="status-bar">
+                <div class="status-container">
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                </div>
+            </div>
         </div>
     </div>
+
     <script src="script.js?v=20260506-3"></script>
 </body>
 </html>
-
