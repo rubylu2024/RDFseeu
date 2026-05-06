@@ -445,7 +445,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260507-5"></script>
+    <script src="script.js?v=20260507-6"></script>
     <script>
         const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
         const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
@@ -492,7 +492,11 @@
                 profileContent.style.display = 'block';
             } catch (error) {
                 console.error('加载个人资料失败:', error);
-                showProfileError(`加载个人资料失败：${error.message || '未知错误'}`, true);
+                const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                    ? getFriendlyErrorMessage(error, 'profile')
+                    : '个人资料暂时无法加载，请稍后再试。';
+                const showLoginLink = Boolean(error?.httpStatus === 401 || error?.apiError?.status === 401);
+                showProfileError(friendlyMessage, showLoginLink);
             } finally {
                 loadingOverlay.style.display = 'none';
             }
@@ -755,7 +759,10 @@
                 alert('头像上传成功');
             } catch (error) {
                 console.error('上传头像失败:', error);
-                alert(`上传头像失败：${error.message || '未知错误'}`);
+                const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                    ? getFriendlyErrorMessage(error, 'upload_avatar')
+                    : '头像上传失败，请稍后再试。';
+                alert(friendlyMessage);
             } finally {
                 avatarContainer.style.opacity = '1';
                 avatarContainer.style.cursor = 'pointer';
@@ -765,6 +772,7 @@
     </script>
 </body>
 </html>
+
 
 
 

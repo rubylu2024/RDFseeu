@@ -218,7 +218,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260507-5"></script>
+    <script src="script.js?v=20260507-6"></script>
     <script>
         // 登录页面脚本
         document.addEventListener('DOMContentLoaded', function() {
@@ -254,10 +254,16 @@
                             window.location.href = redirectUrl;
                         }, 1500);
                     } else {
-                        showMessage('登录失败，请检查账号密码、论坛地址、或跨域配置', 'error');
+                        const friendlyMessage = typeof consumeLastUserErrorMessage === 'function'
+                            ? (consumeLastUserErrorMessage() || '登录失败，请检查账号和密码后重试。')
+                            : '登录失败，请检查账号和密码后重试。';
+                        showMessage(friendlyMessage, 'error');
                     }
                 } catch (error) {
-                    showMessage('登录失败：' + error.message, 'error');
+                    const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                        ? getFriendlyErrorMessage(error, 'login')
+                        : '登录失败，请稍后再试。';
+                    showMessage(friendlyMessage, 'error');
                 } finally {
                     hideLoading();
                 }
@@ -292,6 +298,7 @@
     </script>
 </body>
 </html>
+
 
 
 

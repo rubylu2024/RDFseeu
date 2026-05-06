@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -25,6 +25,33 @@
 
         function getFlarumApiBase() {
             return FLARUM_BASE_URL.replace(/\/+$/, '') + '/api';
+        }
+
+        function getFriendlyTestErrorMessage(error, context) {
+            const rawMessage = String(error?.message || '');
+            if (/Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
+                return '无法连接论坛接口，请检查网络或服务器状态。';
+            }
+
+            if (/401/.test(rawMessage)) {
+                return '接口需要登录后才能访问，当前未提供登录状态。';
+            }
+
+            if (/403/.test(rawMessage)) {
+                return context === 'list'
+                    ? '当前账号或当前访问方式没有获取帖子列表的权限。'
+                    : '当前账号或当前访问方式没有访问该接口的权限。';
+            }
+
+            if (/404/.test(rawMessage)) {
+                return '请求的接口地址不存在，请检查论坛接口配置。';
+            }
+
+            if (/5\d\d/.test(rawMessage)) {
+                return '论坛服务器暂时繁忙，请稍后再试。';
+            }
+
+            return '接口请求失败，请稍后再试。';
         }
 
         async function flarumRequest(path, options = {}) {
@@ -65,14 +92,14 @@
                 const discussions = await flarumRequest('/discussions?sort=-createdAt&page[limit]=5&include=user');
                 addResult('测试 2: 获取讨论列表', '成功', discussions);
             } catch (error) {
-                addResult('测试 2: 获取讨论列表', '失败', error.message);
+                addResult('测试 2: 获取讨论列表', '失败', getFriendlyTestErrorMessage(error, 'list'));
             }
 
             try {
                 const info = await flarumRequest('/');
                 addResult('测试 3: 获取 API 信息', '成功', info);
             } catch (error) {
-                addResult('测试 3: 获取 API 信息', '失败', error.message);
+                addResult('测试 3: 获取 API 信息', '失败', getFriendlyTestErrorMessage(error, 'info'));
             }
         }
 

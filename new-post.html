@@ -402,7 +402,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260507-5"></script>
+    <script src="script.js?v=20260507-6"></script>
     <script>
         const NEW_POST_EMOJIS = [
             '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
@@ -563,7 +563,10 @@
                     alert('发帖失败，请重试');
                 } catch (error) {
                     console.error('发帖失败:', error);
-                    alert((error && error.message ? error.message : '发帖失败') + '\n' + ((error && error.detail) || ''));
+                    const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                        ? getFriendlyErrorMessage(error, 'create_discussion')
+                        : '发帖失败，请稍后再试。';
+                    alert(friendlyMessage);
                 } finally {
                     submitBtn.textContent = '发表帖子';
                     submitBtn.disabled = false;
@@ -676,7 +679,10 @@
                     }
                 } catch (error) {
                     console.error('图片上传失败:', error);
-                    alert('图片上传失败，请重试');
+                    const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                        ? getFriendlyErrorMessage(error, 'upload_image')
+                        : '图片上传失败，请稍后再试。';
+                    alert(friendlyMessage);
                 } finally {
                     imageUpload.value = '';
                 }
@@ -764,6 +770,7 @@
     </script>
 </body>
 </html>
+
 
 
 

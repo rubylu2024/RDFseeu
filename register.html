@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -264,7 +264,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260507-5"></script>
+    <script src="script.js?v=20260507-6"></script>
     <script>
         const errorMap = {
             validation_error: '注册信息不符合要求，请检查用户名、邮箱或密码',
@@ -375,17 +375,31 @@
                             errorMsg = error.result.errors.map(e => {
                                 if (e.detail) return e.detail;
                                 if (e.code && errorMap[e.code]) return errorMap[e.code];
-                                if (e.code) return e.code;
                                 if (e.title) return e.title;
-                                return JSON.stringify(e);
+                                if (typeof getFriendlyErrorMessage === 'function') {
+                                    return getFriendlyErrorMessage({
+                                        httpStatus: e.status ? Number(e.status) : null,
+                                        apiError: {
+                                            status: e.status ? Number(e.status) : null,
+                                            code: e.code || '',
+                                            title: e.title || '',
+                                            detail: e.detail || ''
+                                        }
+                                    }, 'register');
+                                }
+                                return '注册失败，请稍后再试。';
                             }).join('\n');
                         } else if (error.result.message) {
                             errorMsg = error.result.message;
                         } else {
-                            errorMsg = JSON.stringify(error.result);
+                            errorMsg = typeof getFriendlyErrorMessage === 'function'
+                                ? getFriendlyErrorMessage(error, 'register')
+                                : '注册失败，请稍后再试。';
                         }
                     } else if (error.message) {
-                        errorMsg = error.message;
+                        errorMsg = typeof getFriendlyErrorMessage === 'function'
+                            ? getFriendlyErrorMessage(error, 'register')
+                            : error.message;
                     }
                     showMessage(errorMsg, 'error');
                     submitBtn.disabled = false;
@@ -480,6 +494,7 @@
     </script>
 </body>
 </html>
+
 
 
 

@@ -24,6 +24,145 @@ function clearFlarumToken() {
     window.dispatchEvent(new Event('flarum-auth-changed'));
 }
 
+let lastUserErrorMessage = '';
+
+function setLastUserErrorMessage(message) {
+    lastUserErrorMessage = typeof message === 'string' ? message : '';
+}
+
+function consumeLastUserErrorMessage() {
+    const message = lastUserErrorMessage;
+    lastUserErrorMessage = '';
+    return message;
+}
+
+function parseApiErrorDetail(detail) {
+    if (!detail || typeof detail !== 'string') return null;
+
+    try {
+        const parsed = JSON.parse(detail);
+        const firstError = Array.isArray(parsed?.errors) ? parsed.errors[0] : null;
+        return {
+            raw: parsed,
+            status: firstError?.status ? Number(firstError.status) : null,
+            code: firstError?.code || '',
+            title: firstError?.title || '',
+            detail: firstError?.detail || ''
+        };
+    } catch {
+        return null;
+    }
+}
+
+function getFriendlyErrorMessage(error, context = 'generic') {
+    const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+    const status = error?.httpStatus || parsed?.status || null;
+    const code = parsed?.code || error?.code || '';
+    const rawMessage = String(error?.message || '');
+
+    if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
+        return '网络连接异常，暂时无法连接论坛，请检查网络后重试。';
+    }
+
+    if (status === 401 || code === 'not_authenticated') {
+        switch (context) {
+            case 'login':
+                return '登录失败，请检查账号和密码是否正确。';
+            case 'create_discussion':
+            case 'create_post':
+            case 'delete_post':
+            case 'delete_discussion':
+            case 'profile':
+            case 'upload_image':
+            case 'upload_avatar':
+                return '登录状态已失效，请重新登录后再试。';
+            default:
+                return '当前登录状态已失效，请重新登录后再试。';
+        }
+    }
+
+    if (status === 403 || code === 'permission_denied') {
+        switch (context) {
+            case 'create_discussion':
+                return '当前账号没有发帖权限，请联系管理员开通。';
+            case 'create_post':
+                return '当前账号没有回帖权限，请联系管理员开通。';
+            case 'delete_post':
+                return '当前账号没有删除这条回复的权限，只能删除自己的内容。';
+            case 'delete_discussion':
+                return '当前账号没有删除这个帖子的权限，只能删除自己的内容。';
+            case 'upload_image':
+                return '当前账号没有上传图片的权限，请联系管理员开通。';
+            case 'upload_avatar':
+                return '当前账号没有修改头像的权限，请联系管理员开通。';
+            case 'profile':
+                return '当前账号没有查看该页面内容的权限。';
+            case 'load_discussion':
+                return '帖子暂时无法显示，可能需要登录后查看或当前账号没有查看权限。';
+            case 'register':
+                return '当前论坛暂不允许普通用户注册。';
+            default:
+                return '当前账号没有执行此操作的权限，请联系管理员处理。';
+        }
+    }
+
+    if (status === 404 || code === 'not_found') {
+        switch (context) {
+            case 'load_discussion':
+                return '这篇帖子不存在，或已经被删除。';
+            case 'profile':
+                return '未找到对应的用户资料。';
+            default:
+                return '你访问的内容不存在，或已经被删除。';
+        }
+    }
+
+    if (status === 429 || code === 'rate_limit_exceeded') {
+        return '操作太频繁了，请稍后再试。';
+    }
+
+    if (code === 'validation_error') {
+        switch (context) {
+            case 'register':
+                return '注册信息填写不完整，或格式不正确，请检查后重试。';
+            case 'create_discussion':
+                return '帖子内容不符合要求，请检查标题和正文后重试。';
+            case 'create_post':
+                return '回复内容不符合要求，请修改后再试。';
+            default:
+                return '提交的信息不符合要求，请检查后重试。';
+        }
+    }
+
+    if (status && status >= 500) {
+        return '论坛服务器暂时繁忙，请稍后再试。';
+    }
+
+    switch (context) {
+        case 'login':
+            return '登录失败，请检查账号和密码后重试。';
+        case 'register':
+            return '注册失败，请稍后再试。';
+        case 'create_discussion':
+            return '发帖失败，请稍后再试。';
+        case 'create_post':
+            return '回复失败，请稍后再试。';
+        case 'delete_post':
+        case 'delete_discussion':
+            return '删除失败，请稍后再试。';
+        case 'load_discussion':
+            return '帖子暂时无法加载，请刷新页面后重试。';
+        case 'profile':
+            return '个人资料暂时无法加载，请稍后再试。';
+        case 'upload_image':
+            return '图片上传失败，请稍后再试。';
+        case 'upload_avatar':
+            return '头像上传失败，请稍后再试。';
+        default:
+            return '操作失败，请稍后再试。';
+    }
+}
+
 function buildPostFloorLink(discussionId, floor) {
     const normalizedFloor = Number(floor);
     const safeFloor = Number.isFinite(normalizedFloor) && normalizedFloor > 0 ? normalizedFloor : 1;
@@ -77,7 +216,7 @@ async function flarumLogin(username, password) {
         return false;
     } catch (e) {
         console.error('Flarum login error:', e);
-        alert(e.message + '\n' + (e.detail || ''));
+        setLastUserErrorMessage(getFriendlyErrorMessage(e, 'login'));
         return false;
     }
 }
@@ -163,6 +302,8 @@ async function flarumRequest(path, options = {}) {
         }
         const error = new Error(`Flarum API 请求失败: ${response.status} ${response.statusText}`);
         error.detail = detail;
+        error.httpStatus = response.status;
+        error.apiError = parseApiErrorDetail(detail);
         throw error;
     }
 
@@ -618,7 +759,7 @@ async function flarumDeletePost(postId, floor) {
         return true;
     } catch (error) {
         console.error('删除帖子失败:', error);
-        alert('删除帖子失败，可能是权限不足或网络问题。');
+        alert(getFriendlyErrorMessage(error, 'delete_post'));
         return false;
     }
 }
@@ -657,7 +798,7 @@ async function flarumDeleteDiscussion(discussionId) {
         return true;
     } catch (error) {
         console.error('删除讨论失败:', error);
-        alert('删除帖子失败，可能是权限不足或网络问题。');
+        alert(getFriendlyErrorMessage(error, 'delete_discussion'));
         return false;
     }
 }
@@ -718,11 +859,11 @@ async function loadPostData(postId) {
         
         const threadContainer = document.getElementById('forum-thread');
         if (threadContainer) {
+            const friendlyMessage = getFriendlyErrorMessage(error, 'load_discussion');
             threadContainer.innerHTML = `
                 <div style="padding: 40px 20px; text-align: center;">
                     <p style="color: #cc0000; font-size: 16px; margin-bottom: 10px;">抱歉，加载此内容时出错</p>
-                    <p style="color: #666; font-size: 14px;">${error.message || '请稍后刷新页面重试'}</p>
-                    <p style="color: #999; font-size: 12px; margin-top: 10px;">错误码: ${error.detail || '未知'}</p>
+                    <p style="color: #666; font-size: 14px;">${friendlyMessage}</p>
                 </div>
             `;
         }
@@ -1865,7 +2006,7 @@ function setupReplyForm() {
             }
         } catch (error) {
             console.error('提交失败:', error);
-            alert('提交失败，请重试');
+            alert(getFriendlyErrorMessage(error, 'create_post'));
         } finally {
             submitBtn.textContent = originalBtnText;
         }
@@ -1972,7 +2113,7 @@ function initToolbar() {
             }
         } catch (error) {
             console.error('图片上传失败:', error);
-            alert('图片上传失败，请重试');
+            alert(getFriendlyErrorMessage(error, 'upload_image'));
         }
 
         // 清空文件选择
