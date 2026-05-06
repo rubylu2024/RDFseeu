@@ -120,7 +120,7 @@ async function flarumRequest(path, options = {}) {
     const token = getFlarumToken();
     const userId = localStorage.getItem('flarumUserId');
 
-    const shouldAttachAuthHeader = !!(token && options.auth !== false && !headers.Authorization);
+    const shouldAttachAuthHeader = !!(token && options.auth === true && !headers.Authorization);
 
     if (shouldAttachAuthHeader) {
         headers.Authorization = userId
@@ -673,7 +673,7 @@ async function canDeletePost(post) {
     
     // 检查是否是管理员或版主（简化处理）
     try {
-        const userJson = await flarumRequest(`/users/${currentUserId}`);
+        const userJson = await flarumRequest(`/users/${currentUserId}`, { auth: true });
         const groups = userJson?.data?.relationships?.groups?.data || [];
         // 检查是否在管理员或版主组
         const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id)); // 1=管理员, 2=版主
@@ -1103,46 +1103,6 @@ window.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (window.location.pathname.includes('new-post.html')) {
-        const form = document.getElementById('new-post-form');
-        if (form) {
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                const title = document.getElementById('post-title')?.value?.trim() || '';
-                const content = document.getElementById('post-content')?.value?.trim() || '';
-                const category = document.getElementById('post-category')?.value || '';
-
-                if (!title || !content) {
-                    alert('请填写标题和内容！');
-                    return;
-                }
-
-                if (!isFlarumConfigured()) {
-                    alert('管理员尚未配置论坛后端地址，暂时无法提交到论坛。');
-                    return;
-                }
-
-                const tagIds = [];
-                const mappedTagId = localStorage.getItem(`flarumTagMap:${category}`);
-                if (mappedTagId) tagIds.push(mappedTagId);
-
-                try {
-                    const discussionId = await flarumCreateDiscussion({ title, content, tagIds });
-                    if (discussionId) {
-                        alert('帖子发表成功！');
-                        window.location.href = `post.html?id=${encodeURIComponent(discussionId)}`;
-                        return;
-                    }
-                    alert('帖子发表失败。');
-                } catch (error) {
-                    console.error('发帖失败:', error);
-                    alert('帖子发表失败，请检查登录状态、论坛地址、或跨域配置。');
-                }
-            });
-        }
-    }
-    
     // 平滑滚动效果
     setupSmoothScroll();
     
@@ -1847,6 +1807,7 @@ function setupReplyForm() {
 
             const response = await flarumRequest('/posts', {
                 method: 'POST',
+                auth: true,
                 json: {
                     data: {
                         type: 'posts',
@@ -1982,6 +1943,7 @@ function initToolbar() {
 
             const response = await flarumRequest('/api/files', {
                 method: 'POST',
+                auth: true,
                 body: formData
             });
 
@@ -2086,7 +2048,7 @@ async function checkImagePermission() {
     }
 
     try {
-        const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`);
+        const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`, { auth: true });
         const groups = userJson?.data?.relationships?.groups?.data || [];
         // 检查是否在管理员或版主组
         const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id));
