@@ -19,6 +19,7 @@ function clearFlarumToken() {
     localStorage.removeItem('flarumToken');
     localStorage.removeItem('flarumUserId');
     localStorage.removeItem('flarumUsername');
+    window.dispatchEvent(new Event('flarum-auth-changed'));
 }
 
 // Flarum 登录
@@ -46,6 +47,7 @@ async function flarumLogin(username, password) {
                 }
             }
             updateUserLinks();
+            window.dispatchEvent(new Event('flarum-auth-changed'));
             return true;
         }
         return false;
@@ -992,6 +994,7 @@ window.addEventListener('DOMContentLoaded', function() {
             if (target.classList.contains('reply-link') || 
                 target.id === 'cancel-reply' || 
                 target.id === 'logout-btn' ||
+                target.id === 'nav-logout-btn' ||
                 target.id === 'login-btn' ||
                 target.id === 'register-btn') {
                 return;
@@ -2164,10 +2167,10 @@ function updateUserLinks() {
     if (userLoggedIn) {
         userLinksContainer.innerHTML = `
             <a href="profile.html">个人资料</a>
-            <a href="#" id="logout-btn">退出登录</a>
+            <a href="#" id="nav-logout-btn">退出登录</a>
         `;
         
-        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtn = document.getElementById('nav-logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -2182,6 +2185,32 @@ function updateUserLinks() {
         `;
     }
 }
+
+function refreshAuthDependentUI() {
+    try {
+        updateUserLinks();
+    } catch (_) {}
+
+    if (typeof updateReplyFormForLoginStatus === 'function') {
+        try {
+            updateReplyFormForLoginStatus();
+        } catch (_) {}
+    }
+
+    if (typeof updateTopNavLoginStatus === 'function') {
+        try {
+            updateTopNavLoginStatus(!!getFlarumToken());
+        } catch (_) {}
+    }
+}
+
+window.addEventListener('flarum-auth-changed', refreshAuthDependentUI);
+
+window.addEventListener('storage', function(e) {
+    if (!e || e.key === null || e.key === 'flarumToken' || e.key === 'flarumUserId' || e.key === 'flarumUsername') {
+        refreshAuthDependentUI();
+    }
+});
 
 // 设置平滑滚动
 function setupSmoothScroll() {
