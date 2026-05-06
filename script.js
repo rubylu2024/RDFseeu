@@ -77,6 +77,7 @@ async function flarumLogin(username, password) {
         return false;
     } catch (e) {
         console.error('Flarum login error:', e);
+        alert(e.message + '\n' + (e.detail || ''));
         return false;
     }
 }
@@ -130,8 +131,7 @@ async function flarumRequest(path, options = {}) {
     const createFetchOptions = (requestHeaders) => ({
         method: options.method || 'GET',
         headers: requestHeaders,
-        body: options.json !== undefined ? JSON.stringify(options.json) : options.body,
-        credentials: 'include'
+        body: options.json !== undefined ? JSON.stringify(options.json) : options.body
     });
 
     let response = await fetch(url, createFetchOptions(headers));
