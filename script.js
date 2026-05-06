@@ -3,6 +3,7 @@
 
 const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
+const POST_PAGE_SIZE = 20;
 
 function isFlarumConfigured() {
     return true;
@@ -21,6 +22,14 @@ function clearFlarumToken() {
     localStorage.removeItem('flarumUserId');
     localStorage.removeItem('flarumUsername');
     window.dispatchEvent(new Event('flarum-auth-changed'));
+}
+
+function buildPostFloorLink(discussionId, floor) {
+    const normalizedFloor = Number(floor);
+    const safeFloor = Number.isFinite(normalizedFloor) && normalizedFloor > 0 ? normalizedFloor : 1;
+    const targetPage = Math.max(1, Math.ceil(safeFloor / POST_PAGE_SIZE));
+
+    return `post.html?id=${encodeURIComponent(discussionId)}&page=${targetPage}#post-${safeFloor}`;
 }
 
 // Flarum 登录
@@ -967,6 +976,8 @@ function renderPostListIntoIndex(recentReplies) {
         return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
     };
 
+    const buildReplyHref = (reply) => buildPostFloorLink(reply.discussionId, reply.floor);
+
     container.innerHTML = `
         <h3>最新回复</h3>
         <table class="posts-table">
@@ -981,7 +992,7 @@ function renderPostListIntoIndex(recentReplies) {
             <tbody>
                 ${safeList.length > 0 ? safeList.map((r) => `
                     <tr>
-                        <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}#post-${r.floor}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
+                        <td><a href="${buildReplyHref(r)}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
                         <td>${r.author || ''}</td>
                         <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
                         <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 20)}</a></td>
@@ -1317,7 +1328,7 @@ function renderForumThread(postData) {
     }, ...postData.comments];
 
     // 分页配置
-    const PAGE_SIZE = 20;
+    const PAGE_SIZE = POST_PAGE_SIZE;
     const urlParams = new URLSearchParams(window.location.search);
     const totalPosts = allPosts.length;
     const totalPages = Math.max(1, Math.ceil(totalPosts / PAGE_SIZE));
