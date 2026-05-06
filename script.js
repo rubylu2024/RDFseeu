@@ -61,7 +61,7 @@ async function flarumLogin(username, password) {
                 localStorage.setItem('flarumUserId', String(json.userId));
                 // 尝试获取用户信息
                 try {
-                    const userJson = await flarumRequest(`/users/${json.userId}`);
+                    const userJson = await flarumRequest(`/users/${json.userId}`, { auth: true });
                     if (userJson?.data?.attributes) {
                         const displayName = userJson.data.attributes.displayName || userJson.data.attributes.username;
                         localStorage.setItem('flarumUsername', displayName);
@@ -135,6 +135,7 @@ async function flarumRequest(path, options = {}) {
     });
 
     let response = await fetch(url, createFetchOptions(headers));
+    const initialStatus = response.status;
 
     // 对公开接口做一次无鉴权重试，避免本地过期 token 导致“登录后反而看不到内容”。
     if (
@@ -147,7 +148,7 @@ async function flarumRequest(path, options = {}) {
         response = await fetch(url, createFetchOptions(retryHeaders));
 
         // 重试成功说明是本地 token 问题，清理后同步刷新登录态 UI。
-        if (response.ok) {
+        if (response.ok && initialStatus === 401) {
             clearFlarumToken();
         }
     }
