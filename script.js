@@ -90,25 +90,20 @@ async function flarumRequest(path, options = {}) {
         headers['Content-Type'] = 'application/json';
     }
 
-    if (options.auth === true) {
-        const token = getFlarumToken();
-        const userId = localStorage.getItem('flarumUserId');
+    const token = getFlarumToken();
+    const userId = localStorage.getItem('flarumUserId');
 
-        if (token && !headers.Authorization) {
-            headers.Authorization = userId
-                ? `Token ${token}; userId=${userId}`
-                : `Token ${token}`;
-        }
+    if (token && options.auth !== false && !headers.Authorization) {
+        headers.Authorization = userId
+            ? `Token ${token}; userId=${userId}`
+            : `Token ${token}`;
     }
 
     const fetchOptions = {
         method: options.method || 'GET',
         headers,
-        body: options.json !== undefined ? JSON.stringify(options.json) : options.body
-    };
-
-    if (options.withCredentials === true) {
-        fetchOptions.credentials = 'include';
+        body: options.json !== undefined ? JSON.stringify(options.json) : options.body,
+        credentials: 'include'
     }
 
     const response = await fetch(url, fetchOptions);
