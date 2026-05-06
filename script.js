@@ -95,20 +95,38 @@ async function flarumRequest(path, options = {}) {
     const token = getFlarumToken();
     const userId = localStorage.getItem('flarumUserId');
 
-    if (token && options.auth !== false && !headers.Authorization) {
+    const shouldAttachAuthHeader = !!(token && options.auth !== false && !headers.Authorization);
+
+    if (shouldAttachAuthHeader) {
         headers.Authorization = userId
             ? `Token ${token}; userId=${userId}`
             : `Token ${token}`;
     }
 
-    const fetchOptions = {
+    const createFetchOptions = (requestHeaders) => ({
         method: options.method || 'GET',
-        headers,
+        headers: requestHeaders,
         body: options.json !== undefined ? JSON.stringify(options.json) : options.body,
         credentials: 'include'
-    }
+    });
 
-    const response = await fetch(url, fetchOptions);
+    let response = await fetch(url, createFetchOptions(headers));
+
+    // 对公开接口做一次无鉴权重试，避免本地过期 token 导致“登录后反而看不到内容”。
+    if (
+        (response.status === 401 || response.status === 403) &&
+        shouldAttachAuthHeader &&
+        options.auth !== true
+    ) {
+        const retryHeaders = { ...headers };
+        delete retryHeaders.Authorization;
+        response = await fetch(url, createFetchOptions(retryHeaders));
+
+        // 重试成功说明是本地 token 问题，清理后同步刷新登录态 UI。
+        if (response.ok) {
+            clearFlarumToken();
+        }
+    }
 
     if (!response.ok) {
         let detail = '';
