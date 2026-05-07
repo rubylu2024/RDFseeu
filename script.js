@@ -1,4 +1,4 @@
-﻿﻿﻿// 页面加载完成后执行
+﻿// 页面加载完成后执行
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
