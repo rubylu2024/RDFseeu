@@ -1,4 +1,4 @@
-﻿// 页面加载完成后执行
+// 页面加载完成后执行
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
@@ -875,34 +875,57 @@ async function flarumLoadPostsSearchPage({ query, offset, limit, sortOrder }) {
     return { json };
 }
 
-async function flarumLoadUserRecentPosts({ userId, username, limit }) {
+async function flarumLoadUserRecentPosts({ userId, username, limit, onlyReplies }) {
     const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(20, Math.floor(limit)) : 10;
     const id = userId == null ? '' : String(userId);
     const name = typeof username === 'string' ? username.trim() : '';
-    const fetchLimit = Math.min(50, Math.max(safeLimit, 1) * 5);
+    const replyOnly = onlyReplies === true;
 
     const queries = [];
     if (id) {
-        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[user]=${encodeURIComponent(id)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(id)}&include=discussion`);
     }
     if (name) {
-        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[author]=${encodeURIComponent(name)}&include=discussion`);
-        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[user]=${encodeURIComponent(name)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&filter[author]=${encodeURIComponent(name)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(name)}&include=discussion`);
     }
 
     let lastError = null;
     for (const q of queries) {
         try {
-            const json = await flarumRequest(q, { auth: !!getFlarumToken() });
-            const data = Array.isArray(json?.data) ? json.data : [];
-            const filteredById = id
-                ? data.filter((post) => String(post?.relationships?.user?.data?.id || '') === id)
-                : data;
-            const trimmed = filteredById.slice(0, safeLimit);
+            const includedByKey = new Map();
+            const collected = [];
 
-            const normalizedJson = json && typeof json === 'object'
-                ? { ...json, data: trimmed }
-                : { data: trimmed };
+            let offset = 0;
+            let pageGuard = 0;
+            while (collected.length < safeLimit && pageGuard < 8) {
+                pageGuard += 1;
+                const pageJson = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`, { auth: !!getFlarumToken() });
+                const posts = Array.isArray(pageJson?.data) ? pageJson.data : [];
+                const included = Array.isArray(pageJson?.included) ? pageJson.included : [];
+                included.forEach((item) => {
+                    if (!item || !item.type || item.id == null) return;
+                    includedByKey.set(`${item.type}:${item.id}`, item);
+                });
+
+                posts.forEach((post) => {
+                    if (id && String(post?.relationships?.user?.data?.id || '') !== id) return;
+                    if (replyOnly) {
+                        const floor = Number(post?.attributes?.number);
+                        if (!Number.isFinite(floor) || floor <= 1) return;
+                    }
+                    collected.push(post);
+                });
+
+                const nextOffset = parseOffsetFromPageLink(pageJson?.links?.next);
+                if (nextOffset == null || posts.length === 0) break;
+                offset = nextOffset;
+            }
+
+            const normalizedJson = {
+                data: collected.slice(0, safeLimit),
+                included: Array.from(includedByKey.values())
+            };
 
             return { json: normalizedJson, usedQuery: q };
         } catch (e) {
@@ -2692,7 +2715,7 @@ function renderForumThread(postData) {
                                 }
                             </div>
                             <div>
-                                <div class="poster-name ${post.isOp ? 'op' : ''}">${authorHtml}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
+                                <div class="poster-name ${post.isOp ? 'op' : ''}">${authorHtml}${post.isOp ? '<span class="op-badge">[楼主]</span>' : ''}</div>
                                 <div style="font-size: 11px; color: #999;">${post.authorLevel}${post.authorPoints != null ? ` · 积分 ${post.authorPoints}` : ''}</div>
                             </div>
                         </div>
@@ -2808,13 +2831,8 @@ async function renderPublicUserPage() {
         }
 
         try {
-            const { json: postsJson } = await flarumLoadUserRecentPosts({ userId, username, limit: 10 });
-            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => {
-                if (isDeletedPostResource(p)) return false;
-                if (String(p?.relationships?.user?.data?.id || '') !== String(userId || '')) return false;
-                const floor = Number(p?.attributes?.number);
-                return Number.isFinite(floor) && floor > 1;
-            });
+            const { json: postsJson } = await flarumLoadUserRecentPosts({ userId, username, limit: 10, onlyReplies: true });
+            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => !isDeletedPostResource(p));
             const included = postsJson?.included || [];
             replies = posts.map((p) => {
                 const discussionId = p.relationships?.discussion?.data?.id;
@@ -3552,7 +3570,7 @@ function insertNewCommentToPage(comment, postData) {
                 <div class="post-author">
                     <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
                     <div class="author-info">
-                        <div class="author-name">${authorHtml}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
+                        <div class="author-name">${authorHtml}${isOpReply ? '<span class="op-badge">[楼主]</span>' : ''}</div>
                         <div class="author-level">${comment.authorLevel}${comment.authorPoints != null ? ` · 积分 ${comment.authorPoints}` : ''}</div>
                     </div>
                 </div>

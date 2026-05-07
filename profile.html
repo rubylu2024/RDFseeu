@@ -1400,7 +1400,7 @@
                 const [stats, discussions, comments] = await Promise.all([
                     fetchUserStats(userId, context.username),
                     fetchUserDiscussions(context.username),
-                    fetchUserComments(userId)
+                    fetchUserComments(userId, context.username)
                 ]);
                 activityState.discussions = Array.isArray(discussions) ? discussions : [];
                 activityState.comments = Array.isArray(comments) ? comments : [];
@@ -1728,12 +1728,26 @@
                 ]);
 
                 stats.posts = discussionsData?.data?.length || 0;
-                const posts = Array.isArray(postsData?.data) ? postsData.data : [];
-                const ownedPosts = posts.filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''));
-                const replyCount = ownedPosts.filter((post) => {
-                    const floor = Number(post?.attributes?.number);
-                    return Number.isFinite(floor) && floor > 1;
-                }).length;
+                const firstPagePosts = Array.isArray(postsData?.data) ? postsData.data : [];
+                let offset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(postsData?.links?.next) : null;
+                const collected = [...firstPagePosts];
+                let pageGuard = 0;
+                while (offset != null && collected.length < 200 && pageGuard < 6) {
+                    pageGuard += 1;
+                    const pageJson = await flarumRequest(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(String(userId))}&page[limit]=50&page[offset]=${offset}`, { auth: true });
+                    const pagePosts = Array.isArray(pageJson?.data) ? pageJson.data : [];
+                    collected.push(...pagePosts);
+                    offset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(pageJson?.links?.next) : null;
+                    if (pagePosts.length === 0) break;
+                }
+
+                const replyCount = collected
+                    .filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''))
+                    .filter((post) => {
+                        const floor = Number(post?.attributes?.number);
+                        return Number.isFinite(floor) && floor > 1;
+                    }).length;
+
                 stats.comments = replyCount;
             } catch (error) {
                 console.error('获取用户统计失败:', error);
@@ -1752,18 +1766,60 @@
             }
         }
 
-        async function fetchUserComments(userId) {
+        async function fetchUserComments(userId, username) {
             try {
-                const data = await flarumRequest(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(String(userId))}&page[limit]=30&include=discussion`, { auth: true });
-                const posts = Array.isArray(data?.data) ? data.data : [];
-                const comments = posts.filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''))
-                    .filter((post) => {
-                        const floor = Number(post?.attributes?.number);
-                        return Number.isFinite(floor) && floor > 1;
-                    })
-                    .sort((a, b) => String(b?.attributes?.createdAt || '').localeCompare(String(a?.attributes?.createdAt || '')));
-                comments.included = data?.included || [];
-                return comments;
+                const id = userId == null ? '' : String(userId);
+                const name = typeof username === 'string' ? username.trim() : '';
+
+                const queries = [];
+                if (id) {
+                    queries.push(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(id)}&include=discussion`);
+                }
+                if (name) {
+                    queries.push(`/posts?sort=-createdAt&filter[author]=${encodeURIComponent(name)}&include=discussion`);
+                    queries.push(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(name)}&include=discussion`);
+                }
+
+                let lastError = null;
+                for (const q of queries) {
+                    try {
+                        const includedByKey = new Map();
+                        const replies = [];
+
+                        let offset = 0;
+                        let pageGuard = 0;
+                        while (replies.length < 60 && pageGuard < 8) {
+                            pageGuard += 1;
+                            const data = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`, { auth: true });
+                            const posts = Array.isArray(data?.data) ? data.data : [];
+                            const included = Array.isArray(data?.included) ? data.included : [];
+                            included.forEach((item) => {
+                                if (!item || !item.type || item.id == null) return;
+                                includedByKey.set(`${item.type}:${item.id}`, item);
+                            });
+
+                            posts.forEach((post) => {
+                                if (id && String(post?.relationships?.user?.data?.id || '') !== id) return;
+                                const floor = Number(post?.attributes?.number);
+                                if (!Number.isFinite(floor) || floor <= 1) return;
+                                replies.push(post);
+                            });
+
+                            const nextOffset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(data?.links?.next) : null;
+                            if (nextOffset == null || posts.length === 0) break;
+                            offset = nextOffset;
+                        }
+
+                        replies.sort((a, b) => String(b?.attributes?.createdAt || '').localeCompare(String(a?.attributes?.createdAt || '')));
+                        replies.included = Array.from(includedByKey.values());
+                        return replies;
+                    } catch (error) {
+                        lastError = error;
+                    }
+                }
+
+                if (lastError) throw lastError;
+                return [];
             } catch (error) {
                 console.error('获取用户回复失败:', error);
                 return [];
@@ -1933,7 +1989,13 @@
                 });
                 resetPasswordForm();
                 closePasswordModal();
-                showPageMessage('密码已提交修改，请使用新密码重新登录时注意区分大小写。', 'success');
+                showPageMessage('密码修改成功。为保障账号安全，已自动退出登录，请重新登录。', 'success');
+                localStorage.removeItem('flarumToken');
+                localStorage.removeItem('flarumUserId');
+                localStorage.removeItem('flarumUsername');
+                window.setTimeout(() => {
+                    window.location.href = `login.html?redirect=${encodeURIComponent('profile.html')}`;
+                }, 1200);
             } catch (error) {
                 console.error('修改密码失败:', error);
                 let message = typeof getFriendlyErrorMessage === 'function'
