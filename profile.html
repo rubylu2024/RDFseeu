@@ -1208,21 +1208,6 @@
                                             <div class="profile-column">
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
-                                                        <h3>基本资料</h3>
-                                                    </div>
-                                                    <div class="panel-body">
-                                                        <div class="info-table">
-                                                            <div class="info-row"><div class="info-label">用户名</div><div class="info-value" id="info-username">-</div></div>
-                                                            <div class="info-row"><div class="info-label">昵称</div><div class="info-value" id="info-displayname">-</div></div>
-                                                            <div class="info-row"><div class="info-label">邮箱</div><div class="info-value" id="info-email">-</div></div>
-                                                            <div class="info-row"><div class="info-label">用户组</div><div class="info-value" id="info-group">-</div></div>
-                                                            <div class="info-row"><div class="info-label">信任等级</div><div class="info-value" id="info-trust">-</div></div>
-                                                        </div>
-                                                    </div>
-                                                </section>
-
-                                                <section class="profile-panel">
-                                                    <div class="panel-head">
                                                         <h3>资料设置</h3>
                                                     </div>
                                                     <div class="panel-body">
@@ -1508,11 +1493,6 @@
             document.getElementById('meta-username').textContent = context.username;
             document.getElementById('meta-user-id').textContent = context.userId || '-';
             document.getElementById('meta-joined').textContent = formatProfileDate(context.joinedAt);
-            document.getElementById('info-username').textContent = context.username;
-            document.getElementById('info-displayname').textContent = context.displayName;
-            document.getElementById('info-email').textContent = context.email;
-            document.getElementById('info-group').textContent = context.groupNames.join('，');
-            document.getElementById('info-trust').textContent = context.trustTitle;
             document.getElementById('info-last-active').textContent = formatProfileDate(context.lastActiveAt);
             document.getElementById('status-login').textContent = '已登录';
             document.getElementById('status-activation').textContent = context.isActivated ? '已激活' : '待激活';

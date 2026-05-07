@@ -226,6 +226,13 @@
             const messageContainer = document.getElementById('message-container');
             const registerLink = document.getElementById('register-link');
             
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const redirect = params.get('redirect');
+                if (redirect) {
+                    registerLink.href = `register.html?redirect=${encodeURIComponent(redirect)}`;
+                }
+            } catch (_) {}
 
             
             // 处理登录表单提交
@@ -246,13 +253,8 @@
                 try {
                     const success = await flarumLogin(username, password);
                     if (success) {
-                        showMessage('登录成功，正在跳转...', 'success');
-                        setTimeout(() => {
-                            // 获取跳转目标页面，默认返回首页
-                            const urlParams = new URLSearchParams(window.location.search);
-                            const redirectUrl = urlParams.get('redirect') || 'index.html';
-                            window.location.href = redirectUrl;
-                        }, 1500);
+                        const redirectUrl = typeof resolveAuthReturnUrl === 'function' ? resolveAuthReturnUrl() : 'index.html';
+                        window.location.href = redirectUrl;
                     } else {
                         const friendlyMessage = typeof consumeLastUserErrorMessage === 'function'
                             ? (consumeLastUserErrorMessage() || '登录失败，请检查账号和密码后重试。')
@@ -298,7 +300,6 @@
     </script>
 </body>
 </html>
-
 
 
 

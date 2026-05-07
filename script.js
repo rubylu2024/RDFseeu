@@ -1,4 +1,4 @@
-﻿// 页面加载完成后执行
+﻿﻿﻿// 页面加载完成后执行
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
@@ -15,6 +15,144 @@ function getFlarumApiBase() {
 
 function getFlarumToken() {
     return localStorage.getItem('flarumToken');
+}
+
+const AUTH_RETURN_STORAGE_KEY = 'auth:returnTo';
+
+function isAuthPagePathname(pathname) {
+    const p = String(pathname || '').toLowerCase();
+    return p.endsWith('/login.html') || p.endsWith('/register.html');
+}
+
+function getSafeSameOriginUrl(rawUrl) {
+    if (!rawUrl) return null;
+    try {
+        const url = new URL(String(rawUrl), window.location.href);
+        if (url.origin !== window.location.origin) return null;
+        const pathname = String(url.pathname || '').toLowerCase();
+        if (pathname.endsWith('/login.html') || pathname.endsWith('/register.html')) return null;
+        return url.href;
+    } catch {
+        return null;
+    }
+}
+
+function storeAuthReturnUrlIfNeeded(rawUrl) {
+    const safeUrl = getSafeSameOriginUrl(rawUrl);
+    if (!safeUrl) return;
+
+    const existing = sessionStorage.getItem(AUTH_RETURN_STORAGE_KEY);
+    const existingSafe = existing ? getSafeSameOriginUrl(existing) : null;
+    if (existingSafe) return;
+
+    sessionStorage.setItem(AUTH_RETURN_STORAGE_KEY, safeUrl);
+}
+
+function consumeAuthReturnUrl() {
+    const value = sessionStorage.getItem(AUTH_RETURN_STORAGE_KEY);
+    if (value) sessionStorage.removeItem(AUTH_RETURN_STORAGE_KEY);
+    return value ? getSafeSameOriginUrl(value) : null;
+}
+
+function getAuthRedirectParamUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const redirectParam = params.get('redirect');
+        return redirectParam ? getSafeSameOriginUrl(redirectParam) : null;
+    } catch {
+        return null;
+    }
+}
+
+function resolveAuthReturnUrl() {
+    return getAuthRedirectParamUrl() || consumeAuthReturnUrl() || getSafeSameOriginUrl(document.referrer) || 'index.html';
+}
+
+function ensureToastOverlay() {
+    let overlay = document.getElementById('ui-toast-overlay');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'ui-toast-overlay';
+    overlay.className = 'ui-toast-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function showUiToast(options) {
+    const message = typeof options?.message === 'string' ? options.message : '';
+    const type = typeof options?.type === 'string' ? options.type : '';
+    const actionText = typeof options?.actionText === 'string' ? options.actionText : '';
+    const onAction = typeof options?.onAction === 'function' ? options.onAction : null;
+    const autoCloseMs = typeof options?.autoCloseMs === 'number' && isFinite(options.autoCloseMs) && options.autoCloseMs > 0 ? Math.floor(options.autoCloseMs) : 0;
+
+    const overlay = ensureToastOverlay();
+    overlay.innerHTML = `
+        <div class="ui-toast-card ${escapeHtml(type)}" role="dialog" aria-modal="true">
+            <div class="ui-toast-head">
+                <div class="ui-toast-title">${type === 'error' ? '提示' : '提示'}</div>
+                <button type="button" class="ui-toast-close" aria-label="关闭">×</button>
+            </div>
+            <div class="ui-toast-body">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
+            ${actionText ? `<div class="ui-toast-actions"><button type="button" class="ui-toast-action">${escapeHtml(actionText)}</button></div>` : ''}
+        </div>
+    `;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+
+    const closeBtn = overlay.querySelector('.ui-toast-close');
+    const actionBtn = overlay.querySelector('.ui-toast-action');
+
+    let closed = false;
+    const close = () => {
+        if (closed) return;
+        closed = true;
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML = '';
+    };
+
+    if (closeBtn) closeBtn.onclick = close;
+    if (actionBtn) {
+        actionBtn.onclick = () => {
+            if (onAction) onAction();
+        };
+    }
+
+    if (autoCloseMs > 0) {
+        window.setTimeout(close, autoCloseMs);
+    }
+
+    return { close };
+}
+
+function setupAuthReturnCapture() {
+    document.addEventListener('click', (event) => {
+        const anchor = event.target && event.target.closest ? event.target.closest('a') : null;
+        if (!anchor) return;
+        const hrefAttr = anchor.getAttribute('href') || '';
+        if (!hrefAttr) return;
+        const href = String(hrefAttr).trim();
+        const normalized = href.split('#')[0];
+        const isLogin = /(^|\/)login\.html(\?|$)/i.test(normalized);
+        const isRegister = /(^|\/)register\.html(\?|$)/i.test(normalized);
+        if (!isLogin && !isRegister) return;
+        if (isAuthPagePathname(window.location.pathname)) return;
+        storeAuthReturnUrlIfNeeded(window.location.href);
+    }, true);
+
+    if (isAuthPagePathname(window.location.pathname)) {
+        const existing = sessionStorage.getItem(AUTH_RETURN_STORAGE_KEY);
+        const existingSafe = existing ? getSafeSameOriginUrl(existing) : null;
+        if (!existingSafe) {
+            const fromParam = getAuthRedirectParamUrl();
+            if (fromParam) {
+                storeAuthReturnUrlIfNeeded(fromParam);
+            } else if (document.referrer) {
+                storeAuthReturnUrlIfNeeded(document.referrer);
+            }
+        }
+    }
 }
 
 function clearFlarumToken() {
@@ -2155,6 +2293,7 @@ window.addEventListener('DOMContentLoaded', function() {
     });
 
     cleanupLegacyLocalStorage();
+    setupAuthReturnCapture();
     
     // 测试Flarum API连接和动态加载首页热帖（合并为一个调用，避免重复请求）
     if (isFlarumConfigured()) {
@@ -3463,7 +3602,7 @@ function updateUserLinks() {
     } else {
         userLinksContainer.innerHTML = `
             <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" id="login-btn">登录</a>
-            <a href="register.html" id="register-btn">注册</a>
+            <a href="register.html?redirect=${encodeURIComponent(window.location.href)}" id="register-btn">注册</a>
         `;
     }
 }

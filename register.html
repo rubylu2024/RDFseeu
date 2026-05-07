@@ -335,6 +335,15 @@
             const submitBtn = document.getElementById('register-btn-submit');
             const togglePasswordBtn = document.getElementById('toggle-password');
             const toggleConfirmPasswordBtn = document.getElementById('toggle-confirm-password');
+            const loginLink = document.querySelector('.register-footer a[href="login.html"]');
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const redirect = params.get('redirect');
+                if (redirect && loginLink) {
+                    loginLink.href = `login.html?redirect=${encodeURIComponent(redirect)}`;
+                }
+            } catch (_) {}
 
             function getEyeIconMarkup(isVisible) {
                 if (isVisible) {
@@ -407,18 +416,29 @@
                     const normalizedNickname = nickname.trim() || trimmedUsername;
 
                     await customRegister(trimmedUsername, normalizedNickname, email.trim(), password);
-                    registerForm.reset();
-                    setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
-                    setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
-                    showMessage(
-                        '注册信息已提交成功，请前往注册邮箱点击激活链接完成账号激活。\n' +
-                        '账号未激活前，将无法完成注册、查看帖子、发帖或回帖。\n' +
-                        '如果长时间没有收到邮件，请检查垃圾邮箱，或联系网管处理。',
-                        'success'
-                    );
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '注册';
-                    hideLoading();
+                    const loginSuccess = typeof flarumLogin === 'function'
+                        ? await flarumLogin(trimmedUsername, password)
+                        : false;
+
+                    if (!loginSuccess) {
+                        showMessage('注册成功，但自动登录失败，请返回登录页面手动登录。', 'success');
+                        return;
+                    }
+
+                    const redirectUrl = typeof resolveAuthReturnUrl === 'function' ? resolveAuthReturnUrl() : 'index.html';
+                    if (typeof showUiToast === 'function') {
+                        showUiToast({
+                            type: 'success',
+                            message: '注册成功，已为你自动登录。\n请前往邮箱激活账号后再正常发帖/回帖。\n10 秒后将自动返回之前的页面。',
+                            actionText: '立即返回',
+                            onAction: () => { window.location.href = redirectUrl; },
+                            autoCloseMs: 10000
+                        });
+                    }
+
+                    window.setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 10000);
                 } catch (error) {
                     console.error('注册失败:', error);
                     let errorMsg = '注册失败';
@@ -454,6 +474,7 @@
                             : error.message;
                     }
                     showMessage(errorMsg, 'error');
+                } finally {
                     submitBtn.disabled = false;
                     submitBtn.textContent = '注册';
                     hideLoading();

@@ -1169,6 +1169,91 @@ footer {
     text-decoration: none;
 }
 
+.ui-toast-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(48, 28, 18, 0.62);
+    z-index: 10030;
+}
+
+.ui-toast-overlay.open {
+    display: flex;
+}
+
+.ui-toast-card {
+    width: 100%;
+    max-width: 520px;
+    border: 1px solid #7c5b3d;
+    background: #fffaf0;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+.ui-toast-card.success {
+    border-color: #7e9b62;
+}
+
+.ui-toast-card.error {
+    border-color: #bf6f6f;
+}
+
+.ui-toast-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #c7af88;
+    background: linear-gradient(to bottom, #efe2c6 0%, #e4cfaa 100%);
+}
+
+.ui-toast-title {
+    font-size: 16px;
+    color: #6b2d23;
+    font-weight: bold;
+}
+
+.ui-toast-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #8a6a45;
+    background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
+    color: #5d432f;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.ui-toast-body {
+    padding: 14px;
+    color: #5b4733;
+    line-height: 1.8;
+}
+
+.ui-toast-actions {
+    padding: 0 14px 14px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.ui-toast-action {
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid #7c3426;
+    background: linear-gradient(to bottom, #d44a37 0%, #b52f22 100%);
+    color: #fff7ea;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.ui-toast-action:hover {
+    background: linear-gradient(to bottom, #bf3a2a 0%, #9f2317 100%);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     /* 顶部导航栏 */
@@ -1386,5 +1471,4 @@ footer {
         font-size: 11px;
     }
 }
-
 
