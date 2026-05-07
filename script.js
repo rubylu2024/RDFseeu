@@ -735,6 +735,33 @@ async function flarumLoadPostsSearchPage({ query, offset, limit, sortOrder }) {
     return { json };
 }
 
+async function flarumLoadUserRecentPosts({ userId, username, limit }) {
+    const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(20, Math.floor(limit)) : 10;
+    const id = userId == null ? '' : String(userId);
+    const name = typeof username === 'string' ? username.trim() : '';
+
+    const queries = [];
+    if (id) {
+        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[user]=${encodeURIComponent(id)}&include=discussion`);
+    }
+    if (name) {
+        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[author]=${encodeURIComponent(name)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[user]=${encodeURIComponent(name)}&include=discussion`);
+    }
+
+    let lastError = null;
+    for (const q of queries) {
+        try {
+            const json = await flarumRequest(q, { auth: !!getFlarumToken() });
+            return { json, usedQuery: q };
+        } catch (e) {
+            lastError = e;
+        }
+    }
+    if (lastError) throw lastError;
+    return { json: null, usedQuery: '' };
+}
+
 async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder }) {
     const q = typeof query === 'string' ? query.trim() : '';
     const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(15, Math.floor(limit)) : 15;
@@ -2629,8 +2656,8 @@ async function renderPublicUserPage() {
         }
 
         try {
-            const postsJson = await flarumRequest(`/posts?sort=-createdAt&page[limit]=10&filter[user]=${encodeURIComponent(String(userId))}&include=discussion`, { auth: false });
-            const posts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+            const { json: postsJson } = await flarumLoadUserRecentPosts({ userId, username, limit: 10 });
+            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => !isDeletedPostResource(p));
             const included = postsJson?.included || [];
             replies = posts.map((p) => {
                 const discussionId = p.relationships?.discussion?.data?.id;

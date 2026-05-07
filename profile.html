@@ -236,6 +236,59 @@
             color: #8a2f2f;
         }
 
+        .toast-stack {
+            position: fixed;
+            top: 86px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: grid;
+            gap: 10px;
+            width: min(520px, calc(100vw - 28px));
+            z-index: 10050;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: start;
+            padding: 12px 12px;
+            border: 1px solid #c3a072;
+            background: #fff6df;
+            color: #6b492f;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+        }
+
+        .toast.success {
+            border-color: #7e9b62;
+            background: #eef8e2;
+            color: #45622f;
+        }
+
+        .toast.error {
+            border-color: #bf6f6f;
+            background: #fff0f0;
+            color: #8a2f2f;
+        }
+
+        .toast-message {
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        .toast-close {
+            width: 34px;
+            height: 34px;
+            border: 1px solid #8a6a45;
+            background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
+            color: #5d432f;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
         .profile-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -704,8 +757,6 @@
                                         <a href="/">论坛首页</a> &gt; <span>个人资料</span>
                                     </div>
 
-                                    <div id="page-message" class="profile-message"></div>
-
                                     <div id="loading-overlay" class="loading-overlay">
                                         <div class="loading-spinner"></div>
                                     </div>
@@ -778,7 +829,7 @@
                                                         <h3>资料设置</h3>
                                                     </div>
                                                     <div class="panel-body">
-                                                        <form id="profile-form" class="profile-form">
+                                                        <form id="profile-nickname-form" class="profile-form">
                                                             <div class="form-grid">
                                                                 <div class="form-group">
                                                                     <label>用户名</label>
@@ -791,14 +842,23 @@
                                                                 <div class="form-group full">
                                                                     <label for="editor-nickname">昵称</label>
                                                                     <input type="text" id="editor-nickname" maxlength="30" placeholder="请输入昵称">
+                                                                    <small>这里显示的是你当前的昵称（不是用户名）。</small>
                                                                 </div>
+                                                            </div>
+                                                            <div class="form-actions">
+                                                                <button type="submit" class="retro-btn" id="save-nickname-btn">保存昵称</button>
+                                                            </div>
+                                                        </form>
+                                                        <div style="height: 12px;"></div>
+                                                        <form id="profile-signature-form" class="profile-form">
+                                                            <div class="form-grid">
                                                                 <div class="form-group full">
                                                                     <label for="editor-signature">个性签名</label>
                                                                     <textarea id="editor-signature" maxlength="200" placeholder="写一句简单的自我介绍、心情签名或常用说明"></textarea>
                                                                 </div>
                                                             </div>
                                                             <div class="form-actions">
-                                                                <button type="submit" class="retro-btn" id="save-profile-btn">保存资料</button>
+                                                                <button type="submit" class="retro-btn" id="save-signature-btn">保存个性签名</button>
                                                             </div>
                                                         </form>
                                                     </div>
@@ -930,7 +990,6 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const profileContent = document.getElementById('profile-content');
             const errorContent = document.getElementById('error-content');
-            const pageMessage = document.getElementById('page-message');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
             const userId = localStorage.getItem('flarumUserId');
 
@@ -939,9 +998,7 @@
             profileContent.style.display = 'none';
             errorContent.style.display = 'none';
             errorContent.innerHTML = '';
-            pageMessage.style.display = 'none';
-            pageMessage.textContent = '';
-            pageMessage.className = 'profile-message';
+            clearToasts();
 
             if (!token || !userId) {
                 showProfileError('请先登录后再查看个人资料。', true);
@@ -1038,7 +1095,7 @@
                 trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '新手上路',
                 title,
                 avatarUrl,
-                joinedAt: attributes.joinedAt || '',
+                joinedAt: attributes.joinedAt || attributes.joinTime || attributes.createdAt || attributes.registeredAt || '',
                 lastActiveAt: attributes.lastSeenAt || attributes.lastActivityAt || '',
                 groupNames: groupNames.length ? groupNames : ['普通会员'],
                 badgeHTML,
@@ -1090,7 +1147,7 @@
         function renderProfileEditor(context) {
             document.getElementById('editor-username').textContent = context.username;
             document.getElementById('editor-email').textContent = context.email;
-            document.getElementById('editor-nickname').value = context.rawNickname || context.username;
+            document.getElementById('editor-nickname').value = context.rawNickname || context.displayName || '';
             document.getElementById('editor-signature').value = context.signature;
             document.getElementById('security-username').textContent = context.username;
             document.getElementById('security-email').textContent = maskEmail(context.email);
@@ -1205,7 +1262,8 @@
             const logoutBtn = document.getElementById('logout-btn');
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
-            const profileForm = document.getElementById('profile-form');
+            const nicknameForm = document.getElementById('profile-nickname-form');
+            const signatureForm = document.getElementById('profile-signature-form');
             const passwordForm = document.getElementById('password-form');
             const resetPasswordBtn = document.getElementById('reset-password-btn');
             const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
@@ -1244,7 +1302,8 @@
                 handleAvatarUpload(this);
             };
 
-            profileForm.onsubmit = handleProfileSave;
+            nicknameForm.onsubmit = handleNicknameSave;
+            signatureForm.onsubmit = handleSignatureSave;
             passwordForm.onsubmit = handlePasswordSave;
 
             resetPasswordBtn.onclick = resetPasswordForm;
@@ -1324,19 +1383,16 @@
             }
         }
 
-        async function handleProfileSave(event) {
+        async function handleNicknameSave(event) {
             event.preventDefault();
 
             if (!currentProfileContext) return;
 
-            const saveBtn = document.getElementById('save-profile-btn');
             const nicknameInput = document.getElementById('editor-nickname');
-            const signatureInput = document.getElementById('editor-signature');
+            const saveBtn = document.getElementById('save-nickname-btn');
             const userId = localStorage.getItem('flarumUserId');
             const normalizedNickname = nicknameInput.value.trim();
-            const normalizedSignature = signatureInput.value.trim();
-            const fallbackNickname = currentProfileContext.username;
-            const effectiveNickname = normalizedNickname || fallbackNickname;
+            const effectiveNickname = normalizedNickname || currentProfileContext.rawNickname || currentProfileContext.displayName || currentProfileContext.username;
 
             if (effectiveNickname.length > 30) {
                 showPageMessage('昵称最多可填写 30 个字符。', 'error');
@@ -1344,74 +1400,83 @@
                 return;
             }
 
+            const previousEffectiveNickname = currentProfileContext.rawNickname || currentProfileContext.displayName || currentProfileContext.username;
+            const nicknameChanged = effectiveNickname !== previousEffectiveNickname;
+            if (!nicknameChanged) return showPageMessage('昵称没有变化，无需重复保存。', 'success');
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            try {
+                await updateUserAttributes(userId, { nickname: effectiveNickname });
+
+                const refreshedUserData = await fetchUserData(userId);
+                const refreshedContext = buildProfileContext(refreshedUserData);
+                const refreshedEffectiveNickname = refreshedContext.rawNickname || refreshedContext.displayName || refreshedContext.username;
+                const nicknameApplied = refreshedEffectiveNickname === effectiveNickname;
+                if (!nicknameApplied) throw new Error('昵称未实际保存成功');
+
+                localStorage.setItem('flarumUsername', refreshedContext.displayName);
+                window.dispatchEvent(new Event('flarum-auth-changed'));
+
+                pendingProfileMessage = { message: '昵称已保存。', type: 'success' };
+                await initProfilePage();
+            } catch (error) {
+                console.error('保存个人资料失败:', error);
+                let message = typeof getFriendlyErrorMessage === 'function'
+                    ? getFriendlyErrorMessage(error, 'profile')
+                    : '昵称保存失败，请稍后再试。';
+                if (/昵称未实际保存成功/.test(String(error?.message || ''))) message = '昵称提交成功了，但后端没有实际保存这次修改，请稍后重试或联系网管检查昵称字段是否已开启。';
+
+                showPageMessage(message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存昵称';
+            }
+        }
+
+        async function handleSignatureSave(event) {
+            event.preventDefault();
+
+            if (!currentProfileContext) return;
+
+            const signatureInput = document.getElementById('editor-signature');
+            const saveBtn = document.getElementById('save-signature-btn');
+            const userId = localStorage.getItem('flarumUserId');
+            const normalizedSignature = signatureInput.value.trim();
+
             if (normalizedSignature.length > 200) {
                 showPageMessage('个性签名最多可填写 200 个字符。', 'error');
                 signatureInput.focus();
                 return;
             }
 
-            const previousEffectiveNickname = currentProfileContext.rawNickname || currentProfileContext.username;
-            const nicknameChanged = effectiveNickname !== previousEffectiveNickname;
             const signatureChanged = normalizedSignature !== (currentProfileContext.signature || '');
-
-            if (!nicknameChanged && !signatureChanged) {
-                showPageMessage('资料没有变化，无需重复保存。', 'success');
-                return;
-            }
+            if (!signatureChanged) return showPageMessage('个性签名没有变化，无需重复保存。', 'success');
 
             saveBtn.disabled = true;
             saveBtn.textContent = '保存中...';
 
             try {
-                const attributesToUpdate = {};
-                if (nicknameChanged) {
-                    attributesToUpdate.nickname = effectiveNickname;
-                }
-                if (signatureChanged) {
-                    attributesToUpdate.bio = normalizedSignature;
-                }
-
-                await updateUserAttributes(userId, attributesToUpdate);
+                await updateUserAttributes(userId, { bio: normalizedSignature });
 
                 const refreshedUserData = await fetchUserData(userId);
                 const refreshedContext = buildProfileContext(refreshedUserData);
-                const refreshedEffectiveNickname = refreshedContext.rawNickname || refreshedContext.username;
-                const nicknameApplied = !nicknameChanged || refreshedEffectiveNickname === effectiveNickname;
-                const signatureApplied = !signatureChanged || (refreshedContext.signature || '') === normalizedSignature;
+                const signatureApplied = (refreshedContext.signature || '') === normalizedSignature;
+                if (!signatureApplied) throw new Error('个性签名未实际保存成功');
 
-                if (!nicknameApplied && !signatureApplied) {
-                    throw new Error('资料未实际保存成功');
-                }
-
-                localStorage.setItem('flarumUsername', refreshedContext.displayName);
-                window.dispatchEvent(new Event('flarum-auth-changed'));
-
-                let successText = '';
-                if (nicknameApplied && signatureApplied) {
-                    successText = nicknameChanged && signatureChanged
-                        ? '昵称和个性签名已保存。'
-                        : (nicknameChanged ? '昵称已保存。' : '个性签名已保存。');
-                } else if (nicknameApplied) {
-                    successText = '昵称已保存，但个性签名暂未生效，可能是论坛后端暂未开启该字段。';
-                } else {
-                    successText = '个性签名已保存，但昵称暂未生效，请稍后重试。';
-                }
-
-                pendingProfileMessage = { message: successText, type: nicknameApplied && signatureApplied ? 'success' : 'error' };
+                pendingProfileMessage = { message: '个性签名已保存。', type: 'success' };
                 await initProfilePage();
             } catch (error) {
-                console.error('保存个人资料失败:', error);
+                console.error('保存个性签名失败:', error);
                 let message = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'profile')
-                    : '个人资料保存失败，请稍后再试。';
-                if (/资料未实际保存成功/.test(String(error?.message || ''))) {
-                    message = '资料提交成功了，但后端没有实际保存这次修改，请稍后重试或联系网管检查对应字段是否已开启。';
-                }
-
+                    : '个性签名保存失败，请稍后再试。';
+                if (/个性签名未实际保存成功/.test(String(error?.message || ''))) message = '个性签名提交成功了，但后端没有实际保存这次修改，请稍后重试或联系网管检查对应字段是否已开启。';
                 showPageMessage(message, 'error');
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = '保存资料';
+                saveBtn.textContent = '保存个性签名';
             }
         }
 
@@ -1503,10 +1568,44 @@
         }
 
         function showPageMessage(message, type) {
-            const pageMessage = document.getElementById('page-message');
-            pageMessage.textContent = message;
-            pageMessage.className = `profile-message ${type || ''}`.trim();
-            pageMessage.style.display = 'block';
+            showToast(message, type);
+        }
+
+        function ensureToastStack() {
+            let stack = document.getElementById('toast-stack');
+            if (stack) return stack;
+            stack = document.createElement('div');
+            stack.id = 'toast-stack';
+            stack.className = 'toast-stack';
+            document.body.appendChild(stack);
+            return stack;
+        }
+
+        function clearToasts() {
+            const stack = document.getElementById('toast-stack');
+            if (stack) stack.innerHTML = '';
+        }
+
+        function showToast(message, type) {
+            const stack = ensureToastStack();
+            const toast = document.createElement('div');
+            toast.className = `toast ${type || ''}`.trim();
+            toast.setAttribute('role', 'status');
+            toast.innerHTML = `
+                <div class="toast-message">${escapeHtml(message)}</div>
+                <button type="button" class="toast-close" aria-label="关闭">×</button>
+            `;
+            stack.appendChild(toast);
+
+            const closeBtn = toast.querySelector('.toast-close');
+            let closed = false;
+            const close = () => {
+                if (closed) return;
+                closed = true;
+                toast.remove();
+            };
+            closeBtn.onclick = close;
+            window.setTimeout(close, 3000);
         }
 
         function showProfileError(message, showLoginLink) {
@@ -1517,7 +1616,15 @@
 
         function formatProfileDate(value) {
             if (!value) return '暂无记录';
-            const date = new Date(value);
+            let raw = value;
+            if (typeof raw === 'string' && /^\d+$/.test(raw.trim())) {
+                const asNum = Number(raw.trim());
+                if (Number.isFinite(asNum)) raw = asNum;
+            }
+            if (typeof raw === 'number' && Number.isFinite(raw) && raw < 100000000000) {
+                raw = raw * 1000;
+            }
+            const date = new Date(raw);
             if (Number.isNaN(date.getTime())) return '暂无记录';
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
