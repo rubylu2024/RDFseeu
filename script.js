@@ -349,6 +349,36 @@ function formatFlarumTime(isoString) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+function formatViewCount(viewCount) {
+    if (typeof viewCount === 'number' && isFinite(viewCount) && viewCount >= 0) return String(viewCount);
+    return '-';
+}
+
+function escapeHtml(raw) {
+    const s = typeof raw === 'string' ? raw : '';
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildUserProfileHref(userId) {
+    const id = userId == null ? '' : String(userId);
+    if (!id) return '#';
+    const currentUserId = localStorage.getItem('flarumUserId');
+    if (getFlarumToken() && currentUserId && String(currentUserId) === id) return 'profile.html';
+    return `user.html?id=${encodeURIComponent(id)}`;
+}
+
+function buildUserLinkHtml(userId, displayName) {
+    const label = typeof displayName === 'string' ? displayName : '';
+    const href = buildUserProfileHref(userId);
+    if (href === '#') return label;
+    return `<a href="${href}" class="user-link" style="color: #0066cc; text-decoration: none;">${label}</a>`;
+}
+
 function pickIncluded(included, type, id) {
     if (!Array.isArray(included)) return null;
     return included.find((x) => x && x.type === type && String(x.id) === String(id)) || null;
@@ -467,7 +497,6 @@ function flarumDiscussionToPostData(apiJson) {
     const firstUser = firstUserId ? pickIncluded(included, 'users', firstUserId) : null;
 
     const viewCount = discussion.attributes?.viewCount;
-    const commentCount = discussion.attributes?.commentCount;
 
     const postData = {
         id: Number(discussion.id),
@@ -478,7 +507,7 @@ function flarumDiscussionToPostData(apiJson) {
         authorPoints: getUserPoints(firstUser?.attributes),
         authorAvatar: getUserAvatarUrl(firstUser),
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
-        viewCount: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0),
+        viewCount: typeof viewCount === 'number' ? viewCount : null,
         allowComments: true,
         content: firstPost?.attributes?.contentHtml || firstPost?.attributes?.content || '',
         comments: posts
@@ -569,13 +598,12 @@ async function flarumLoadDiscussionList() {
             const userId = d.relationships?.user?.data?.id;
             const user = userId ? pickIncluded(included, 'users', userId) : null;
             const viewCount = d.attributes?.viewCount;
-            const commentCount = d.attributes?.commentCount;
             return {
                 id: Number(d.id),
                 title: d.attributes?.title || '',
                 author: getPreferredDisplayName(user?.attributes),
                 date: (d.attributes?.createdAt || '').slice(0, 10),
-                views: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0)
+                views: typeof viewCount === 'number' ? viewCount : null
             };
         });
     } catch (error) {
@@ -595,9 +623,6 @@ async function flarumLoadRecentReplies() {
         const seenDiscussionIds = new Set();
         
         for (const post of posts) {
-            // 跳过帖子的第一条（主题帖），只显示回复
-            if (post.attributes?.number === 1) continue;
-            
             const discussionId = post.relationships?.discussion?.data?.id;
             if (!discussionId || seenDiscussionIds.has(discussionId)) continue;
             
@@ -615,10 +640,10 @@ async function flarumLoadRecentReplies() {
                 title: discussion?.attributes?.title || '',
                 author: getPreferredDisplayName(user?.attributes),
                 time: post.attributes?.createdAt || '',
-                content: post.attributes?.content || ''
+                content: post.attributes?.contentHtml || post.attributes?.content || ''
             });
             
-            // 只取5条不重复的回复
+            // 只取5条不重复的回复/主题
             if (results.length >= 5) break;
         }
         
@@ -1280,6 +1305,11 @@ window.addEventListener('DOMContentLoaded', function() {
         updateReplyFormForLoginStatus();
     }
 
+    if (window.location.pathname.includes('user.html')) {
+        updateUserLinks();
+        renderPublicUserPage();
+    }
+
     if (document.querySelector('.forum-posts')) {
         flarumLoadRecentReplies().then(renderPostListIntoIndex).catch((error) => {
             console.error('加载最新回复失败:', error);
@@ -1477,9 +1507,9 @@ function renderForumThread(postData) {
         threadContainer.innerHTML = `
             <div class="thread-header">
                 <div class="thread-title">${postData.title}</div>
-                <span>作者：<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
+                <span>作者：${buildUserLinkHtml(postData.userId, postData.author)}</span> | 
                 <span>发表于：${postData.publishTime}</span> | 
-                <span>浏览：${postData.viewCount}次</span>
+                <span>浏览：${formatViewCount(postData.viewCount)}次</span>
             </div>
             <div class="post" style="padding: 30px 20px; text-align: center;">
                 <div style="font-size: 16px; color: #cc0000; margin-bottom: 12px;">本帖内容仅限登录后查看</div>
@@ -1492,7 +1522,7 @@ function renderForumThread(postData) {
 
     const allPosts = [{
         id: 0,
-        userId: null,
+        userId: postData.userId,
         author: postData.author,
         authorLevel: postData.authorLevel,
         authorAvatar: postData.authorAvatar,
@@ -1593,9 +1623,9 @@ function renderForumThread(postData) {
     threadContainer.innerHTML = `
         <div class="thread-header">
             <div class="thread-title">${postData.title}</div>
-            <span>作者：<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
+            <span>作者：${buildUserLinkHtml(postData.userId, postData.author)}</span> | 
             <span>发表于：${postData.publishTime}</span> | 
-            <span>浏览：${postData.viewCount}次</span>
+            <span>浏览：${formatViewCount(postData.viewCount)}次</span>
             <a href="#" id="delete-discussion-link" style="display: none; margin-left: 10px; color: #cc0000;">删除帖子</a>
         </div>
         
@@ -1613,6 +1643,7 @@ function renderForumThread(postData) {
             
             const quoteHTML = generateQuoteHTML(post.replyTo, allPosts);
             const plainContent = post.content.replace(/<[^>]*>/g, '').substring(0, 50) + (post.content.replace(/<[^>]*>/g, '').length > 50 ? '...' : '');
+            const authorHtml = buildUserLinkHtml(post.userId, post.author);
             
             return `
                 <div class="post" id="post-${post.floor}" data-post-id="${post.id}">
@@ -1626,7 +1657,7 @@ function renderForumThread(postData) {
                                 }
                             </div>
                             <div>
-                                <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
+                                <div class="poster-name ${post.isOp ? 'op' : ''}">${authorHtml}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
                                 <div style="font-size: 11px; color: #999;">${post.authorLevel}${post.authorPoints != null ? ` · 积分 ${post.authorPoints}` : ''}</div>
                             </div>
                         </div>
@@ -1671,6 +1702,157 @@ function renderForumThread(postData) {
             }
         }
     }, 100);
+}
+
+async function renderPublicUserPage() {
+    const container = document.getElementById('public-user-container');
+    if (!container) return;
+
+    if (!isFlarumConfigured()) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">论坛后端未配置</div>';
+        return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('id');
+    if (!userId) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">未指定用户</div>';
+        return;
+    }
+
+    const currentUserId = localStorage.getItem('flarumUserId');
+    if (getFlarumToken() && currentUserId && String(currentUserId) === String(userId)) {
+        window.location.href = 'profile.html';
+        return;
+    }
+
+    container.innerHTML = '<div style="padding: 20px; text-align: center;">加载中...</div>';
+
+    try {
+        const userJson = await flarumRequest(`/users/${encodeURIComponent(String(userId))}`, { auth: false });
+        const user = userJson?.data;
+        if (!user) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">用户不存在或无法访问</div>';
+            return;
+        }
+
+        const attributes = user.attributes || {};
+        const displayName = getPreferredDisplayName(attributes, attributes.username || '');
+        const username = typeof attributes.username === 'string' ? attributes.username : '';
+        const avatarUrl = getUserAvatarUrl(user);
+        const points = getUserPoints(attributes);
+        const joinTimeRaw = attributes.joinTime || attributes.createdAt || '';
+        const joinTime = joinTimeRaw ? formatFlarumTime(joinTimeRaw) : '';
+        const bioRaw = typeof attributes.bio === 'string'
+            ? attributes.bio
+            : (typeof attributes.signature === 'string' ? attributes.signature : '');
+        const bio = bioRaw ? escapeHtml(bioRaw).replace(/\n/g, '<br>') : '暂无简介';
+
+        let badgeText = '';
+        const badgeType = await getUserGroupBadgeType(userId);
+        if (badgeType === 'admin') badgeText = '管理员';
+        if (badgeType === 'mod') badgeText = '版主';
+
+        let topics = [];
+        let replies = [];
+
+        if (username) {
+            try {
+                const discussionsJson = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=10&filter[author]=${encodeURIComponent(username)}`, { auth: false });
+                const discussions = Array.isArray(discussionsJson?.data) ? discussionsJson.data : [];
+                topics = discussions.map((d) => ({
+                    id: d.id,
+                    title: d.attributes?.title || '',
+                    createdAt: d.attributes?.createdAt || '',
+                    commentCount: d.attributes?.commentCount,
+                    viewCount: d.attributes?.viewCount
+                }));
+            } catch {
+                topics = [];
+            }
+        }
+
+        try {
+            const postsJson = await flarumRequest(`/posts?sort=-createdAt&page[limit]=10&filter[user]=${encodeURIComponent(String(userId))}&include=discussion`, { auth: false });
+            const posts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+            const included = postsJson?.included || [];
+            replies = posts.map((p) => {
+                const discussionId = p.relationships?.discussion?.data?.id;
+                const discussion = discussionId ? pickIncluded(included, 'discussions', discussionId) : null;
+                const title = discussion?.attributes?.title || '';
+                const floor = p.attributes?.number || 1;
+                const contentHtml = p.attributes?.contentHtml || p.attributes?.content || '';
+                const preview = contentHtml.replace(/<[^>]*>/g, '').trim().slice(0, 50);
+                return {
+                    discussionId,
+                    title,
+                    floor,
+                    createdAt: p.attributes?.createdAt || '',
+                    preview
+                };
+            });
+        } catch {
+            replies = [];
+        }
+
+        const topicsHtml = topics.length > 0
+            ? topics.map((t) => `
+                <li>
+                    <a href="post.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.title || '')}</a>
+                    <div class="public-user-item-meta">
+                        <span>${(t.createdAt || '').slice(0, 16).replace('T', ' ')}</span>
+                        <span>回复 ${typeof t.commentCount === 'number' ? t.commentCount : 0}</span>
+                        <span>浏览 ${formatViewCount(typeof t.viewCount === 'number' ? t.viewCount : null)}</span>
+                    </div>
+                </li>
+            `).join('')
+            : '<li style="color: #888;">暂无主题</li>';
+
+        const repliesHtml = replies.length > 0
+            ? replies.map((r) => `
+                <li>
+                    <a href="${r.discussionId ? buildPostFloorLink(r.discussionId, r.floor) : '#'}">${escapeHtml(r.title || '查看帖子')}</a>
+                    <div class="public-user-item-meta">
+                        <span>${(r.createdAt || '').slice(0, 16).replace('T', ' ')}</span>
+                        <span>${escapeHtml(r.preview || '无内容')}</span>
+                    </div>
+                </li>
+            `).join('')
+            : '<li style="color: #888;">暂无回复</li>';
+
+        container.innerHTML = `
+            <div class="public-user-header">
+                <div class="public-user-avatar">
+                    <img src="${avatarUrl}" alt="avatar">
+                </div>
+                <div>
+                    <div class="public-user-name">${escapeHtml(displayName)}${badgeText ? ` <span style="font-size: 12px; color: #fff; background: ${badgeText === '管理员' ? '#cc0000' : '#0066cc'}; padding: 2px 6px; border-radius: 3px; margin-left: 6px;">${badgeText}</span>` : ''}</div>
+                    <div class="public-user-meta">
+                        <span>ID：${escapeHtml(String(userId))}</span>
+                        ${username ? `<span>用户名：${escapeHtml(username)}</span>` : ''}
+                        ${joinTime ? `<span>加入：${escapeHtml(joinTime)}</span>` : ''}
+                        <span>积分：${points == null ? '-' : escapeHtml(String(points))}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="public-user-bio">${bio}</div>
+            <div class="public-user-grid">
+                <div class="public-user-panel">
+                    <h3>最近主题</h3>
+                    <ul class="public-user-list">${topicsHtml}</ul>
+                </div>
+                <div class="public-user-panel">
+                    <h3>最近回复</h3>
+                    <ul class="public-user-list">${repliesHtml}</ul>
+                </div>
+            </div>
+        `;
+
+        document.title = `用户资料 - ${displayName}`;
+    } catch (error) {
+        const friendlyMessage = getFriendlyErrorMessage(error, '加载用户资料');
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #666;">${escapeHtml(friendlyMessage || '加载失败')}</div>`;
+    }
 }
 
 // 设置回复按钮
@@ -2275,7 +2457,7 @@ function insertNewCommentToPage(comment, postData) {
     // 生成新评论的HTML
     const allPosts = [{
         id: 0,
-        userId: null,
+        userId: postData.userId,
         author: postData.author,
         authorLevel: postData.authorLevel,
         authorPoints: postData.authorPoints,
@@ -2322,6 +2504,7 @@ function insertNewCommentToPage(comment, postData) {
     const quoteHTML = generateQuoteHTML(comment.replyTo, allPosts);
     
     const isOpReply = isOriginalPosterReply(comment, postData);
+    const authorHtml = buildUserLinkHtml(comment.userId, comment.author);
 
     const commentHTML = `
         <div class="post" id="post-${comment.floor}">
@@ -2329,7 +2512,7 @@ function insertNewCommentToPage(comment, postData) {
                 <div class="post-author">
                     <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
                     <div class="author-info">
-                        <div class="author-name">${comment.author}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
+                        <div class="author-name">${authorHtml}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
                         <div class="author-level">${comment.authorLevel}${comment.authorPoints != null ? ` · 积分 ${comment.authorPoints}` : ''}</div>
                     </div>
                 </div>
