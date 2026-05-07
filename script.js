@@ -1,5 +1,5 @@
-// 页面加载完成后执行
-// 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
+﻿// 椤甸潰鍔犺浇瀹屾垚鍚庢墽琛?
+// 椤甸潰鍔犺浇瀹屾垚鍚庢墽琛屽凡缁忓寘鍚湪涓嬫柟鐨?window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
@@ -54,7 +54,7 @@ function parseApiErrorDetail(detail) {
     }
 }
 
-function getPreferredDisplayName(userAttributes, fallback = '匿名用户') {
+function getPreferredDisplayName(userAttributes, fallback = '鍖垮悕鐢ㄦ埛') {
     const preferredName = [
         userAttributes?.nickname,
         userAttributes?.displayName,
@@ -69,16 +69,16 @@ function getFriendlyErrorMessage(error, context = 'generic') {
     const status = error?.httpStatus || parsed?.status || null;
     const code = parsed?.code || error?.code || '';
     const rawMessage = String(error?.message || '');
-    const activationHint = '请确认账号已经激活，如仍有问题请联系网管。';
+    const activationHint = '璇风‘璁よ处鍙峰凡缁忔縺娲伙紝濡備粛鏈夐棶棰樿鑱旂郴缃戠銆?;
 
     if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
-        return '网络连接异常，暂时无法连接论坛，请检查网络后重试。';
+        return '缃戠粶杩炴帴寮傚父锛屾殏鏃舵棤娉曡繛鎺ヨ鍧涳紝璇锋鏌ョ綉缁滃悗閲嶈瘯銆?;
     }
 
     if (status === 401 || code === 'not_authenticated') {
         switch (context) {
             case 'login':
-                return '登录失败，请检查账号和密码是否正确。';
+                return '鐧诲綍澶辫触锛岃妫€鏌ヨ处鍙峰拰瀵嗙爜鏄惁姝ｇ‘銆?;
             case 'create_discussion':
             case 'create_post':
             case 'delete_post':
@@ -86,91 +86,91 @@ function getFriendlyErrorMessage(error, context = 'generic') {
             case 'profile':
             case 'upload_image':
             case 'upload_avatar':
-                return '登录状态已失效，请重新登录后再试。';
+                return '鐧诲綍鐘舵€佸凡澶辨晥锛岃閲嶆柊鐧诲綍鍚庡啀璇曘€?;
             default:
-                return '当前登录状态已失效，请重新登录后再试。';
+                return '褰撳墠鐧诲綍鐘舵€佸凡澶辨晥锛岃閲嶆柊鐧诲綍鍚庡啀璇曘€?;
         }
     }
 
     if (status === 403 || code === 'permission_denied') {
         switch (context) {
             case 'create_discussion':
-                return `当前账号没有发帖权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鍙戝笘鏉冮檺銆?{activationHint}`;
             case 'create_post':
-                return `当前账号没有回帖权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鍥炲笘鏉冮檺銆?{activationHint}`;
             case 'delete_post':
-                return `当前账号没有删除这条回复的权限，只能删除自己的内容。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鍒犻櫎杩欐潯鍥炲鐨勬潈闄愶紝鍙兘鍒犻櫎鑷繁鐨勫唴瀹广€?{activationHint}`;
             case 'delete_discussion':
-                return `当前账号没有删除这个帖子的权限，只能删除自己的内容。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鍒犻櫎杩欎釜甯栧瓙鐨勬潈闄愶紝鍙兘鍒犻櫎鑷繁鐨勫唴瀹广€?{activationHint}`;
             case 'upload_image':
-                return `当前账号没有上传图片的权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁涓婁紶鍥剧墖鐨勬潈闄愩€?{activationHint}`;
             case 'upload_avatar':
-                return `当前账号没有修改头像的权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁淇敼澶村儚鐨勬潈闄愩€?{activationHint}`;
             case 'profile':
-                return `当前账号没有查看该页面内容的权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鏌ョ湅璇ラ〉闈㈠唴瀹圭殑鏉冮檺銆?{activationHint}`;
             case 'load_discussion':
-                return `当前账号暂时没有查看该内容的权限。${activationHint}`;
+                return `褰撳墠璐﹀彿鏆傛椂娌℃湁鏌ョ湅璇ュ唴瀹圭殑鏉冮檺銆?{activationHint}`;
             case 'register':
-                return '当前论坛暂不允许普通用户注册。';
+                return '褰撳墠璁哄潧鏆備笉鍏佽鏅€氱敤鎴锋敞鍐屻€?;
             default:
-                return `当前账号没有执行此操作的权限。${activationHint}`;
+                return `褰撳墠璐﹀彿娌℃湁鎵ц姝ゆ搷浣滅殑鏉冮檺銆?{activationHint}`;
         }
     }
 
     if (status === 404 || code === 'not_found') {
         switch (context) {
             case 'load_discussion':
-                return '这篇帖子不存在，或已经被删除。';
+                return '杩欑瘒甯栧瓙涓嶅瓨鍦紝鎴栧凡缁忚鍒犻櫎銆?;
             case 'profile':
-                return '未找到对应的用户资料。';
+                return '鏈壘鍒板搴旂殑鐢ㄦ埛璧勬枡銆?;
             default:
-                return '你访问的内容不存在，或已经被删除。';
+                return '浣犺闂殑鍐呭涓嶅瓨鍦紝鎴栧凡缁忚鍒犻櫎銆?;
         }
     }
 
     if (status === 429 || code === 'rate_limit_exceeded') {
-        return '操作太频繁了，请稍后再试。';
+        return '鎿嶄綔澶绻佷簡锛岃绋嶅悗鍐嶈瘯銆?;
     }
 
     if (code === 'validation_error') {
         switch (context) {
             case 'register':
-                return '注册信息填写不完整，或格式不正确，请检查后重试。';
+                return '娉ㄥ唽淇℃伅濉啓涓嶅畬鏁达紝鎴栨牸寮忎笉姝ｇ‘锛岃妫€鏌ュ悗閲嶈瘯銆?;
             case 'create_discussion':
-                return '帖子内容不符合要求，请检查标题和正文后重试。';
+                return '甯栧瓙鍐呭涓嶇鍚堣姹傦紝璇锋鏌ユ爣棰樺拰姝ｆ枃鍚庨噸璇曘€?;
             case 'create_post':
-                return '回复内容不符合要求，请修改后再试。';
+                return '鍥炲鍐呭涓嶇鍚堣姹傦紝璇蜂慨鏀瑰悗鍐嶈瘯銆?;
             default:
-                return '提交的信息不符合要求，请检查后重试。';
+                return '鎻愪氦鐨勪俊鎭笉绗﹀悎瑕佹眰锛岃妫€鏌ュ悗閲嶈瘯銆?;
         }
     }
 
     if (status && status >= 500) {
-        return '论坛服务器暂时繁忙，请稍后再试。';
+        return '璁哄潧鏈嶅姟鍣ㄦ殏鏃剁箒蹇欙紝璇风◢鍚庡啀璇曘€?;
     }
 
     switch (context) {
         case 'login':
-            return '登录失败，请检查账号和密码后重试。';
+            return '鐧诲綍澶辫触锛岃妫€鏌ヨ处鍙峰拰瀵嗙爜鍚庨噸璇曘€?;
         case 'register':
-            return '注册失败，请稍后再试。';
+            return '娉ㄥ唽澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         case 'create_discussion':
-            return '发帖失败，请稍后再试。';
+            return '鍙戝笘澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         case 'create_post':
-            return '回复失败，请稍后再试。';
+            return '鍥炲澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         case 'delete_post':
         case 'delete_discussion':
-            return '删除失败，请稍后再试。';
+            return '鍒犻櫎澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         case 'load_discussion':
-            return '帖子暂时无法加载，请刷新页面后重试。';
+            return '甯栧瓙鏆傛椂鏃犳硶鍔犺浇锛岃鍒锋柊椤甸潰鍚庨噸璇曘€?;
         case 'profile':
-            return '个人资料暂时无法加载，请稍后再试。';
+            return '涓汉璧勬枡鏆傛椂鏃犳硶鍔犺浇锛岃绋嶅悗鍐嶈瘯銆?;
         case 'upload_image':
-            return '图片上传失败，请稍后再试。';
+            return '鍥剧墖涓婁紶澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         case 'upload_avatar':
-            return '头像上传失败，请稍后再试。';
+            return '澶村儚涓婁紶澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         default:
-            return '操作失败，请稍后再试。';
+            return '鎿嶄綔澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
     }
 }
 
@@ -196,7 +196,7 @@ function isOriginalPosterReply(post, postData) {
     return !!(post.author && postData.author && post.author === postData.author);
 }
 
-// Flarum 登录
+// Flarum 鐧诲綍
 async function flarumLogin(username, password) {
     try {
         const json = await flarumRequest('/token', {
@@ -209,15 +209,15 @@ async function flarumLogin(username, password) {
             localStorage.setItem('flarumToken', json.token);
             if (json.userId) {
                 localStorage.setItem('flarumUserId', String(json.userId));
-                // 尝试获取用户信息
+                // 灏濊瘯鑾峰彇鐢ㄦ埛淇℃伅
                 try {
                     const userJson = await flarumRequest(`/users/${json.userId}`, { auth: true });
                     if (userJson?.data?.attributes) {
-                        const displayName = getPreferredDisplayName(userJson.data.attributes, '已登录用户');
+                        const displayName = getPreferredDisplayName(userJson.data.attributes, '宸茬櫥褰曠敤鎴?);
                         localStorage.setItem('flarumUsername', displayName);
                     }
                 } catch (e) {
-                    console.error('获取用户信息失败:', e);
+                    console.error('鑾峰彇鐢ㄦ埛淇℃伅澶辫触:', e);
                 }
             }
             updateUserLinks();
@@ -232,7 +232,7 @@ async function flarumLogin(username, password) {
     }
 }
 
-// Flarum 注册
+// Flarum 娉ㄥ唽
 async function flarumRegister(username, email, password) {
     const json = await flarumRequest('/users', {
         method: 'POST',
@@ -287,7 +287,7 @@ async function flarumRequest(path, options = {}) {
     let response = await fetch(url, createFetchOptions(headers));
     const initialStatus = response.status;
 
-    // 对公开接口做一次无鉴权重试，避免本地过期 token 导致“登录后反而看不到内容”。
+    // 瀵瑰叕寮€鎺ュ彛鍋氫竴娆℃棤閴存潈閲嶈瘯锛岄伩鍏嶆湰鍦拌繃鏈?token 瀵艰嚧鈥滅櫥褰曞悗鍙嶈€岀湅涓嶅埌鍐呭鈥濄€?
     if (
         (response.status === 401 || response.status === 403) &&
         shouldAttachAuthHeader &&
@@ -297,7 +297,7 @@ async function flarumRequest(path, options = {}) {
         delete retryHeaders.Authorization;
         response = await fetch(url, createFetchOptions(retryHeaders));
 
-        // 重试成功说明是本地 token 问题，清理后同步刷新登录态 UI。
+        // 閲嶈瘯鎴愬姛璇存槑鏄湰鍦?token 闂锛屾竻鐞嗗悗鍚屾鍒锋柊鐧诲綍鎬?UI銆?
         if (response.ok && initialStatus === 401) {
             clearFlarumToken();
         }
@@ -311,7 +311,7 @@ async function flarumRequest(path, options = {}) {
         } catch {
             detail = await response.text();
         }
-        const error = new Error(`Flarum API 请求失败: ${response.status} ${response.statusText}`);
+        const error = new Error(`Flarum API 璇锋眰澶辫触: ${response.status} ${response.statusText}`);
         error.detail = detail;
         error.httpStatus = response.status;
         error.apiError = parseApiErrorDetail(detail);
@@ -350,7 +350,7 @@ function resolveFlarumUrlMaybeRelative(url) {
 function getUserAvatarUrl(user) {
     const url = user?.attributes?.avatarUrl;
     if (typeof url === 'string' && url.trim().length > 0) return resolveFlarumUrlMaybeRelative(url);
-    return 'images/用户头像.png';
+    return 'images/鐢ㄦ埛澶村儚.png';
 }
 
 function getFlarumReplyStorageKey(discussionId, postId) {
@@ -379,16 +379,16 @@ function extractReplyMetaFromContentHtml(contentHtml) {
         if (first && first.tagName === 'P') {
             let text = (first.textContent || '').trim();
 
-            // 支持：
-            // 回复 3楼：
-            // 回复 张三(3楼)：
-            // 回复 张三(3楼)：\n\n正文
-            const m = text.match(/^回复\s+(?:.*?\()?(\d+)楼\)?：(?:\\n\\n|\n\n|\s*)?/);
+            // 鏀寔锛?
+            // 鍥炲 3妤硷細
+            // 鍥炲 寮犱笁(3妤?锛?
+            // 鍥炲 寮犱笁(3妤?锛歕n\n姝ｆ枃
+            const m = text.match(/^鍥炲\s+(?:.*?\()?(\d+)妤糪)?锛??:\\n\\n|\n\n|\s*)?/);
 
             if (m) {
                 const replyToFloor = Number(m[1]);
 
-                text = text.replace(/^回复\s+(?:.*?\()?(\d+)楼\)?：(?:\\n\\n|\n\n|\s*)?/, '').trim();
+                text = text.replace(/^鍥炲\s+(?:.*?\()?(\d+)妤糪)?锛??:\\n\\n|\n\n|\s*)?/, '').trim();
 
                 if (text) {
                     first.textContent = text;
@@ -434,7 +434,7 @@ function flarumDiscussionToPostData(apiJson) {
     .filter((p) => relationshipPostIds.includes(String(p.id)))
     .sort((a, b) => (a.attributes?.number || 0) - (b.attributes?.number || 0));
 
-    // 创建帖子ID到楼层号的映射
+    // 鍒涘缓甯栧瓙ID鍒版ゼ灞傚彿鐨勬槧灏?
     const postIdToFloor = new Map();
     posts.forEach((p) => {
         const number = p.attributes?.number;
@@ -455,7 +455,7 @@ function flarumDiscussionToPostData(apiJson) {
         userId: firstUserId ? Number(firstUserId) : null,
         title: discussion.attributes?.title || '',
         author: getPreferredDisplayName(firstUser?.attributes),
-        authorLevel: 'Lv.1 新手上路',
+        authorLevel: 'Lv.1 鏂版墜涓婅矾',
         authorAvatar: getUserAvatarUrl(firstUser),
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
         viewCount: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0),
@@ -477,7 +477,7 @@ function flarumDiscussionToPostData(apiJson) {
                     id: Number(p.id),
                     userId: userId ? Number(userId) : null,
                     author: getPreferredDisplayName(user?.attributes),
-                    authorLevel: 'Lv.1 新手上路',
+                    authorLevel: 'Lv.1 鏂版墜涓婅矾',
                     authorAvatar: getUserAvatarUrl(user),
                     time: formatFlarumTime(p.attributes?.createdAt),
                     floor: typeof number === 'number' ? number : 0,
@@ -498,7 +498,7 @@ async function flarumLoadDiscussion(postId) {
     const id = String(postId);
 
     try {
-        // 获取 discussion 基本信息
+        // 鑾峰彇 discussion 鍩烘湰淇℃伅
         const discussionJson = await flarumRequest(
             `/discussions/${encodeURIComponent(id)}?include=user`,
             { auth: false }
@@ -508,7 +508,7 @@ async function flarumLoadDiscussion(postId) {
             return null;
         }
 
-        // 只加载前30条帖子（核心优化点）
+        // 鍙姞杞藉墠30鏉″笘瀛愶紙鏍稿績浼樺寲鐐癸級
         const limit = 30;
 
         const postsJson = await flarumRequest(
@@ -518,7 +518,7 @@ async function flarumLoadDiscussion(postId) {
 
         const allPosts = Array.isArray(postsJson.data) ? postsJson.data : [];
 
-        // 合并数据结构（保持兼容）
+        // 鍚堝苟鏁版嵁缁撴瀯锛堜繚鎸佸吋瀹癸級
         discussionJson.included = [
             ...(discussionJson.included || []),
             ...(postsJson.included || []),
@@ -532,8 +532,8 @@ async function flarumLoadDiscussion(postId) {
 
         return flarumDiscussionToPostData(discussionJson);
     } catch (error) {
-        console.error('flarumLoadDiscussion: 加载帖子失败:', error);
-        console.error('错误详情:', error.detail);
+        console.error('flarumLoadDiscussion: 鍔犺浇甯栧瓙澶辫触:', error);
+        console.error('閿欒璇︽儏:', error.detail);
         throw error;
     }
 }
@@ -558,12 +558,12 @@ async function flarumLoadDiscussionList() {
             };
         });
     } catch (error) {
-        console.warn('获取帖子列表失败:', error);
+        console.warn('鑾峰彇甯栧瓙鍒楄〃澶辫触:', error);
         return [];
     }
 }
 
-// 获取最新回复列表
+// 鑾峰彇鏈€鏂板洖澶嶅垪琛?
 async function flarumLoadRecentReplies() {
     try {
         const json = await flarumRequest('/posts?sort=-createdAt&page[limit]=20&include=discussion,user', { auth: false });
@@ -574,13 +574,13 @@ async function flarumLoadRecentReplies() {
         const seenDiscussionIds = new Set();
         
         for (const post of posts) {
-            // 跳过帖子的第一条（主题帖），只显示回复
+            // 璺宠繃甯栧瓙鐨勭涓€鏉★紙涓婚甯栵級锛屽彧鏄剧ず鍥炲
             if (post.attributes?.number === 1) continue;
             
             const discussionId = post.relationships?.discussion?.data?.id;
             if (!discussionId || seenDiscussionIds.has(discussionId)) continue;
             
-            // 找到对应的讨论
+            // 鎵惧埌瀵瑰簲鐨勮璁?
             const discussion = included.find(i => i.type === 'discussions' && i.id === discussionId);
             const userId = post.relationships?.user?.data?.id;
             const user = userId ? included.find(i => i.type === 'users' && i.id === userId) : null;
@@ -590,25 +590,25 @@ async function flarumLoadRecentReplies() {
             results.push({
                 discussionId: Number(discussionId),
                 postId: Number(post.id),
-                floor: post.attributes?.number, // 添加楼层号用于锚点跳转
+                floor: post.attributes?.number, // 娣诲姞妤煎眰鍙风敤浜庨敋鐐硅烦杞?
                 title: discussion?.attributes?.title || '',
                 author: getPreferredDisplayName(user?.attributes),
                 time: post.attributes?.createdAt || '',
                 content: post.attributes?.content || ''
             });
             
-            // 只取5条不重复的回复
+            // 鍙彇5鏉′笉閲嶅鐨勫洖澶?
             if (results.length >= 5) break;
         }
         
         return results;
     } catch (error) {
-        console.warn('获取最新回复失败:', error);
+        console.warn('鑾峰彇鏈€鏂板洖澶嶅け璐?', error);
         return [];
     }
 }
 
-// 动态加载首页热帖和近期帖子链接
+// 鍔ㄦ€佸姞杞介椤电儹甯栧拰杩戞湡甯栧瓙閾炬帴
 async function renderDynamicHomeLinks() {
     try {
         const discussions = await flarumLoadDiscussionList();
@@ -617,50 +617,50 @@ async function renderDynamicHomeLinks() {
         const recentHotList = document.getElementById('recent-hot-list');
         
         if (hotTopicsList) {
-            // 固定置顶帖标题
-            const pin1Title = '红蜻蜓论坛·版务公告';
-            const pin2Title = '关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知';
-            const hotTitle = '求助帖，真实经历，感觉自己被脑控了';
+            // 鍥哄畾缃《甯栨爣棰?
+            const pin1Title = '绾㈣溁铚撹鍧浡风増鍔″叕鍛?;
+            const pin2Title = '鍏充簬寮€灞曗€滄嫆缁濋粍璧屾瘨銆佸叡寤哄钩瀹夌ぞ鍖衡€濆浼犳暀鑲叉椿鍔ㄧ殑閫氱煡';
+            const hotTitle = '姹傚姪甯栵紝鐪熷疄缁忓巻锛屾劅瑙夎嚜宸辫鑴戞帶浜?;
             
-            // 从API数据中找到对应的帖子
-            const pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
-            const hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
+            // 浠嶢PI鏁版嵁涓壘鍒板搴旂殑甯栧瓙
+            const pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('鎷掔粷榛勮祵姣?));
+            const hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('鑴戞帶') || d.title.includes('鑴戞帶浜?));
             
-            // 过滤掉已固定的帖子，用于填充其他位置
+            // 杩囨护鎺夊凡鍥哄畾鐨勫笘瀛愶紝鐢ㄤ簬濉厖鍏朵粬浣嶇疆
             const remainingDiscussions = discussions.filter(d => 
-                !d.title.includes(pin2Title) && !d.title.includes('拒绝黄赌毒') &&
-                !d.title.includes(hotTitle) && !d.title.includes('脑控') && !d.title.includes('脑控了')
+                !d.title.includes(pin2Title) && !d.title.includes('鎷掔粷榛勮祵姣?) &&
+                !d.title.includes(hotTitle) && !d.title.includes('鑴戞帶') && !d.title.includes('鑴戞帶浜?)
             );
             
-            // 构建热帖榜（共12条）
+            // 鏋勫缓鐑笘姒滐紙鍏?2鏉★級
             const hotTopics = [];
             
-            // 第1条：固定链接到违规公示
-            hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="violation.html">${pin1Title}</a></li>`);
+            // 绗?鏉★細鍥哄畾閾炬帴鍒拌繚瑙勫叕绀?
+            hotTopics.push(`<li><span class="pin-badge">缃《</span><a href="violation.html">${pin1Title}</a></li>`);
             
-            // 第2条：固定置顶帖
+            // 绗?鏉★細鍥哄畾缃《甯?
             if (pin2Post) {
-                hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="post.html?id=${pin2Post.id}">${pin2Post.title}</a></li>`);
+                hotTopics.push(`<li><span class="pin-badge">缃《</span><a href="post.html?id=${pin2Post.id}">${pin2Post.title}</a></li>`);
             }
             
-            // 第3-6条：按热度排序的普通帖子
+            // 绗?-6鏉★細鎸夌儹搴︽帓搴忕殑鏅€氬笘瀛?
             const normalPosts = remainingDiscussions.slice(0, 4);
             normalPosts.forEach(p => {
                 hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
             });
             
-            // 第7条：固定HOT帖
+            // 绗?鏉★細鍥哄畾HOT甯?
             if (hotPost) {
                 hotTopics.push(`<li><span class="hot-badge">HOT</span><a href="post.html?id=${hotPost.id}">${hotPost.title}</a></li>`);
             }
             
-            // 第8-12条：按热度排序的普通帖子
+            // 绗?-12鏉★細鎸夌儹搴︽帓搴忕殑鏅€氬笘瀛?
             const remainingPosts = remainingDiscussions.slice(4, 9);
             remainingPosts.forEach(p => {
                 hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
             });
             
-            // 如果总数不足12条，用剩余帖子补齐
+            // 濡傛灉鎬绘暟涓嶈冻12鏉★紝鐢ㄥ墿浣欏笘瀛愯ˉ榻?
             if (hotTopics.length < 12 && remainingDiscussions.length > 9) {
                 remainingDiscussions.slice(9, 12 - hotTopics.length + 9).forEach(p => {
                     hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
@@ -670,15 +670,15 @@ async function renderDynamicHomeLinks() {
             hotTopicsList.innerHTML = hotTopics.join('');
         }
         
-        // 最新发帖：显示最新20个帖子，按日期顺序
+        // 鏈€鏂板彂甯栵細鏄剧ず鏈€鏂?0涓笘瀛愶紝鎸夋棩鏈熼『搴?
         if (recentHotList && discussions.length > 0) {
             recentHotList.innerHTML = discussions.slice(0, 20).map(p => 
                 `<li><a href="post.html?id=${p.id}">${p.title}</a></li>`
             ).join('');
         }
     } catch (error) {
-        console.warn('动态加载首页帖子列表失败:', error);
-        // 即使加载失败也不显示错误信息，保持页面安静
+        console.warn('鍔ㄦ€佸姞杞介椤靛笘瀛愬垪琛ㄥけ璐?', error);
+        // 鍗充娇鍔犺浇澶辫触涔熶笉鏄剧ず閿欒淇℃伅锛屼繚鎸侀〉闈㈠畨闈?
     }
 }
 
@@ -687,7 +687,7 @@ async function renderDynamicHomeLinks() {
 async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再发帖。');
+        alert('璇峰厛鐧诲綍鍚庡啀鍙戝笘銆?);
         return null;
     }
 
@@ -715,7 +715,7 @@ async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
 async function flarumCreatePost({ discussionId, content }) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再回帖。');
+        alert('璇峰厛鐧诲綍鍚庡啀鍥炲笘銆?);
         return null;
     }
 
@@ -736,23 +736,23 @@ async function flarumCreatePost({ discussionId, content }) {
     return json?.data?.id ? String(json.data.id) : null;
 }
 
-// 删除帖子（改为更新帖子内容为删除提示）
+// 鍒犻櫎甯栧瓙锛堟敼涓烘洿鏂板笘瀛愬唴瀹逛负鍒犻櫎鎻愮ず锛?
 async function flarumDeletePost(postId, floor) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再操作。');
+        alert('璇峰厛鐧诲綍鍚庡啀鎿嶄綔銆?);
         return false;
     }
 
     try {
-        const currentUsername = localStorage.getItem('flarumUsername') || '匿名用户';
+        const currentUsername = localStorage.getItem('flarumUsername') || '鍖垮悕鐢ㄦ埛';
         const now = new Date();
         const deleteTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
         
-        // 构造删除提示内容（使用特殊标记便于识别）
+        // 鏋勯€犲垹闄ゆ彁绀哄唴瀹癸紙浣跨敤鐗规畩鏍囪渚夸簬璇嗗埆锛?
         const deleteContent = `[DELETED]{"deletedBy":"${currentUsername}","deletedAt":"${deleteTime}"}[/DELETED]`;
         
-        // 使用PATCH更新帖子内容，而不是DELETE删除
+        // 浣跨敤PATCH鏇存柊甯栧瓙鍐呭锛岃€屼笉鏄疍ELETE鍒犻櫎
         await flarumRequest(`/posts/${postId}`, {
             method: 'PATCH',
             auth: true,
@@ -769,13 +769,13 @@ async function flarumDeletePost(postId, floor) {
         
         return true;
     } catch (error) {
-        console.error('删除帖子失败:', error);
+        console.error('鍒犻櫎甯栧瓙澶辫触:', error);
         alert(getFriendlyErrorMessage(error, 'delete_post'));
         return false;
     }
 }
 
-// 检查并解析删除标记
+// 妫€鏌ュ苟瑙ｆ瀽鍒犻櫎鏍囪
 function parseDeletedContent(content) {
     const deletedMatch = content.match(/\[DELETED\](\{.*?\})\[\/DELETED\]/);
     if (deletedMatch) {
@@ -783,7 +783,7 @@ function parseDeletedContent(content) {
             const deleteInfo = JSON.parse(deletedMatch[1]);
             return {
                 deleted: true,
-                deletedBy: deleteInfo.deletedBy || '匿名用户',
+                deletedBy: deleteInfo.deletedBy || '鍖垮悕鐢ㄦ埛',
                 deletedAt: deleteInfo.deletedAt || ''
             };
         } catch {
@@ -793,11 +793,11 @@ function parseDeletedContent(content) {
     return null;
 }
 
-// 删除整个讨论（帖子）
+// 鍒犻櫎鏁翠釜璁ㄨ锛堝笘瀛愶級
 async function flarumDeleteDiscussion(discussionId) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再操作。');
+        alert('璇峰厛鐧诲綍鍚庡啀鎿嶄綔銆?);
         return false;
     }
 
@@ -808,72 +808,72 @@ async function flarumDeleteDiscussion(discussionId) {
         });
         return true;
     } catch (error) {
-        console.error('删除讨论失败:', error);
+        console.error('鍒犻櫎璁ㄨ澶辫触:', error);
         alert(getFriendlyErrorMessage(error, 'delete_discussion'));
         return false;
     }
 }
 
-// 检查用户是否有权限删除帖子
+// 妫€鏌ョ敤鎴锋槸鍚︽湁鏉冮檺鍒犻櫎甯栧瓙
 async function canDeletePost(post) {
     const token = getFlarumToken();
     if (!token) return false;
     
     const currentUserId = localStorage.getItem('flarumUserId');
     
-    // 如果是自己的帖子，可以删除
+    // 濡傛灉鏄嚜宸辩殑甯栧瓙锛屽彲浠ュ垹闄?
     if (post.userId && currentUserId && String(post.userId) === String(currentUserId)) {
         return true;
     }
     
-    // 检查是否是管理员或版主（简化处理）
+    // 妫€鏌ユ槸鍚︽槸绠＄悊鍛樻垨鐗堜富锛堢畝鍖栧鐞嗭級
     try {
         const userJson = await flarumRequest(`/users/${currentUserId}`, { auth: true });
         const groups = userJson?.data?.relationships?.groups?.data || [];
-        // 检查是否在管理员或版主组
-        const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id)); // 1=管理员, 2=版主
+        // 妫€鏌ユ槸鍚﹀湪绠＄悊鍛樻垨鐗堜富缁?
+        const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id)); // 1=绠＄悊鍛? 2=鐗堜富
         return isAdminOrMod;
     } catch {
         return false;
     }
 }
 
-// 动态加载帖子数据
+// 鍔ㄦ€佸姞杞藉笘瀛愭暟鎹?
 async function loadPostData(postId) {
     try {
-        console.log('当前使用的是 Flarum API 版本 loadPostData');
-        console.log('loadPostData: 开始加载帖子数据，postId:', postId);
+        console.log('褰撳墠浣跨敤鐨勬槸 Flarum API 鐗堟湰 loadPostData');
+        console.log('loadPostData: 寮€濮嬪姞杞藉笘瀛愭暟鎹紝postId:', postId);
         
-        // 显示加载状态
+        // 鏄剧ず鍔犺浇鐘舵€?
         const threadContainer = document.getElementById('forum-thread');
         if (threadContainer) {
-            threadContainer.innerHTML = '<div style="padding: 20px; text-align: center;">加载中...</div>';
+            threadContainer.innerHTML = '<div style="padding: 20px; text-align: center;">鍔犺浇涓?..</div>';
         }
         
         if (isFlarumConfigured()) {
-            console.log('loadPostData: 尝试从Flarum API加载帖子');
+            console.log('loadPostData: 灏濊瘯浠嶧larum API鍔犺浇甯栧瓙');
             const fromApi = await flarumLoadDiscussion(postId);
-            console.log('loadPostData: Flarum API返回结果:', fromApi);
+            console.log('loadPostData: Flarum API杩斿洖缁撴灉:', fromApi);
             if (fromApi) {
-                console.log('loadPostData: 成功加载帖子数据');
+                console.log('loadPostData: 鎴愬姛鍔犺浇甯栧瓙鏁版嵁');
                 return fromApi;
             }
             
-            // API 返回 null，表示加载失败
-            throw new Error('无法从 Flarum API 加载帖子数据');
+            // API 杩斿洖 null锛岃〃绀哄姞杞藉け璐?
+            throw new Error('鏃犳硶浠?Flarum API 鍔犺浇甯栧瓙鏁版嵁');
         }
         
-        throw new Error('论坛后端未配置');
+        throw new Error('璁哄潧鍚庣鏈厤缃?);
     } catch (error) {
-        console.error('loadPostData: 加载帖子数据失败:', error);
-        console.error('loadPostData: 错误详情:', error.detail);
+        console.error('loadPostData: 鍔犺浇甯栧瓙鏁版嵁澶辫触:', error);
+        console.error('loadPostData: 閿欒璇︽儏:', error.detail);
         
         const threadContainer = document.getElementById('forum-thread');
         if (threadContainer) {
             const friendlyMessage = getFriendlyErrorMessage(error, 'load_discussion');
             threadContainer.innerHTML = `
                 <div style="padding: 40px 20px; text-align: center;">
-                    <p style="color: #cc0000; font-size: 16px; margin-bottom: 10px;">抱歉，加载此内容时出错</p>
+                    <p style="color: #cc0000; font-size: 16px; margin-bottom: 10px;">鎶辨瓑锛屽姞杞芥鍐呭鏃跺嚭閿?/p>
                     <p style="color: #666; font-size: 14px;">${friendlyMessage}</p>
                 </div>
             `;
@@ -882,208 +882,208 @@ async function loadPostData(postId) {
     }
 }
 
-// 备用帖子数据（fallback）
+// 澶囩敤甯栧瓙鏁版嵁锛坒allback锛?
 function getFallbackPostData(postId) {
     const fallbackData = {
         "1": {
             "id": 1,
-            "title": "说说你在的城市，一个月工资能买几平米？房价到底怎么涨？",
-            "author": "☆_房产の观察家_☆",
-            "authorLevel": "Lv.3 中级会员",
-            "authorAvatar": "images/用户头像.png",
+            "title": "璇磋浣犲湪鐨勫煄甯傦紝涓€涓湀宸ヨ祫鑳戒拱鍑犲钩绫筹紵鎴夸环鍒板簳鎬庝箞娑紵",
+            "author": "鈽哶鎴夸骇銇瀵熷_鈽?,
+            "authorLevel": "Lv.3 涓骇浼氬憳",
+            "authorAvatar": "images/鐢ㄦ埛澶村儚.png",
             "publishTime": "2010-04-17 10:30:45",
             "viewCount": 2345,
-            "content": "<p>房价一直是大家关注的热点话题，尤其是在一线城市，房价的涨幅让很多年轻人望而却步。今天我们来讨论一下，在你所在的城市，一个月的工资能买几平米房子？</p><h3>一线城市情况</h3><p>在北京、上海、深圳等一线城市，房价普遍在每平米1-3万元之间（2010年数据），而平均工资大约在3000-6000元左右。这意味着，一个月的工资只能买0.2-0.4平米的房子，想要买一套100平米的房子，不吃不喝也得几十年。</p><h3>二线城市情况</h3><p>在杭州、南京、成都等二线城市，房价大约在每平米8000-15000元之间，平均工资在2000-4000元左右。一个月的工资能买0.25-0.5平米的房子，压力同样不小。</p><h3>网友讨论</h3><p>@神马都是浮云：在深圳工作3年，月薪4000，依然买不起房，只能租房住，也是醉了。</p><p>@给跪了：在南京有套房，现在房价翻了一倍，感觉自己要发财了，不解释。</p><p>@杯具的小明：刚毕业工资2000，房价1万，你造吗？我勒个去！</p><p>你所在的城市房价如何？一个月工资能买几平米？欢迎在评论区分享你的情况！</p>",
+            "content": "<p>鎴夸环涓€鐩存槸澶у鍏虫敞鐨勭儹鐐硅瘽棰橈紝灏ゅ叾鏄湪涓€绾垮煄甯傦紝鎴夸环鐨勬定骞呰寰堝骞磋交浜烘湜鑰屽嵈姝ャ€備粖澶╂垜浠潵璁ㄨ涓€涓嬶紝鍦ㄤ綘鎵€鍦ㄧ殑鍩庡競锛屼竴涓湀鐨勫伐璧勮兘涔板嚑骞崇背鎴垮瓙锛?/p><h3>涓€绾垮煄甯傛儏鍐?/h3><p>鍦ㄥ寳浜€佷笂娴枫€佹繁鍦崇瓑涓€绾垮煄甯傦紝鎴夸环鏅亶鍦ㄦ瘡骞崇背1-3涓囧厓涔嬮棿锛?010骞存暟鎹級锛岃€屽钩鍧囧伐璧勫ぇ绾﹀湪3000-6000鍏冨乏鍙炽€傝繖鎰忓懗鐫€锛屼竴涓湀鐨勫伐璧勫彧鑳戒拱0.2-0.4骞崇背鐨勬埧瀛愶紝鎯宠涔颁竴濂?00骞崇背鐨勬埧瀛愶紝涓嶅悆涓嶅枬涔熷緱鍑犲崄骞淬€?/p><h3>浜岀嚎鍩庡競鎯呭喌</h3><p>鍦ㄦ澀宸炪€佸崡浜€佹垚閮界瓑浜岀嚎鍩庡競锛屾埧浠峰ぇ绾﹀湪姣忓钩绫?000-15000鍏冧箣闂达紝骞冲潎宸ヨ祫鍦?000-4000鍏冨乏鍙炽€備竴涓湀鐨勫伐璧勮兘涔?.25-0.5骞崇背鐨勬埧瀛愶紝鍘嬪姏鍚屾牱涓嶅皬銆?/p><h3>缃戝弸璁ㄨ</h3><p>@绁為┈閮芥槸娴簯锛氬湪娣卞湷宸ヤ綔3骞达紝鏈堣柂4000锛屼緷鐒朵拱涓嶈捣鎴匡紝鍙兘绉熸埧浣忥紝涔熸槸閱変簡銆?/p><p>@缁欒藩浜嗭細鍦ㄥ崡浜湁濂楁埧锛岀幇鍦ㄦ埧浠风炕浜嗕竴鍊嶏紝鎰熻鑷繁瑕佸彂璐簡锛屼笉瑙ｉ噴銆?/p><p>@鏉叿鐨勫皬鏄庯細鍒氭瘯涓氬伐璧?000锛屾埧浠?涓囷紝浣犻€犲悧锛熸垜鍕掍釜鍘伙紒</p><p>浣犳墍鍦ㄧ殑鍩庡競鎴夸环濡備綍锛熶竴涓湀宸ヨ祫鑳戒拱鍑犲钩绫筹紵娆㈣繋鍦ㄨ瘎璁哄尯鍒嗕韩浣犵殑鎯呭喌锛?/p>",
             "comments": [
-                {"id": 1, "author": "ゞ泪流满面的小明ζ", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-18 09:15:32", "floor": 2, "content": "<p>前排占座！坐标上海，月薪3500，房价2万/平，一个月工资能买0.175平，想想就泪流满面... T_T</p><p>工作3年了，连首付的零头都没攒够，神马都是浮云啊！</p>"},
-                {"id": 2, "author": "oοゞ杭州新市民ゞοo", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-18 10:42:18", "floor": 3, "content": "<p>沙发！杭州城西，月薪3000，房价1.2万/平，一个月能买0.25平，努力几年还是有希望的！</p><p>打算再攒两年钱，加上家里支持一点，争取明年上车. 给跪了！</p>"},
-                {"id": 3, "author": "成都安逸哥(￣▽￣)", "authorLevel": "Lv.4 高级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-19 14:28:55", "floor": 4, "content": "<p>板凳。成都二环路，月薪2500，房价6000/平，一个月能买0.4平，感觉压力还好。</p><p>成都生活节奏慢，房价相对友好，适合宜居。赞一个，不解释！</p>"},
-                {"id": 4, "author": "ξ北京追梦人ξ", "authorLevel": "Lv.1 新手上路", "authorAvatar": "images/用户头像.png", "time": "2010-04-19 16:55:03", "floor": 5, "content": "<p>地板。北京五环外，月薪4000，房价1.5万/平，一个月0.26平，但是首付太难了... 也是醉了。</p><p>家里条件一般，全靠自己，不知道什么时候才能凑够首付. 我勒个去！</p>"},
-                {"id": 5, "author": "广州打工人_bule", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-20 09:30:17", "floor": 6, "content": "<p>地下室。广州天河，月薪3500，房价1.2万/平，一个月0.29平，慢慢来吧。</p><p>相比北上深，广州的房价还是比较友好的，咬咬牙还是有希望的. 给力！</p>"},
-                {"id": 6, "author": "火钳留名の武汉新青年", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-20 11:22:44", "floor": 7, "content": "<p>路过打酱油。武汉光谷，月薪2000，房价5000/平，一个月0.4平，感觉还可以接受。</p><p>新一线里武汉性价比挺高的，发展也快，看好未来. 火钳留名！</p>"},
-                {"id": 7, "author": "↘深圳奋斗者↖", "authorLevel": "Lv.3 中级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-21 15:48:30", "floor": 8, "content": "<p>围观。深圳南山，月薪5000，房价2.5万/平，一个月0.2平，太难了太难了. 你造吗？</p><p>准备回老家发展了，深圳实在是买不起，压力太大了. 鸭梨山大啊！</p>"},
-                {"id": 8, "author": "苏州小白领(^_−)☆", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-21 17:15:08", "floor": 9, "content": "<p>潜水多年冒个泡。苏州园区，月薪3000，房价8000/平，一个月0.375平，加油攒钱中。</p><p>苏州环境好，离上海近，感觉是个不错的选择. 妥妥的！</p>"},
-                {"id": 9, "author": "✿重庆土著✿", "authorLevel": "Lv.3 中级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-22 10:30:00", "floor": 10, "content": "<p>重庆江北，月薪2200，房价4000/平，一个月0.55平！简直太幸福了！</p><p>重庆房价真的很良心，生活压力小很多，推荐大家来重庆发展. 各种羡慕嫉妒恨！</p>"},
-                {"id": 10, "author": "西安奋斗哥+1", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-22 14:20:15", "floor": 11, "content": "<p>西安高新区，月薪2800，房价5500/平，一个月0.5平，还可以接受。</p><p>西安发展很快，文化底蕴深厚，适合定居. 楼上+1！</p>"},
-                {"id": 11, "author": "坑爹o厦门岛民", "authorLevel": "Lv.4 高级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-23 09:45:30", "floor": 12, "content": "<p>厦门岛内，月薪3500，房价1.5万/平，一个月0.23平，压力山大...</p><p>不过厦门环境真的好，面朝大海春暖花开，咬咬牙坚持吧. 坑爹啊！</p>"},
-                {"id": 12, "author": "郑州上班族(元芳你怎么看)", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-23 16:00:00", "floor": 13, "content": "<p>郑州东区，月薪2000，房价5000/平，一个月0.4平，感觉还行。</p><p>郑州作为中原核心，发展潜力大，房价相对友好. 元芳，你怎么看？</p>"},
-                {"id": 13, "author": "楼中楼测试员", "authorLevel": "Lv.1 新手上路", "authorAvatar": "images/用户头像.png", "time": "2010-04-24 10:00:00", "floor": 14, "content": "<p>你说得对，上海的房价确实让人望尘莫及. 我也是醉了。</p>", "replyTo": 2},
-                {"id": 14, "author": "深度评论家", "authorLevel": "Lv.5 社区元老", "authorAvatar": "images/用户头像.png", "time": "2010-04-24 11:30:00", "floor": 15, "content": "<p>我也觉得上海的生活成本太高了，其实二线城市也不错. 给力不解释！</p>", "replyTo": 14},
-                {"id": 15, "author": "终极回复者", "authorLevel": "Lv.2 初级会员", "authorAvatar": "images/用户头像.png", "time": "2010-04-24 12:45:00", "floor": 16, "content": "<p>赞同楼上的深度分析！现在的年轻人确实需要更多的选择. 火钳留名！</p>", "replyTo": 15}
+                {"id": 1, "author": "銈炴唱娴佹弧闈㈢殑灏忔槑味", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-18 09:15:32", "floor": 2, "content": "<p>鍓嶆帓鍗犲骇锛佸潗鏍囦笂娴凤紝鏈堣柂3500锛屾埧浠?涓?骞筹紝涓€涓湀宸ヨ祫鑳戒拱0.175骞筹紝鎯虫兂灏辨唱娴佹弧闈?.. T_T</p><p>宸ヤ綔3骞翠簡锛岃繛棣栦粯鐨勯浂澶撮兘娌℃敀澶燂紝绁為┈閮芥槸娴簯鍟婏紒</p>"},
+                {"id": 2, "author": "o慰銈炴澀宸炴柊甯傛皯銈炍縪", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-18 10:42:18", "floor": 3, "content": "<p>娌欏彂锛佹澀宸炲煄瑗匡紝鏈堣柂3000锛屾埧浠?.2涓?骞筹紝涓€涓湀鑳戒拱0.25骞筹紝鍔姏鍑犲勾杩樻槸鏈夊笇鏈涚殑锛?/p><p>鎵撶畻鍐嶆敀涓ゅ勾閽憋紝鍔犱笂瀹堕噷鏀寔涓€鐐癸紝浜夊彇鏄庡勾涓婅溅. 缁欒藩浜嗭紒</p>"},
+                {"id": 3, "author": "鎴愰兘瀹夐€稿摜(锟ｂ柦锟?", "authorLevel": "Lv.4 楂樼骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-19 14:28:55", "floor": 4, "content": "<p>鏉垮嚦銆傛垚閮戒簩鐜矾锛屾湀钖?500锛屾埧浠?000/骞筹紝涓€涓湀鑳戒拱0.4骞筹紝鎰熻鍘嬪姏杩樺ソ銆?/p><p>鎴愰兘鐢熸椿鑺傚鎱紝鎴夸环鐩稿鍙嬪ソ锛岄€傚悎瀹滃眳銆傝禐涓€涓紝涓嶈В閲婏紒</p>"},
+                {"id": 4, "author": "尉鍖椾含杩芥ⅵ浜何?, "authorLevel": "Lv.1 鏂版墜涓婅矾", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-19 16:55:03", "floor": 5, "content": "<p>鍦版澘銆傚寳浜簲鐜锛屾湀钖?000锛屾埧浠?.5涓?骞筹紝涓€涓湀0.26骞筹紝浣嗘槸棣栦粯澶毦浜?.. 涔熸槸閱変簡銆?/p><p>瀹堕噷鏉′欢涓€鑸紝鍏ㄩ潬鑷繁锛屼笉鐭ラ亾浠€涔堟椂鍊欐墠鑳藉噾澶熼浠? 鎴戝嫆涓幓锛?/p>"},
+                {"id": 5, "author": "骞垮窞鎵撳伐浜篲bule", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-20 09:30:17", "floor": 6, "content": "<p>鍦颁笅瀹ゃ€傚箍宸炲ぉ娌筹紝鏈堣柂3500锛屾埧浠?.2涓?骞筹紝涓€涓湀0.29骞筹紝鎱㈡參鏉ュ惂銆?/p><p>鐩告瘮鍖椾笂娣憋紝骞垮窞鐨勬埧浠疯繕鏄瘮杈冨弸濂界殑锛屽挰鍜墮杩樻槸鏈夊笇鏈涚殑. 缁欏姏锛?/p>"},
+                {"id": 6, "author": "鐏挸鐣欏悕銇姹夋柊闈掑勾", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-20 11:22:44", "floor": 7, "content": "<p>璺繃鎵撻叡娌广€傛姹夊厜璋凤紝鏈堣柂2000锛屾埧浠?000/骞筹紝涓€涓湀0.4骞筹紝鎰熻杩樺彲浠ユ帴鍙椼€?/p><p>鏂颁竴绾块噷姝︽眽鎬т环姣旀尯楂樼殑锛屽彂灞曚篃蹇紝鐪嬪ソ鏈潵. 鐏挸鐣欏悕锛?/p>"},
+                {"id": 7, "author": "鈫樻繁鍦冲鏂楄€呪問", "authorLevel": "Lv.3 涓骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-21 15:48:30", "floor": 8, "content": "<p>鍥磋銆傛繁鍦冲崡灞憋紝鏈堣柂5000锛屾埧浠?.5涓?骞筹紝涓€涓湀0.2骞筹紝澶毦浜嗗お闅句簡. 浣犻€犲悧锛?/p><p>鍑嗗鍥炶€佸鍙戝睍浜嗭紝娣卞湷瀹炲湪鏄拱涓嶈捣锛屽帇鍔涘お澶т簡. 楦ⅷ灞卞ぇ鍟婏紒</p>"},
+                {"id": 8, "author": "鑻忓窞灏忕櫧棰?^_鈭?鈽?, "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-21 17:15:08", "floor": 9, "content": "<p>娼滄按澶氬勾鍐掍釜娉°€傝嫃宸炲洯鍖猴紝鏈堣柂3000锛屾埧浠?000/骞筹紝涓€涓湀0.375骞筹紝鍔犳补鏀掗挶涓€?/p><p>鑻忓窞鐜濂斤紝绂讳笂娴疯繎锛屾劅瑙夋槸涓笉閿欑殑閫夋嫨. 濡ュΕ鐨勶紒</p>"},
+                {"id": 9, "author": "鉁块噸搴嗗湡钁椻溈", "authorLevel": "Lv.3 涓骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-22 10:30:00", "floor": 10, "content": "<p>閲嶅簡姹熷寳锛屾湀钖?200锛屾埧浠?000/骞筹紝涓€涓湀0.55骞筹紒绠€鐩村お骞哥浜嗭紒</p><p>閲嶅簡鎴夸环鐪熺殑寰堣壇蹇冿紝鐢熸椿鍘嬪姏灏忓緢澶氾紝鎺ㄨ崘澶у鏉ラ噸搴嗗彂灞? 鍚勭缇℃厱瀚夊鎭紒</p>"},
+                {"id": 10, "author": "瑗垮畨濂嬫枟鍝?1", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-22 14:20:15", "floor": 11, "content": "<p>瑗垮畨楂樻柊鍖猴紝鏈堣柂2800锛屾埧浠?500/骞筹紝涓€涓湀0.5骞筹紝杩樺彲浠ユ帴鍙椼€?/p><p>瑗垮畨鍙戝睍寰堝揩锛屾枃鍖栧簳钑存繁鍘氾紝閫傚悎瀹氬眳. 妤间笂+1锛?/p>"},
+                {"id": 11, "author": "鍧戠埞o鍘﹂棬宀涙皯", "authorLevel": "Lv.4 楂樼骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-23 09:45:30", "floor": 12, "content": "<p>鍘﹂棬宀涘唴锛屾湀钖?500锛屾埧浠?.5涓?骞筹紝涓€涓湀0.23骞筹紝鍘嬪姏灞卞ぇ...</p><p>涓嶈繃鍘﹂棬鐜鐪熺殑濂斤紝闈㈡湞澶ф捣鏄ユ殩鑺卞紑锛屽挰鍜墮鍧氭寔鍚? 鍧戠埞鍟婏紒</p>"},
+                {"id": 12, "author": "閮戝窞涓婄彮鏃?鍏冭姵浣犳€庝箞鐪?", "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-23 16:00:00", "floor": 13, "content": "<p>閮戝窞涓滃尯锛屾湀钖?000锛屾埧浠?000/骞筹紝涓€涓湀0.4骞筹紝鎰熻杩樿銆?/p><p>閮戝窞浣滀负涓師鏍稿績锛屽彂灞曟綔鍔涘ぇ锛屾埧浠风浉瀵瑰弸濂? 鍏冭姵锛屼綘鎬庝箞鐪嬶紵</p>"},
+                {"id": 13, "author": "妤间腑妤兼祴璇曞憳", "authorLevel": "Lv.1 鏂版墜涓婅矾", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-24 10:00:00", "floor": 14, "content": "<p>浣犺寰楀锛屼笂娴风殑鎴夸环纭疄璁╀汉鏈涘皹鑾強. 鎴戜篃鏄唹浜嗐€?/p>", "replyTo": 2},
+                {"id": 14, "author": "娣卞害璇勮瀹?, "authorLevel": "Lv.5 绀惧尯鍏冭€?, "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-24 11:30:00", "floor": 15, "content": "<p>鎴戜篃瑙夊緱涓婃捣鐨勭敓娲绘垚鏈お楂樹簡锛屽叾瀹炰簩绾垮煄甯備篃涓嶉敊. 缁欏姏涓嶈В閲婏紒</p>", "replyTo": 14},
+                {"id": 15, "author": "缁堟瀬鍥炲鑰?, "authorLevel": "Lv.2 鍒濈骇浼氬憳", "authorAvatar": "images/鐢ㄦ埛澶村儚.png", "time": "2010-04-24 12:45:00", "floor": 16, "content": "<p>璧炲悓妤间笂鐨勬繁搴﹀垎鏋愶紒鐜板湪鐨勫勾杞讳汉纭疄闇€瑕佹洿澶氱殑閫夋嫨. 鐏挸鐣欏悕锛?/p>", "replyTo": 15}
             ]
         },
         "2": {
             "id": 2,
-            "title": "关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知",
-            "author": "宁水市公安局闵江分局治安大队",
-            "authorLevel": "Lv.5 社区元老",
-            "authorAvatar": "images/用户头像.png",
+            "title": "鍏充簬寮€灞曗€滄嫆缁濋粍璧屾瘨銆佸叡寤哄钩瀹夌ぞ鍖衡€濆浼犳暀鑲叉椿鍔ㄧ殑閫氱煡",
+            "author": "瀹佹按甯傚叕瀹夊眬闂垫睙鍒嗗眬娌诲畨澶ч槦",
+            "authorLevel": "Lv.5 绀惧尯鍏冭€?,
+            "authorAvatar": "images/鐢ㄦ埛澶村儚.png",
             "publishTime": "2012-08-20 09:00:00",
             "viewCount": 567,
             "allowComments": false,
-            "content": "<p>福云路沿街各商铺、彩票销售网点、棋牌室、网吧、茶楼及全体居民：</p><p>近期接群众反映，我辖区个别场所存在疑似聚众赌博、地下字谜投注等不良现象。为进一步净化社区环境，特此重申：</p><p>一、严禁任何形式的赌博行为。包括但不限于：以营利为目的的棋牌局、利用网络平台进行的第三方投注、以“字画竞猜”或“生肖走势分析”为名义的变相聚赌。</p><p>二、彩票销售网点须持证经营。不得私自提供开奖趋势图、“内部参考图”或任何形式的“规律分析图”，不得向未成年人出售彩票。所谓“福粮”“内参”“玄机”等非法印刷品一经发现，立即收缴。</p><p>三、棋牌室、茶楼等场所须在晚23时前停止营业。严禁以“朋友消遣”为名组织大规模现金麻将局，不得容留陌生人员进行约定时间的轮换牌局。如有发现按聚众赌博论处</p><p>四、警惕以“文化交流”为名的非法出版物。近期发现有人以“字花”旧报合订本等形式夹带敏感内容向中老年人兜售。此类物品中常印有所谓“某某大师独家解密”等诱导性话术，本质是赌博投注的变体，请居民一旦发现及时举报。</p><p>五、请将本公告张贴于各楼栋单元入口。本周三上午九点将在福云小区中心广场举办“平安社区”现场宣讲，届时会有实物展示（含近期查获的印刷品如“福粮图”教具）供居民辨别。</p><p>举报电话：宁水市公安局闵江分局治安大队 053X-XXXXXXX<br>宁水市闵江区福云路街道办<br>2012年8月20日</p>",
+            "content": "<p>绂忎簯璺部琛楀悇鍟嗛摵銆佸僵绁ㄩ攢鍞綉鐐广€佹鐗屽銆佺綉鍚с€佽尪妤煎強鍏ㄤ綋灞呮皯锛?/p><p>杩戞湡鎺ョ兢浼楀弽鏄狅紝鎴戣緰鍖轰釜鍒満鎵€瀛樺湪鐤戜技鑱氫紬璧屽崥銆佸湴涓嬪瓧璋滄姇娉ㄧ瓑涓嶈壇鐜拌薄銆備负杩涗竴姝ュ噣鍖栫ぞ鍖虹幆澧冿紝鐗规閲嶇敵锛?/p><p>涓€銆佷弗绂佷换浣曞舰寮忕殑璧屽崥琛屼负銆傚寘鎷絾涓嶉檺浜庯細浠ヨ惀鍒╀负鐩殑鐨勬鐗屽眬銆佸埄鐢ㄧ綉缁滃钩鍙拌繘琛岀殑绗笁鏂规姇娉ㄣ€佷互鈥滃瓧鐢荤珵鐚溾€濇垨鈥滅敓鑲栬蛋鍔垮垎鏋愨€濅负鍚嶄箟鐨勫彉鐩歌仛璧屻€?/p><p>浜屻€佸僵绁ㄩ攢鍞綉鐐归』鎸佽瘉缁忚惀銆備笉寰楃鑷彁渚涘紑濂栬秼鍔垮浘銆佲€滃唴閮ㄥ弬鑰冨浘鈥濇垨浠讳綍褰㈠紡鐨勨€滆寰嬪垎鏋愬浘鈥濓紝涓嶅緱鍚戞湭鎴愬勾浜哄嚭鍞僵绁ㄣ€傛墍璋撯€滅绮€濃€滃唴鍙傗€濃€滅巹鏈衡€濈瓑闈炴硶鍗板埛鍝佷竴缁忓彂鐜帮紝绔嬪嵆鏀剁即銆?/p><p>涓夈€佹鐗屽銆佽尪妤肩瓑鍦烘墍椤诲湪鏅?3鏃跺墠鍋滄钀ヤ笟銆備弗绂佷互鈥滄湅鍙嬫秷閬ｂ€濅负鍚嶇粍缁囧ぇ瑙勬ā鐜伴噾楹诲皢灞€锛屼笉寰楀鐣欓檶鐢熶汉鍛樿繘琛岀害瀹氭椂闂寸殑杞崲鐗屽眬銆傚鏈夊彂鐜版寜鑱氫紬璧屽崥璁哄</p><p>鍥涖€佽鎯曚互鈥滄枃鍖栦氦娴佲€濅负鍚嶇殑闈炴硶鍑虹増鐗┿€傝繎鏈熷彂鐜版湁浜轰互鈥滃瓧鑺扁€濇棫鎶ュ悎璁㈡湰绛夊舰寮忓す甯︽晱鎰熷唴瀹瑰悜涓€佸勾浜哄厹鍞€傛绫荤墿鍝佷腑甯稿嵃鏈夋墍璋撯€滄煇鏌愬ぇ甯堢嫭瀹惰В瀵嗏€濈瓑璇卞鎬ц瘽鏈紝鏈川鏄祵鍗氭姇娉ㄧ殑鍙樹綋锛岃灞呮皯涓€鏃﹀彂鐜板強鏃朵妇鎶ャ€?/p><p>浜斻€佽灏嗘湰鍏憡寮犺创浜庡悇妤兼爧鍗曞厓鍏ュ彛銆傛湰鍛ㄤ笁涓婂崍涔濈偣灏嗗湪绂忎簯灏忓尯涓績骞垮満涓惧姙鈥滃钩瀹夌ぞ鍖衡€濈幇鍦哄璁诧紝灞婃椂浼氭湁瀹炵墿灞曠ず锛堝惈杩戞湡鏌ヨ幏鐨勫嵃鍒峰搧濡傗€滅绮浘鈥濇暀鍏凤級渚涘眳姘戣鲸鍒€?/p><p>涓炬姤鐢佃瘽锛氬畞姘村競鍏畨灞€闂垫睙鍒嗗眬娌诲畨澶ч槦 053X-XXXXXXX<br>瀹佹按甯傞椀姹熷尯绂忎簯璺閬撳姙<br>2012骞?鏈?0鏃?/p>",
             "comments": []
         },
         "4": {
             "id": 4,
-            "title": "结婚两年，老公嫌我胖，我想离婚了，该怎么继续……",
-            "author": "紫色的梦",
-            "authorLevel": "Lv.2 初级会员",
-            "authorAvatar": "梦",
+            "title": "缁撳涓ゅ勾锛岃€佸叕瀚屾垜鑳栵紝鎴戞兂绂诲浜嗭紝璇ユ€庝箞缁х画鈥︹€?,
+            "author": "绱壊鐨勬ⅵ",
+            "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+            "authorAvatar": "姊?,
             "publishTime": "2010-07-15 14:23:00",
             "viewCount": 1582,
             "allowComments": true,
-            "content": "<p>我和老公是大学同学，恋爱五年结了婚，到现在刚好两年。结婚前 I 98斤，他天天说就喜欢我这样肉肉的。结婚后我因为工作压力大、内分泌失调胖了差不多三十斤，唉，我自己都天天焦虑呢……上个月他开始嫌我胖，一开始还是开玩笑呢，后来又认真地说让我减肥，他以前从不这样说我的。我试着减了，每天下班回来晚饭不吃，还跳绳，瘦了五斤又反弹了。昨天晚上他去洗澡了，我看见他和堂弟的微信聊天记录，说我胖，没有腰摸起来没有灵魂。不如他的前女友瘦可以各种姿势，玩得好天天想。还有半个月就到我们两周年纪念日了，看到后我没跟他说，不过心里想离婚。我可以瘦，可以减肥，但我不想讨好一个真心嫌弃我的人。</p><p>他比我小十个月，我今年也快三十了，还没要孩子。我觉得他是一个自私的人，这么大了只顾自己，钱也赚不了多少，可我自己没有存款，也不敢离婚。</p><p>心里苦！不知道该对谁说……女人上哪去找一个真心爱自己的男人？</p>",
+            "content": "<p>鎴戝拰鑰佸叕鏄ぇ瀛﹀悓瀛︼紝鎭嬬埍浜斿勾缁撲簡濠氾紝鍒扮幇鍦ㄥ垰濂戒袱骞淬€傜粨濠氬墠 I 98鏂わ紝浠栧ぉ澶╄灏卞枩娆㈡垜杩欐牱鑲夎倝鐨勩€傜粨濠氬悗鎴戝洜涓哄伐浣滃帇鍔涘ぇ銆佸唴鍒嗘硨澶辫皟鑳栦簡宸笉澶氫笁鍗佹枻锛屽攭锛屾垜鑷繁閮藉ぉ澶╃劍铏戝憿鈥︹€︿笂涓湀浠栧紑濮嬪珜鎴戣儢锛屼竴寮€濮嬭繕鏄紑鐜╃瑧鍛紝鍚庢潵鍙堣鐪熷湴璇磋鎴戝噺鑲ワ紝浠栦互鍓嶄粠涓嶈繖鏍疯鎴戠殑銆傛垜璇曠潃鍑忎簡锛屾瘡澶╀笅鐝洖鏉ユ櫄楗笉鍚冿紝杩樿烦缁筹紝鐦︿簡浜旀枻鍙堝弽寮逛簡銆傛槰澶╂櫄涓婁粬鍘绘礂婢′簡锛屾垜鐪嬭浠栧拰鍫傚紵鐨勫井淇¤亰澶╄褰曪紝璇存垜鑳栵紝娌℃湁鑵版懜璧锋潵娌℃湁鐏甸瓊銆備笉濡備粬鐨勫墠濂冲弸鐦﹀彲浠ュ悇绉嶅Э鍔匡紝鐜╁緱濂藉ぉ澶╂兂銆傝繕鏈夊崐涓湀灏卞埌鎴戜滑涓ゅ懆骞寸邯蹇垫棩浜嗭紝鐪嬪埌鍚庢垜娌¤窡浠栬锛屼笉杩囧績閲屾兂绂诲銆傛垜鍙互鐦︼紝鍙互鍑忚偉锛屼絾鎴戜笉鎯宠濂戒竴涓湡蹇冨珜寮冩垜鐨勪汉銆?/p><p>浠栨瘮鎴戝皬鍗佷釜鏈堬紝鎴戜粖骞翠篃蹇笁鍗佷簡锛岃繕娌¤瀛╁瓙銆傛垜瑙夊緱浠栨槸涓€涓嚜绉佺殑浜猴紝杩欎箞澶т簡鍙【鑷繁锛岄挶涔熻禋涓嶄簡澶氬皯锛屽彲鎴戣嚜宸辨病鏈夊瓨娆撅紝涔熶笉鏁㈢濠氥€?/p><p>蹇冮噷鑻︼紒涓嶇煡閬撹瀵硅皝璇粹€︹€﹀コ浜轰笂鍝幓鎵句竴涓湡蹇冪埍鑷繁鐨勭敺浜猴紵</p>",
             "comments": [
                 {
                     "id": 1,
-                    "author": "暖心小贴士",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "贴",
+                    "author": "鏆栧績灏忚创澹?,
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "璐?,
                     "time": "2010-07-15 15:10:22",
                     "floor": 2,
-                    "content": "<p>抱抱楼主。我老公以前也嫌 v 胖，我当时直接回了一句“看看你自己的样子”。男人就是欠教育</p>"
+                    "content": "<p>鎶辨姳妤间富銆傛垜鑰佸叕浠ュ墠涔熷珜 v 鑳栵紝鎴戝綋鏃剁洿鎺ュ洖浜嗕竴鍙モ€滅湅鐪嬩綘鑷繁鐨勬牱瀛愨€濄€傜敺浜哄氨鏄瑺鏁欒偛</p>"
                 },
                 {
                     "id": 2,
-                    "author": "职场理智姐",
-                    "authorLevel": "Lv.4 高级会员",
-                    "authorAvatar": "姐",
+                    "author": "鑱屽満鐞嗘櫤濮?,
+                    "authorLevel": "Lv.4 楂樼骇浼氬憳",
+                    "authorAvatar": "濮?,
                     "time": "2010-07-15 15:45:10",
                     "floor": 3,
-                    "content": "<p>这体重也不胖呀？你长胖是因为内分泌失调，内分泌失调是因为压力大，压力大是因为什么你心里清楚。听姐的，把压力源头解决掉，比减肥管用！</p>"
+                    "content": "<p>杩欎綋閲嶄篃涓嶈儢鍛€锛熶綘闀胯儢鏄洜涓哄唴鍒嗘硨澶辫皟锛屽唴鍒嗘硨澶辫皟鏄洜涓哄帇鍔涘ぇ锛屽帇鍔涘ぇ鏄洜涓轰粈涔堜綘蹇冮噷娓呮銆傚惉濮愮殑锛屾妸鍘嬪姏婧愬ご瑙ｅ喅鎺夛紝姣斿噺鑲ョ鐢紒</p>"
                 },
                 {
                     "id": 3,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 16:02:45",
                     "floor": 4,
-                    "content": "<p>谢谢。压力源头可能是我婆婆，她一直想让我们生孩子，但我老公说现在不是时候。每次回去吃饭她都用那种眼神看我，我去她家比上班还累，更可恨的是我老公当着家人朋友的面从不嫌我，还说胖点好，叫我多吃点。</p>",
+                    "content": "<p>璋㈣阿銆傚帇鍔涙簮澶村彲鑳芥槸鎴戝﹩濠嗭紝濂逛竴鐩存兂璁╂垜浠敓瀛╁瓙锛屼絾鎴戣€佸叕璇寸幇鍦ㄤ笉鏄椂鍊欍€傛瘡娆″洖鍘诲悆楗ス閮界敤閭ｇ鐪肩鐪嬫垜锛屾垜鍘诲ス瀹舵瘮涓婄彮杩樼疮锛屾洿鍙仺鐨勬槸鎴戣€佸叕褰撶潃瀹朵汉鏈嬪弸鐨勯潰浠庝笉瀚屾垜锛岃繕璇磋儢鐐瑰ソ锛屽彨鎴戝鍚冪偣銆?/p>",
                     "replyTo": 3
                 },
                 {
                     "id": 4,
-                    "author": "辣妈萌宝",
-                    "authorLevel": "Lv.3 中级会员",
-                    "authorAvatar": "宝",
+                    "author": "杈ｅ钀屽疂",
+                    "authorLevel": "Lv.3 涓骇浼氬憳",
+                    "authorAvatar": "瀹?,
                     "time": "2010-07-15 16:30:15",
                     "floor": 5,
-                    "content": "<p>有孩子了吗？没有的话还好办。我生完孩子胖了二十斤，我老公屁都不敢放，敢离我就敢带孩子走，他有话说不？胖点又咋了？你就是太在意他怎么看你了</p>"
+                    "content": "<p>鏈夊瀛愪簡鍚楋紵娌℃湁鐨勮瘽杩樺ソ鍔炪€傛垜鐢熷畬瀛╁瓙鑳栦簡浜屽崄鏂わ紝鎴戣€佸叕灞侀兘涓嶆暍鏀撅紝鏁㈢鎴戝氨鏁㈠甫瀛╁瓙璧帮紝浠栨湁璇濊涓嶏紵鑳栫偣鍙堝拫浜嗭紵浣犲氨鏄お鍦ㄦ剰浠栨€庝箞鐪嬩綘浜?/p>"
                 },
                 {
                     "id": 5,
-                    "author": "健身达人阿强",
-                    "authorLevel": "Lv.5 社区元老",
-                    "authorAvatar": "强",
+                    "author": "鍋ヨ韩杈句汉闃垮己",
+                    "authorLevel": "Lv.5 绀惧尯鍏冭€?,
+                    "authorAvatar": "寮?,
                     "time": "2010-07-15 17:15:40",
                     "floor": 6,
-                    "content": "<p>姐妹们听我说，我三个月瘦了二十斤，没靠什么药物和手术，就是管住嘴迈开腿，每天一万步！碳水全断，晚餐六点之前吃完。变美不是为了男人，是为了自己！</p>"
+                    "content": "<p>濮愬浠惉鎴戣锛屾垜涓変釜鏈堢槮浜嗕簩鍗佹枻锛屾病闈犱粈涔堣嵂鐗╁拰鎵嬫湳锛屽氨鏄浣忓槾杩堝紑鑵匡紝姣忓ぉ涓€涓囨锛佺⒊姘村叏鏂紝鏅氶鍏偣涔嬪墠鍚冨畬銆傚彉缇庝笉鏄负浜嗙敺浜猴紝鏄负浜嗚嚜宸憋紒</p>"
                 },
                 {
                     "id": 6,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 17:45:12",
                     "floor": 7,
-                    "content": "<p>我试过断碳水，但上班很难提起精神，集中不了注意力呀</p>",
+                    "content": "<p>鎴戣瘯杩囨柇纰虫按锛屼絾涓婄彮寰堥毦鎻愯捣绮剧锛岄泦涓笉浜嗘敞鎰忓姏鍛€</p>",
                     "replyTo": 6
                 },
                 {
                     "id": 7,
-                    "author": "情感小魔女",
-                    "authorLevel": "Lv.3 中级会员",
-                    "authorAvatar": "魔",
+                    "author": "鎯呮劅灏忛瓟濂?,
+                    "authorLevel": "Lv.3 涓骇浼氬憳",
+                    "authorAvatar": "榄?,
                     "time": "2010-07-15 18:20:05",
                     "floor": 8,
-                    "content": "<p>这种男的就欠治，楼主我教你一招，你也开始嫌弃他。嫌他头发少，嫌他挣钱不多，嫌他妈宝，嫌他各种！然后当你真的开始挑剔他，你就不那么害怕他挑剔你了，亲测有效！哈哈哈！</p>"
+                    "content": "<p>杩欑鐢风殑灏辨瑺娌伙紝妤间富鎴戞暀浣犱竴鎷涳紝浣犱篃寮€濮嬪珜寮冧粬銆傚珜浠栧ご鍙戝皯锛屽珜浠栨專閽变笉澶氾紝瀚屼粬濡堝疂锛屽珜浠栧悇绉嶏紒鐒跺悗褰撲綘鐪熺殑寮€濮嬫寫鍓斾粬锛屼綘灏变笉閭ｄ箞瀹虫€曚粬鎸戝墧浣犱簡锛屼翰娴嬫湁鏁堬紒鍝堝搱鍝堬紒</p>"
                 },
                 {
                     "id": 8,
-                    "author": "路边小草",
-                    "authorLevel": "Lv.1 新手上路",
-                    "authorAvatar": "草",
+                    "author": "璺竟灏忚崏",
+                    "authorLevel": "Lv.1 鏂版墜涓婅矾",
+                    "authorAvatar": "鑽?,
                     "time": "2010-07-15 19:10:30",
                     "floor": 9,
-                    "content": "<p>说到这个我突然想起来，楼主有没有试过报个课？你这种属于心理问题，我表姐当年也是因为类似的事闹得差点离婚，后来她也是打算报一个什么帮人调整心态的机构，不过好像没报上名</p>"
+                    "content": "<p>璇村埌杩欎釜鎴戠獊鐒舵兂璧锋潵锛屾ゼ涓绘湁娌℃湁璇曡繃鎶ヤ釜璇撅紵浣犺繖绉嶅睘浜庡績鐞嗛棶棰橈紝鎴戣〃濮愬綋骞翠篃鏄洜涓虹被浼肩殑浜嬮椆寰楀樊鐐圭濠氾紝鍚庢潵濂逛篃鏄墦绠楁姤涓€涓粈涔堝府浜鸿皟鏁村績鎬佺殑鏈烘瀯锛屼笉杩囧ソ鍍忔病鎶ヤ笂鍚?/p>"
                 },
                 {
                     "id": 9,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 19:35:18",
                     "floor": 10,
-                    "content": "<p>你说的那种机构我不了解。我同事倒是推荐过一个什么心理课程，我还没去问。</p>",
+                    "content": "<p>浣犺鐨勯偅绉嶆満鏋勬垜涓嶄簡瑙ｃ€傛垜鍚屼簨鍊掓槸鎺ㄨ崘杩囦竴涓粈涔堝績鐞嗚绋嬶紝鎴戣繕娌″幓闂€?/p>",
                     "replyTo": 9
                 },
                 {
                     "id": 10,
-                    "author": "真相只有一个",
-                    "authorLevel": "Lv.4 高级会员",
-                    "authorAvatar": "真",
+                    "author": "鐪熺浉鍙湁涓€涓?,
+                    "authorLevel": "Lv.4 楂樼骇浼氬憳",
+                    "authorAvatar": "鐪?,
                     "time": "2010-07-15 20:15:00",
                     "floor": 11,
-                    "content": "<p>可以是可以，但也得谨慎选择！我一个同学以前就进过这种机构，入学费好像五六千还是多少。后来应该是出什么事了吧，反正搬走了，去年路过看到外面挂着招租的牌子。提醒楼主看到那种学校绕着走。正规心理咨询去三甲医院，越神秘的越有猫腻</p>"
+                    "content": "<p>鍙互鏄彲浠ワ紝浣嗕篃寰楄皑鎱庨€夋嫨锛佹垜涓€涓悓瀛︿互鍓嶅氨杩涜繃杩欑鏈烘瀯锛屽叆瀛﹁垂濂藉儚浜斿叚鍗冭繕鏄灏戙€傚悗鏉ュ簲璇ユ槸鍑轰粈涔堜簨浜嗗惂锛屽弽姝ｆ惉璧颁簡锛屽幓骞磋矾杩囩湅鍒板闈㈡寕鐫€鎷涚鐨勭墝瀛愩€傛彁閱掓ゼ涓荤湅鍒伴偅绉嶅鏍＄粫鐫€璧般€傛瑙勫績鐞嗗挩璇㈠幓涓夌敳鍖婚櫌锛岃秺绁炵鐨勮秺鏈夌尗鑵?/p>"
                 },
                 {
                     "id": 11,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 20:45:00",
                     "floor": 12,
-                    "content": "<p>谢谢提醒，我没打算报什么学校，没钱也没时间……</p>",
+                    "content": "<p>璋㈣阿鎻愰啋锛屾垜娌℃墦绠楁姤浠€涔堝鏍★紝娌￠挶涔熸病鏃堕棿鈥︹€?/p>",
                     "replyTo": 11
                 },
                 {
                     "id": 12,
-                    "author": "理智分析师",
-                    "authorLevel": "Lv.4 高级会员",
-                    "authorAvatar": "理",
+                    "author": "鐞嗘櫤鍒嗘瀽甯?,
+                    "authorLevel": "Lv.4 楂樼骇浼氬憳",
+                    "authorAvatar": "鐞?,
                     "time": "2010-07-15 21:10:00",
                     "floor": 13,
-                    "content": "<p>帖子有点歪了哈，正个楼，离不离是大事，但在此之前，试着找一份不需要在意他眼光的事做，业余时间有自己能投入的东西，你的情绪独立性会强很多。至于减肥，等你不那么焦虑了自然会瘦，身体很诚实</p>"
+                    "content": "<p>甯栧瓙鏈夌偣姝簡鍝堬紝姝ｄ釜妤硷紝绂讳笉绂绘槸澶т簨锛屼絾鍦ㄦ涔嬪墠锛岃瘯鐫€鎵句竴浠戒笉闇€瑕佸湪鎰忎粬鐪煎厜鐨勪簨鍋氾紝涓氫綑鏃堕棿鏈夎嚜宸辫兘鎶曞叆鐨勪笢瑗匡紝浣犵殑鎯呯华鐙珛鎬т細寮哄緢澶氥€傝嚦浜庡噺鑲ワ紝绛変綘涓嶉偅涔堢劍铏戜簡鑷劧浼氱槮锛岃韩浣撳緢璇氬疄</p>"
                 },
                 {
                     "id": 13,
-                    "author": "江湖百晓生",
-                    "authorLevel": "Lv.3 中级会员",
-                    "authorAvatar": "生",
+                    "author": "姹熸箹鐧炬檽鐢?,
+                    "authorLevel": "Lv.3 涓骇浼氬憳",
+                    "authorAvatar": "鐢?,
                     "time": "2010-07-15 21:35:00",
                     "floor": 14,
-                    "content": "<p>对对对，我表姐也是，不知道从哪听来这么个机构，只不过我姐夫觉得是骗钱的没让她去，后来就没听说过了。估计真是骗钱的，倒闭了吧！呵呵！</p>",
+                    "content": "<p>瀵瑰瀵癸紝鎴戣〃濮愪篃鏄紝涓嶇煡閬撲粠鍝惉鏉ヨ繖涔堜釜鏈烘瀯锛屽彧涓嶈繃鎴戝澶寰楁槸楠楅挶鐨勬病璁╁ス鍘伙紝鍚庢潵灏辨病鍚杩囦簡銆備及璁＄湡鏄獥閽辩殑锛屽€掗棴浜嗗惂锛佸懙鍛碉紒</p>",
                     "replyTo": 11
                 },
                 {
                     "id": 14,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 22:05:00",
                     "floor": 15,
-                    "content": "<p>你说得对，我确实什么自己的事都没在做。自从结了婚，自己的时间就被褫夺了，以前还画点画，结婚后再也没碰过，为柴米油盐酱醋茶操碎了心！我今晚上翻一翻以前的本子</p>",
+                    "content": "<p>浣犺寰楀锛屾垜纭疄浠€涔堣嚜宸辩殑浜嬮兘娌″湪鍋氥€傝嚜浠庣粨浜嗗锛岃嚜宸辩殑鏃堕棿灏辫瑜ず浜嗭紝浠ュ墠杩樼敾鐐圭敾锛岀粨濠氬悗鍐嶄篃娌＄杩囷紝涓烘煷绫虫补鐩愰叡閱嬭尪鎿嶇浜嗗績锛佹垜浠婃櫄涓婄炕涓€缈讳互鍓嶇殑鏈瓙</p>",
                     "replyTo": 13
                 },
                 {
                     "id": 15,
-                    "author": "画笔生花",
-                    "authorLevel": "Lv.3 中级会员",
-                    "authorAvatar": "画",
+                    "author": "鐢荤瑪鐢熻姳",
+                    "authorLevel": "Lv.3 涓骇浼氬憳",
+                    "authorAvatar": "鐢?,
                     "time": "2010-07-15 22:30:00",
                     "floor": 16,
-                    "content": "<p>画！画起来！画得好不好不重要，重要的是那是你自己的东西。你老公嫌你胖是他的问题，你把画笔捡起来是你的问题。加油楼主！</p>"
+                    "content": "<p>鐢伙紒鐢昏捣鏉ワ紒鐢诲緱濂戒笉濂戒笉閲嶈锛岄噸瑕佺殑鏄偅鏄綘鑷繁鐨勪笢瑗裤€備綘鑰佸叕瀚屼綘鑳栨槸浠栫殑闂锛屼綘鎶婄敾绗旀崱璧锋潵鏄綘鐨勯棶棰樸€傚姞娌规ゼ涓伙紒</p>"
                 },
                 {
                     "id": 16,
-                    "author": "紫色的梦",
-                    "authorLevel": "Lv.2 初级会员",
-                    "authorAvatar": "梦",
+                    "author": "绱壊鐨勬ⅵ",
+                    "authorLevel": "Lv.2 鍒濈骇浼氬憳",
+                    "authorAvatar": "姊?,
                     "time": "2010-07-15 22:50:00",
                     "floor": 17,
-                    "content": "<p>谢谢大家，我去找速写本了。婚姻的事我再想想。</p>"
+                    "content": "<p>璋㈣阿澶у锛屾垜鍘绘壘閫熷啓鏈簡銆傚濮荤殑浜嬫垜鍐嶆兂鎯炽€?/p>"
                 }
             ]
         }
@@ -1092,19 +1092,19 @@ function getFallbackPostData(postId) {
 }
 
 
-// 获取帖子列表（从data文件夹读取）
+// 鑾峰彇甯栧瓙鍒楄〃锛堜粠data鏂囦欢澶硅鍙栵級
 async function loadPostList() {
-    // 显示加载状态
+    // 鏄剧ず鍔犺浇鐘舵€?
     const container = document.querySelector('.forum-posts');
     if (container) {
-        container.innerHTML = '<div style="padding: 20px; text-align: center;">加载中...</div>';
+        container.innerHTML = '<div style="padding: 20px; text-align: center;">鍔犺浇涓?..</div>';
     }
     
     if (isFlarumConfigured()) {
         try {
             return await flarumLoadDiscussionList();
         } catch (error) {
-            console.error('加载帖子列表失败:', error);
+            console.error('鍔犺浇甯栧瓙鍒楄〃澶辫触:', error);
             return [];
         }
     }
@@ -1126,7 +1126,7 @@ async function loadPostList() {
                 });
             }
         } catch (error) {
-            // 如果文件不存在，跳过
+            // 濡傛灉鏂囦欢涓嶅瓨鍦紝璺宠繃
         }
     }
     return postList;
@@ -1138,24 +1138,24 @@ function renderPostListIntoIndex(recentReplies) {
 
     const safeList = Array.isArray(recentReplies) ? recentReplies : [];
 
-    // 截取字符串函数
+    // 鎴彇瀛楃涓插嚱鏁?
     const truncate = (str, maxLength) => {
         if (!str) return '';
-        const text = str.replace(/<[^>]*>/g, '').trim(); // 移除HTML标签
+        const text = str.replace(/<[^>]*>/g, '').trim(); // 绉婚櫎HTML鏍囩
         return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
     };
 
     const buildReplyHref = (reply) => buildPostFloorLink(reply.discussionId, reply.floor);
 
     container.innerHTML = `
-        <h3>最新回复</h3>
+        <h3>鏈€鏂板洖澶?/h3>
         <table class="posts-table">
             <thead>
                 <tr>
-                    <th style="width: 30%;">回帖内容</th>
-                    <th style="width: 18%;">回帖人</th>
-                    <th style="width: 17%;">时间</th>
-                    <th style="width: 35%;">帖子标题</th>
+                    <th style="width: 30%;">鍥炲笘鍐呭</th>
+                    <th style="width: 18%;">鍥炲笘浜?/th>
+                    <th style="width: 17%;">鏃堕棿</th>
+                    <th style="width: 35%;">甯栧瓙鏍囬</th>
                 </tr>
             </thead>
             <tbody>
@@ -1166,7 +1166,7 @@ function renderPostListIntoIndex(recentReplies) {
                         <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
                         <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 20)}</a></td>
                     </tr>
-                `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
+                `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">鏆傛棤鍥炲</td></tr>`}
             </tbody>
         </table>
     `;
@@ -1183,13 +1183,13 @@ function cleanupLegacyLocalStorage() {
     keysToRemove.forEach((k) => localStorage.removeItem(k));
 }
 
-// 页面加载完成后执行
+// 椤甸潰鍔犺浇瀹屾垚鍚庢墽琛?
 window.addEventListener('DOMContentLoaded', function() {
-    // 处理所有 href="#" 的链接
+    // 澶勭悊鎵€鏈?href="#" 鐨勯摼鎺?
     document.addEventListener('click', (e) => {
         const target = e.target.closest('a');
         if (target && target.getAttribute('href') === '#') {
-            // 排除掉已经有特定功能的链接（如回复、取消回复、退出登录等）
+            // 鎺掗櫎鎺夊凡缁忔湁鐗瑰畾鍔熻兘鐨勯摼鎺ワ紙濡傚洖澶嶃€佸彇娑堝洖澶嶃€侀€€鍑虹櫥褰曠瓑锛?
             if (target.classList.contains('reply-link') || 
                 target.id === 'cancel-reply' || 
                 target.id === 'logout-btn' ||
@@ -1201,17 +1201,17 @@ window.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
         }
         
-        // 处理楼中楼楼层链接的平滑滚动
+        // 澶勭悊妤间腑妤兼ゼ灞傞摼鎺ョ殑骞虫粦婊氬姩
         if (target && target.classList.contains('quote-floor-link')) {
             e.preventDefault();
             const href = target.getAttribute('href');
             if (href) {
-                // 判断是否需要跳转到其他页面
+                // 鍒ゆ柇鏄惁闇€瑕佽烦杞埌鍏朵粬椤甸潰
                 if (href.startsWith('?')) {
-                    // 跳转到其他页面，让浏览器处理
+                    // 璺宠浆鍒板叾浠栭〉闈紝璁╂祻瑙堝櫒澶勭悊
                     window.location.href = href;
                 } else if (href.startsWith('#post-')) {
-                    // 在当前页内跳转
+                    // 鍦ㄥ綋鍓嶉〉鍐呰烦杞?
                     const floorId = href.substring(6);
                     const targetElement = document.getElementById(`post-${floorId}`);
                     if (targetElement) {
@@ -1219,7 +1219,7 @@ window.addEventListener('DOMContentLoaded', function() {
                             behavior: 'smooth', 
                             block: 'center' 
                         });
-                        // 添加高亮效果
+                        // 娣诲姞楂樹寒鏁堟灉
                         targetElement.style.backgroundColor = '#ffffcc';
                         setTimeout(() => {
                             targetElement.style.backgroundColor = '';
@@ -1232,84 +1232,84 @@ window.addEventListener('DOMContentLoaded', function() {
 
     cleanupLegacyLocalStorage();
     
-    // 测试Flarum API连接和动态加载首页热帖（合并为一个调用，避免重复请求）
+    // 娴嬭瘯Flarum API杩炴帴鍜屽姩鎬佸姞杞介椤电儹甯栵紙鍚堝苟涓轰竴涓皟鐢紝閬垮厤閲嶅璇锋眰锛?
     if (isFlarumConfigured()) {
-        console.log('Flarum API 配置已完成，正在加载首页内容...');
+        console.log('Flarum API 閰嶇疆宸插畬鎴愶紝姝ｅ湪鍔犺浇棣栭〉鍐呭...');
         renderDynamicHomeLinks();
     } else {
-        console.log('Flarum API 未配置');
+        console.log('Flarum API 鏈厤缃?);
     }
     
-    // 检查是否是帖子详情页面
+    // 妫€鏌ユ槸鍚︽槸甯栧瓙璇︽儏椤甸潰
     if (window.location.pathname.includes('post.html')) {
-        // 更新用户链接状态（登录/注册按钮）
+        // 鏇存柊鐢ㄦ埛閾炬帴鐘舵€侊紙鐧诲綍/娉ㄥ唽鎸夐挳锛?
         updateUserLinks();
         loadPostDetailsFromJson();
-        // 表单事件只绑定一次
+        // 琛ㄥ崟浜嬩欢鍙粦瀹氫竴娆?
         setupReplyForm();
         
-        // 页面加载时检查登录状态，修改回复表单
+        // 椤甸潰鍔犺浇鏃舵鏌ョ櫥褰曠姸鎬侊紝淇敼鍥炲琛ㄥ崟
         updateReplyFormForLoginStatus();
     }
 
     if (document.querySelector('.forum-posts')) {
         flarumLoadRecentReplies().then(renderPostListIntoIndex).catch((error) => {
-            console.error('加载最新回复失败:', error);
+            console.error('鍔犺浇鏈€鏂板洖澶嶅け璐?', error);
         });
     }
 
-    // 平滑滚动效果
+    // 骞虫粦婊氬姩鏁堟灉
     setupSmoothScroll();
     
-    // 浮窗广告
+    // 娴獥骞垮憡
     // setupFloatingAd();
     setupFloatingAd2();
     
-    // 右下角弹窗广告
+    // 鍙充笅瑙掑脊绐楀箍鍛?
     setupPopupAd();
     
-    // 音频控制
+    // 闊抽鎺у埗
     setupAudio();
     
-    // 更新用户导航链接
+    // 鏇存柊鐢ㄦ埛瀵艰埅閾炬帴
     updateUserLinks();
     
-    // 将近期热帖滚动区域滚动到顶部
+    // 灏嗚繎鏈熺儹甯栨粴鍔ㄥ尯鍩熸粴鍔ㄥ埌椤堕儴
     const scrollableContent = document.querySelector('.scrollable-content');
     if (scrollableContent) {
         scrollableContent.scrollTop = 0;
     }
 });
 
-// 测试Flarum API连接
+// 娴嬭瘯Flarum API杩炴帴
 async function testFlarumConnection() {
     try {
-        console.log('正在测试Flarum API连接...');
+        console.log('姝ｅ湪娴嬭瘯Flarum API杩炴帴...');
         const response = await flarumRequest('/');
-        console.log('Flarum API 连接成功:', response);
+        console.log('Flarum API 杩炴帴鎴愬姛:', response);
         
-        // 测试获取讨论列表
+        // 娴嬭瘯鑾峰彇璁ㄨ鍒楄〃
         const discussions = await flarumRequest('/discussions?sort=-createdAt&page[limit]=5&include=user');
-        console.log('获取讨论列表成功:', discussions);
+        console.log('鑾峰彇璁ㄨ鍒楄〃鎴愬姛:', discussions);
         
-        console.log('Flarum API 测试完成，连接正常！');
+        console.log('Flarum API 娴嬭瘯瀹屾垚锛岃繛鎺ユ甯革紒');
     } catch (error) {
-        console.error('Flarum API 连接失败:', error);
-        console.error('可能的原因: 1. Flarum论坛未运行 2. 跨域配置问题 3. 网络连接问题');
+        console.error('Flarum API 杩炴帴澶辫触:', error);
+        console.error('鍙兘鐨勫師鍥? 1. Flarum璁哄潧鏈繍琛?2. 璺ㄥ煙閰嶇疆闂 3. 缃戠粶杩炴帴闂');
     }
 }
 
-// 设置音频控制
+// 璁剧疆闊抽鎺у埗
 function setupAudio() {
     const audio = document.getElementById('background-music');
     const audioToggle = document.getElementById('audio-toggle');
     
     if (audio && audioToggle) {
-        // 初始状态为暂停
+        // 鍒濆鐘舵€佷负鏆傚仠
         audio.pause();
         audioToggle.classList.add('paused');
         
-        // 点击切换播放状态
+        // 鐐瑰嚮鍒囨崲鎾斁鐘舵€?
         audioToggle.addEventListener('click', function() {
             if (audio.paused) {
                 audio.play().catch(function(error) {
@@ -1322,7 +1322,7 @@ function setupAudio() {
             }
         });
         
-        // 监听播放状态
+        // 鐩戝惉鎾斁鐘舵€?
         audio.addEventListener('play', function() {
             audioToggle.classList.remove('paused');
         });
@@ -1333,108 +1333,108 @@ function setupAudio() {
     }
 }
 
-// 从JSON文件加载帖子详情并渲染
+// 浠嶫SON鏂囦欢鍔犺浇甯栧瓙璇︽儏骞舵覆鏌?
 async function loadPostDetailsFromJson() {
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id') || '1';
     
     const postData = await loadPostData(postId);
     if (!postData) {
-        console.error('无法加载帖子数据');
+        console.error('鏃犳硶鍔犺浇甯栧瓙鏁版嵁');
         return;
     }
     
     renderForumThread(postData);
 }
 
-// 渲染论坛帖子
+// 娓叉煋璁哄潧甯栧瓙
 function renderForumThread(postData) {
     const threadContainer = document.querySelector('.forum-thread');
     if (!threadContainer) return;
     
-    // 保存帖子数据到全局变量，供后续使用（避免重复加载）
+    // 淇濆瓨甯栧瓙鏁版嵁鍒板叏灞€鍙橀噺锛屼緵鍚庣画浣跨敤锛堥伩鍏嶉噸澶嶅姞杞斤級
     window.currentPostData = postData;
     const isLoggedIn = !!getFlarumToken();
 
-    // 更新页面标题
-    document.title = `红蜻蜓论坛 - ${postData.title}`;
+    // 鏇存柊椤甸潰鏍囬
+    document.title = `绾㈣溁铚撹鍧?- ${postData.title}`;
 
-    // 处理不可回帖的情况
+    // 澶勭悊涓嶅彲鍥炲笘鐨勬儏鍐?
     const replyBox = document.getElementById('reply-box');
     if (replyBox) {
         if (postData.allowComments === false) {
-            replyBox.innerHTML = '<div class="comments-disabled-msg" style="padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; margin-top: 20px;">该帖子已设置不可回帖</div>';
+            replyBox.innerHTML = '<div class="comments-disabled-msg" style="padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; margin-top: 20px;">璇ュ笘瀛愬凡璁剧疆涓嶅彲鍥炲笘</div>';
         } else {
-            // 恢复回帖表单（如果之前被禁用了）
+            // 鎭㈠鍥炲笘琛ㄥ崟锛堝鏋滀箣鍓嶈绂佺敤浜嗭級
             if (replyBox.querySelector('.comments-disabled-msg')) {
                 if (isLoggedIn) {
-                    // 已登录：显示用户信息和表单
+                    // 宸茬櫥褰曪細鏄剧ず鐢ㄦ埛淇℃伅鍜岃〃鍗?
                     replyBox.innerHTML = `
-                        <h4>发表回复</h4>
+                        <h4>鍙戣〃鍥炲</h4>
                         <div class="current-user-info" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                            <img src="images/用户头像.png" alt="头像" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                            <img src="images/鐢ㄦ埛澶村儚.png" alt="澶村儚" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                             <div>
-                                <div style="font-weight: bold; color: #333;">${localStorage.getItem('flarumUsername') || '已登录用户'}</div>
-                                <div style="font-size: 12px; color: #999;">Lv.1 新手上路</div>
+                                <div style="font-weight: bold; color: #333;">${localStorage.getItem('flarumUsername') || '宸茬櫥褰曠敤鎴?}</div>
+                                <div style="font-size: 12px; color: #999;">Lv.1 鏂版墜涓婅矾</div>
                             </div>
                         </div>
                         <form class="reply-form" id="reply-form">
-                            <!-- 富文本工具栏 -->
+                            <!-- 瀵屾枃鏈伐鍏锋爮 -->
                             <div class="toolbar" style="margin-bottom: 10px; padding: 5px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
-                                <button type="button" class="toolbar-btn" data-action="bold" title="粗体 (Ctrl+B)">
+                                <button type="button" class="toolbar-btn" data-action="bold" title="绮椾綋 (Ctrl+B)">
                                     <b>B</b>
                                 </button>
-                                <button type="button" class="toolbar-btn" data-action="italic" title="斜体 (Ctrl+I)">
+                                <button type="button" class="toolbar-btn" data-action="italic" title="鏂滀綋 (Ctrl+I)">
                                     <i>I</i>
                                 </button>
-                                <button type="button" class="toolbar-btn" data-action="underline" title="下划线 (Ctrl+U)">
+                                <button type="button" class="toolbar-btn" data-action="underline" title="涓嬪垝绾?(Ctrl+U)">
                                     <u>U</u>
                                 </button>
-                                <button type="button" class="toolbar-btn" data-action="strike" title="删除线">
+                                <button type="button" class="toolbar-btn" data-action="strike" title="鍒犻櫎绾?>
                                     <s>S</s>
                                 </button>
                                 <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
-                                <button type="button" class="toolbar-btn" data-action="quote" title="引用">
+                                <button type="button" class="toolbar-btn" data-action="quote" title="寮曠敤">
                                     "
                                 </button>
-                                <button type="button" class="toolbar-btn" data-action="code" title="代码">
+                                <button type="button" class="toolbar-btn" data-action="code" title="浠ｇ爜">
                                     &lt;/&gt;
                                 </button>
                                 <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
-                                <button type="button" class="toolbar-btn emoji-btn" data-action="emoji" title="表情">
-                                    😊
+                                <button type="button" class="toolbar-btn emoji-btn" data-action="emoji" title="琛ㄦ儏">
+                                    馃槉
                                 </button>
-                                <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
-                                    🖼️
+                                <button type="button" class="toolbar-btn image-btn" data-action="image" title="鎻掑叆鍥剧墖" id="insert-image-btn" style="display: none;">
+                                    馃柤锔?
                                 </button>
                             </div>
-                            <!-- emoji选择器 -->
+                            <!-- emoji閫夋嫨鍣?-->
                             <div class="emoji-picker" id="emoji-picker" style="display: none; position: absolute; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
                                 <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;">
-                                    ${['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮‍💨','😥','😢','😭','😱','😨','😰','😥','🤯','😲','😳','🥵','🤤','🥴','😵','💫','🤢','🤮','🤒','🤕','😷','🤧','🥶','🥵','😴','😪','🤫','🤭','🤗','🤑','🤤','😋','😛','😜','🤪','😝','🤐','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','🧐','🤓','😎','🥸','🥳','🤠','🥰','😍','🤩','😘','😗','😚','😙','🙂','😊','😇','🤣','😂','😅','😆','😁','😄','😃','😀'].map(e => `<span class="emoji-item" style="font-size: 18px; cursor: pointer; padding: 4px; text-align: center;" data-emoji="${e}">${e}</span>`).join('')}
+                                    ${['馃榾','馃槂','馃槃','馃榿','馃槅','馃槄','馃ぃ','馃槀','馃檪','馃槉','馃槆','馃グ','馃槏','馃ぉ','馃槝','馃槜','馃槡','馃槞','馃ゲ','馃構','馃槢','馃槣','馃お','馃槤','馃','馃','馃き','馃か','馃','馃','馃え','馃槓','馃槕','馃樁','馃槒','馃槖','馃檮','馃槵','馃ぅ','馃槍','馃様','馃槳','馃い','馃槾','馃樂','馃','馃','馃あ','馃ぎ','馃サ','馃ザ','馃ゴ','馃樀','馃く','馃','馃コ','馃ジ','馃槑','馃','馃','馃槙','馃槦','馃檨','鈽癸笍','馃槷鈥嶐煉?,'馃槬','馃槩','馃槶','馃槺','馃槰','馃槹','馃槬','馃く','馃槻','馃槼','馃サ','馃い','馃ゴ','馃樀','馃挮','馃あ','馃ぎ','馃','馃','馃樂','馃ぇ','馃ザ','馃サ','馃槾','馃槳','馃か','馃き','馃','馃','馃い','馃構','馃槢','馃槣','馃お','馃槤','馃','馃','馃え','馃槓','馃槕','馃樁','馃槒','馃槖','馃檮','馃槵','馃ぅ','馃槍','馃様','馃','馃','馃槑','馃ジ','馃コ','馃','馃グ','馃槏','馃ぉ','馃槝','馃槜','馃槡','馃槞','馃檪','馃槉','馃槆','馃ぃ','馃槀','馃槄','馃槅','馃榿','馃槃','馃槂','馃榾'].map(e => `<span class="emoji-item" style="font-size: 18px; cursor: pointer; padding: 4px; text-align: center;" data-emoji="${e}">${e}</span>`).join('')}
                                 </div>
                             </div>
-                            <!-- 隐藏的图片上传输入 -->
+                            <!-- 闅愯棌鐨勫浘鐗囦笂浼犺緭鍏?-->
                             <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                            <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
+                            <textarea id="reply-content" placeholder="鍒嗕韩浣犵殑鐪嬫硶..."></textarea>
                             <input type="hidden" id="reply-target" name="reply-target" value="">
                             <div>
-                                <button type="submit">发表回复</button>
-                                <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                                <button type="submit">鍙戣〃鍥炲</button>
+                                <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">鍙栨秷鍥炲</a>
                             </div>
                         </form>
                     `;
                 } else {
-                    // 未登录：显示登录提示
+                    // 鏈櫥褰曪細鏄剧ず鐧诲綍鎻愮ず
                     replyBox.innerHTML = `
-                        <h4>发表回复</h4>
+                        <h4>鍙戣〃鍥炲</h4>
                         <div class="login-prompt" style="padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 10px;">
-                            <p style="margin-bottom: 10px;">未登录用户不可回复</p>
-                            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">立即登录</a>
+                            <p style="margin-bottom: 10px;">鏈櫥褰曠敤鎴蜂笉鍙洖澶?/p>
+                            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">绔嬪嵆鐧诲綍</a>
                         </div>
                     `;
                 }
-                // 重新绑定提交事件（因为 innerHTML 会移除事件监听）
+                // 閲嶆柊缁戝畾鎻愪氦浜嬩欢锛堝洜涓?innerHTML 浼氱Щ闄や簨浠剁洃鍚級
                 if (isLoggedIn) {
                     setupReplyForm();
                 }
@@ -1446,14 +1446,14 @@ function renderForumThread(postData) {
         threadContainer.innerHTML = `
             <div class="thread-header">
                 <div class="thread-title">${postData.title}</div>
-                <span>作者：<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
-                <span>发表于：${postData.publishTime}</span> | 
-                <span>浏览：${postData.viewCount}次</span>
+                <span>浣滆€咃細<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
+                <span>鍙戣〃浜庯細${postData.publishTime}</span> | 
+                <span>娴忚锛?{postData.viewCount}娆?/span>
             </div>
             <div class="post" style="padding: 30px 20px; text-align: center;">
-                <div style="font-size: 16px; color: #cc0000; margin-bottom: 12px;">本帖内容仅限登录后查看</div>
-                <div style="color: #666; margin-bottom: 12px;">请先登录后查看正文和回帖内容</div>
-                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">立即登录</a>
+                <div style="font-size: 16px; color: #cc0000; margin-bottom: 12px;">鏈笘鍐呭浠呴檺鐧诲綍鍚庢煡鐪?/div>
+                <div style="color: #666; margin-bottom: 12px;">璇峰厛鐧诲綍鍚庢煡鐪嬫鏂囧拰鍥炲笘鍐呭</div>
+                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">绔嬪嵆鐧诲綍</a>
             </div>
         `;
         return;
@@ -1475,7 +1475,7 @@ function renderForumThread(postData) {
         isOp: isOriginalPosterReply(comment, postData)
     }))];
 
-    // 分页配置
+    // 鍒嗛〉閰嶇疆
     const PAGE_SIZE = POST_PAGE_SIZE;
     const urlParams = new URLSearchParams(window.location.search);
     const totalPosts = allPosts.length;
@@ -1483,27 +1483,27 @@ function renderForumThread(postData) {
     const requestedPage = parseInt(urlParams.get('page'), 10) || 1;
     const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
     
-    // 计算当前页显示的帖子范围
+    // 璁＄畻褰撳墠椤垫樉绀虹殑甯栧瓙鑼冨洿
     const startIndex = (currentPage - 1) * PAGE_SIZE;
     const endIndex = Math.min(startIndex + PAGE_SIZE, totalPosts);
     const currentPagePosts = allPosts.slice(startIndex, endIndex);
     
-    // 获取当前页可见的楼层范围（用于楼中楼跳转判断）
+    // 鑾峰彇褰撳墠椤靛彲瑙佺殑妤煎眰鑼冨洿锛堢敤浜庢ゼ涓ゼ璺宠浆鍒ゆ柇锛?
     const visibleFloors = currentPagePosts.map(p => p.floor);
 
-    // 递归生成引用 HTML
+    // 閫掑綊鐢熸垚寮曠敤 HTML
     function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
         if (!replyToFloor || depth >= 3) return '';
         const target = allPosts.find(p => p.floor === replyToFloor);
         if (!target) return '';
 
-        // 检查目标楼层是否被删除
+        // 妫€鏌ョ洰鏍囨ゼ灞傛槸鍚﹁鍒犻櫎
         const deletedInfo = parseDeletedContent(target.content);
         if (deletedInfo) {
             return `
                 <div class="quote-box quote-level-${depth}">
-                    <div class="quote-author">引用 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}楼</span>) 的发言：</div>
-                    <div class="quote-content" style="color: #999;">该楼层已被删除</div>
+                    <div class="quote-author">寮曠敤 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}妤?/span>) 鐨勫彂瑷€锛?/div>
+                    <div class="quote-content" style="color: #999;">璇ユゼ灞傚凡琚垹闄?/div>
                 </div>
             `;
         }
@@ -1511,36 +1511,36 @@ function renderForumThread(postData) {
         const parentQuote = generateQuoteHTML(target.replyTo, allPosts, depth + 1);
         const plainContent = target.content.replace(/<[^>]*>/g, '').substring(0, 100);
         
-        // 判断目标楼层是否在当前页
+        // 鍒ゆ柇鐩爣妤煎眰鏄惁鍦ㄥ綋鍓嶉〉
         const isOnCurrentPage = visibleFloors.includes(target.floor);
         
         return `
             <div class="quote-box quote-level-${depth}">
                 ${parentQuote}
-                <div class="quote-author">引用 ${target.author}(<a href="${isOnCurrentPage ? `#post-${target.floor}` : `?id=${postData.id}&page=${Math.ceil(target.floor / PAGE_SIZE)}#post-${target.floor}`}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}楼</a>) 的发言：</div>
+                <div class="quote-author">寮曠敤 ${target.author}(<a href="${isOnCurrentPage ? `#post-${target.floor}` : `?id=${postData.id}&page=${Math.ceil(target.floor / PAGE_SIZE)}#post-${target.floor}`}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}妤?/a>) 鐨勫彂瑷€锛?/div>
                 <div class="quote-content">${plainContent}${target.content.replace(/<[^>]*>/g, '').length > 100 ? '...' : ''}</div>
             </div>
         `;
     }
 
-    // 生成分页导航HTML
+    // 鐢熸垚鍒嗛〉瀵艰埅HTML
     function generatePaginationHTML() {
         if (totalPages <= 1) return '';
         
         let html = '<div class="pagination" style="margin-top: 20px; text-align: center;">';
         
-        // 首页和上一页
+        // 棣栭〉鍜屼笂涓€椤?
         if (currentPage > 1) {
-            html += `<a href="?id=${postData.id}&page=1" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">首页</a>`;
-            html += `<a href="?id=${postData.id}&page=${currentPage - 1}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">上一页</a>`;
+            html += `<a href="?id=${postData.id}&page=1" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">棣栭〉</a>`;
+            html += `<a href="?id=${postData.id}&page=${currentPage - 1}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">涓婁竴椤?/a>`;
         }
         
-        // 页码
+        // 椤电爜
         for (let i = 1; i <= totalPages; i++) {
             if (i === currentPage) {
                 html += `<span style="margin: 0 5px; padding: 4px 8px; background: #cc0000; color: white;">${i}</span>`;
             } else {
-                // 只显示当前页附近的页码
+                // 鍙樉绀哄綋鍓嶉〉闄勮繎鐨勯〉鐮?
                 if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
                     html += `<a href="?id=${postData.id}&page=${i}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">${i}</a>`;
                 } else if (Math.abs(i - currentPage) === 3) {
@@ -1549,10 +1549,10 @@ function renderForumThread(postData) {
             }
         }
         
-        // 下一页和末页
+        // 涓嬩竴椤靛拰鏈〉
         if (currentPage < totalPages) {
-            html += `<a href="?id=${postData.id}&page=${currentPage + 1}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">下一页</a>`;
-            html += `<a href="?id=${postData.id}&page=${totalPages}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">末页</a>`;
+            html += `<a href="?id=${postData.id}&page=${currentPage + 1}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">涓嬩竴椤?/a>`;
+            html += `<a href="?id=${postData.id}&page=${totalPages}" style="margin: 0 5px; padding: 4px 8px; border: 1px solid #ccc; text-decoration: none; color: #0066cc;">鏈〉</a>`;
         }
         
         html += `</div>`;
@@ -1562,20 +1562,20 @@ function renderForumThread(postData) {
     threadContainer.innerHTML = `
         <div class="thread-header">
             <div class="thread-title">${postData.title}</div>
-            <span>作者：<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
-            <span>发表于：${postData.publishTime}</span> | 
-            <span>浏览：${postData.viewCount}次</span>
-            <a href="#" id="delete-discussion-link" style="display: none; margin-left: 10px; color: #cc0000;">删除帖子</a>
+            <span>浣滆€咃細<a href="#" style="color: #0066cc;">${postData.author}</a></span> | 
+            <span>鍙戣〃浜庯細${postData.publishTime}</span> | 
+            <span>娴忚锛?{postData.viewCount}娆?/span>
+            <a href="#" id="delete-discussion-link" style="display: none; margin-left: 10px; color: #cc0000;">鍒犻櫎甯栧瓙</a>
         </div>
         
         ${currentPagePosts.map((post, index) => {
-            // 检查是否是删除标记
+            // 妫€鏌ユ槸鍚︽槸鍒犻櫎鏍囪
             const deletedInfo = parseDeletedContent(post.content);
             if (deletedInfo) {
-                // 显示删除提示（包含楼层号）
+                // 鏄剧ず鍒犻櫎鎻愮ず锛堝寘鍚ゼ灞傚彿锛?
                 return `
                     <div class="post" id="post-${post.floor}" data-post-id="${post.id}" style="background-color: #f5f5f5; border: 1px dashed #ccc; padding: 15px; text-align: center;">
-                        <p style="color: #999; font-size: 14px;">第 ${post.floor} 楼已在【${deletedInfo.deletedAt}】被【${deletedInfo.deletedBy}】删除</p>
+                        <p style="color: #999; font-size: 14px;">绗?${post.floor} 妤煎凡鍦ㄣ€?{deletedInfo.deletedAt}銆戣銆?{deletedInfo.deletedBy}銆戝垹闄?/p>
                     </div>
                 `;
             }
@@ -1591,11 +1591,11 @@ function renderForumThread(postData) {
                             <div class="avatar">
                                 ${post.authorAvatar && post.authorAvatar.length === 1 
                                     ? `<span style="font-size: 24px; color: #666; font-weight: bold;">${post.authorAvatar}</span>` 
-                                    : `<img src="${post.authorAvatar || 'images/用户头像.png'}" alt="avatar" style="width:100%; height:100%; border-radius:3px; object-fit:cover;">`
+                                    : `<img src="${post.authorAvatar || 'images/鐢ㄦ埛澶村儚.png'}" alt="avatar" style="width:100%; height:100%; border-radius:3px; object-fit:cover;">`
                                 }
                             </div>
                             <div>
-                                <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
+                                <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}${post.isOp ? '<span class="op-badge">妤间富</span>' : ''}</div>
                                 <div style="font-size: 11px; color: #999;">${post.authorLevel}</div>
                             </div>
                         </div>
@@ -1603,10 +1603,10 @@ function renderForumThread(postData) {
                     </div>
                     <div class="post-content">${post.content}</div>
                     <div class="floor-info" style="display: flex; justify-content: flex-end; align-items: center;">
-                        <span class="floor-number" style="margin-right: auto;">${post.floor}楼</span>
-                        ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${post.author}" data-content="${plainContent}">回复</a>` : ''}
+                        <span class="floor-number" style="margin-right: auto;">${post.floor}妤?/span>
+                        ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${post.author}" data-content="${plainContent}">鍥炲</a>` : ''}
                         <span style="margin: 0 5px; color: #ccc; display: none;" class="reply-divider">|</span>
-                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">删除</a>
+                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">鍒犻櫎</a>
                     </div>
                 </div>
             `;
@@ -1615,9 +1615,9 @@ function renderForumThread(postData) {
         ${generatePaginationHTML()}
         
         <div class="forum-stats">
-            <span>共 ${totalPosts} 楼</span>
-            <span>当前第 ${currentPage} / ${totalPages} 页</span>
-            <span>最后回复：${postData.comments.length > 0 ? postData.comments[postData.comments.length - 1].time : postData.publishTime}</span>
+            <span>鍏?${totalPosts} 妤?/span>
+            <span>褰撳墠绗?${currentPage} / ${totalPages} 椤?/span>
+            <span>鏈€鍚庡洖澶嶏細${postData.comments.length > 0 ? postData.comments[postData.comments.length - 1].time : postData.publishTime}</span>
         </div>
     `;
 
@@ -1625,7 +1625,7 @@ function renderForumThread(postData) {
     setupDeleteButtons(allPosts, postData);
     updatePostUserBadges(allPosts);
     
-    // 页面加载后检查URL锚点，进行高亮
+    // 椤甸潰鍔犺浇鍚庢鏌RL閿氱偣锛岃繘琛岄珮浜?
     setTimeout(() => {
         const hash = window.location.hash;
         if (hash.startsWith('#post-')) {
@@ -1642,7 +1642,7 @@ function renderForumThread(postData) {
     }, 100);
 }
 
-// 设置回复按钮
+// 璁剧疆鍥炲鎸夐挳
 function setupReplyButtons(postData) {
     const replyLinks = document.querySelectorAll('.reply-link');
     const replyTargetInput = document.getElementById('reply-target');
@@ -1657,15 +1657,15 @@ function setupReplyButtons(postData) {
             const content = this.dataset.content;
             
             replyTargetInput.value = floor;
-            replyContent.value = `回复 ${author}(${floor}楼)：`;
-            replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
+            replyContent.value = `鍥炲 ${author}(${floor}妤?锛歚;
+            replyBoxTitle.textContent = `鍥炲 ${author}(${floor}妤?`;
             document.getElementById('cancel-reply').style.display = 'inline';
             replyContent.focus();
         });
     });
 }
 
-// 设置删除按钮
+// 璁剧疆鍒犻櫎鎸夐挳
 async function setupDeleteButtons(allPosts, postData) {
     const deleteLinks = document.querySelectorAll('.delete-link');
     
@@ -1673,14 +1673,14 @@ async function setupDeleteButtons(allPosts, postData) {
         const postId = Number(link.dataset.postId);
         const floor = Number(link.dataset.floor);
         
-        // 找到对应的帖子
+        // 鎵惧埌瀵瑰簲鐨勫笘瀛?
         const post = allPosts.find(p => p.id === postId || p.floor === floor);
         
-        // 检查是否有权限删除
+        // 妫€鏌ユ槸鍚︽湁鏉冮檺鍒犻櫎
         if (post && await canDeletePost(post)) {
             link.style.display = 'inline';
             
-            // 显示分隔符
+            // 鏄剧ず鍒嗛殧绗?
             const divider = link.parentElement.querySelector('.reply-divider');
             if (divider) {
                 divider.style.display = 'inline';
@@ -1689,25 +1689,25 @@ async function setupDeleteButtons(allPosts, postData) {
             link.addEventListener('click', async function(e) {
                 e.preventDefault();
                 
-                // 二次确认
-                if (!confirm(`确定要删除第 ${floor} 楼的帖子吗？此操作不可撤销。`)) {
+                // 浜屾纭
+                if (!confirm(`纭畾瑕佸垹闄ょ ${floor} 妤肩殑甯栧瓙鍚楋紵姝ゆ搷浣滀笉鍙挙閿€銆俙)) {
                     return;
                 }
                 
-                // 执行删除
+                // 鎵ц鍒犻櫎
                 const success = await flarumDeletePost(postId, floor);
                 if (success) {
-                    // 获取当前登录用户信息
-                    const currentUsername = localStorage.getItem('flarumUsername') || '匿名用户';
+                    // 鑾峰彇褰撳墠鐧诲綍鐢ㄦ埛淇℃伅
+                    const currentUsername = localStorage.getItem('flarumUsername') || '鍖垮悕鐢ㄦ埛';
                     const now = new Date();
                     const deleteTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
                     
-                    // 在原地显示删除提示
+                    // 鍦ㄥ師鍦版樉绀哄垹闄ゆ彁绀?
                     const postElement = document.getElementById(`post-${floor}`);
                     if (postElement) {
                         postElement.innerHTML = `
                             <div class="post" id="post-${floor}" style="background-color: #f5f5f5; border: 1px dashed #ccc; padding: 15px; text-align: center;">
-                                <p style="color: #999; font-size: 14px;">此楼层已在【${deleteTime}】被【${currentUsername}】删除</p>
+                                <p style="color: #999; font-size: 14px;">姝ゆゼ灞傚凡鍦ㄣ€?{deleteTime}銆戣銆?{currentUsername}銆戝垹闄?/p>
                             </div>
                         `;
                     }
@@ -1716,10 +1716,10 @@ async function setupDeleteButtons(allPosts, postData) {
         }
     }
     
-    // 设置删除整个帖子的按钮
+    // 璁剧疆鍒犻櫎鏁翠釜甯栧瓙鐨勬寜閽?
     const deleteDiscussionLink = document.getElementById('delete-discussion-link');
     if (deleteDiscussionLink && postData) {
-        // 检查是否有权限删除整个帖子（主题帖的作者或管理员）
+        // 妫€鏌ユ槸鍚︽湁鏉冮檺鍒犻櫎鏁翠釜甯栧瓙锛堜富棰樺笘鐨勪綔鑰呮垨绠＄悊鍛橈級
         const isAuthor = localStorage.getItem('flarumUserId') === String(postData.userId);
         const isAdmin = await isCurrentUserAdmin();
         
@@ -1729,24 +1729,24 @@ async function setupDeleteButtons(allPosts, postData) {
             deleteDiscussionLink.addEventListener('click', async function(e) {
                 e.preventDefault();
                 
-                // 二次确认
-                if (!confirm(`确定要删除整个帖子「${postData.title}」吗？此操作将删除所有回复，不可撤销。`)) {
+                // 浜屾纭
+                if (!confirm(`纭畾瑕佸垹闄ゆ暣涓笘瀛愩€?{postData.title}銆嶅悧锛熸鎿嶄綔灏嗗垹闄ゆ墍鏈夊洖澶嶏紝涓嶅彲鎾ら攢銆俙)) {
                     return;
                 }
                 
-                // 执行删除
+                // 鎵ц鍒犻櫎
                 const success = await flarumDeleteDiscussion(postData.id);
                 if (success) {
-                    alert('删除成功！');
-                    // 返回首页
-                    window.location.href = 'index.html';
+                    alert('鍒犻櫎鎴愬姛锛?);
+                    // 杩斿洖棣栭〉
+                    window.location.href = '/';
                 }
             });
         }
     }
 }
 
-// 更新帖子中的用户名显示，添加用户组标志
+// 鏇存柊甯栧瓙涓殑鐢ㄦ埛鍚嶆樉绀猴紝娣诲姞鐢ㄦ埛缁勬爣蹇?
 async function updatePostUserBadges(allPosts) {
     for (const post of allPosts) {
         if (!post.userId) continue;
@@ -1754,13 +1754,13 @@ async function updatePostUserBadges(allPosts) {
         const badgeType = await getUserGroupBadgeType(post.userId);
         if (!badgeType) continue;
         
-        // 更新帖子中的用户名显示
+        // 鏇存柊甯栧瓙涓殑鐢ㄦ埛鍚嶆樉绀?
         const posterNameElements = document.querySelectorAll(`#post-${post.floor} .poster-name`);
         for (const element of posterNameElements) {
-            // 检查是否已经添加过标志
+            // 妫€鏌ユ槸鍚﹀凡缁忔坊鍔犺繃鏍囧織
             if (element.querySelector('.group-badge')) continue;
             
-            // 创建标志元素
+            // 鍒涘缓鏍囧織鍏冪礌
             const badge = document.createElement('span');
             badge.className = 'group-badge group-badge-' + badgeType;
             badge.style.cssText = `
@@ -1779,10 +1779,10 @@ async function updatePostUserBadges(allPosts) {
             
             if (badgeType === 'admin') {
                 badge.style.backgroundColor = '#cc0000';
-                badge.textContent = '管';
+                badge.textContent = '绠?;
             } else if (badgeType === 'mod') {
                 badge.style.backgroundColor = '#0066cc';
-                badge.textContent = '版';
+                badge.textContent = '鐗?;
             }
             
             element.insertBefore(badge, element.firstChild);
@@ -1790,7 +1790,7 @@ async function updatePostUserBadges(allPosts) {
     }
 }
 
-// 获取用户组标志类型
+// 鑾峰彇鐢ㄦ埛缁勬爣蹇楃被鍨?
 async function getUserGroupBadgeType(userId) {
     if (!userId) return '';
     
@@ -1798,21 +1798,21 @@ async function getUserGroupBadgeType(userId) {
         const userJson = await flarumRequest(`/users/${userId}`);
         const groups = userJson?.data?.relationships?.groups?.data || [];
         
-        // 检查是否是管理员（组ID为1）
+        // 妫€鏌ユ槸鍚︽槸绠＄悊鍛橈紙缁処D涓?锛?
         const isAdmin = groups.some(g => g.id === '1');
         if (isAdmin) return 'admin';
         
-        // 检查是否是版主（组ID为2）
+        // 妫€鏌ユ槸鍚︽槸鐗堜富锛堢粍ID涓?锛?
         const isMod = groups.some(g => g.id === '2');
         if (isMod) return 'mod';
     } catch {
-        // 忽略错误
+        // 蹇界暐閿欒
     }
     
     return '';
 }
 
-// 检查当前用户是否是管理员
+// 妫€鏌ュ綋鍓嶇敤鎴锋槸鍚︽槸绠＄悊鍛?
 async function isCurrentUserAdmin() {
     const token = getFlarumToken();
     if (!token) return false;
@@ -1823,14 +1823,14 @@ async function isCurrentUserAdmin() {
     try {
         const userJson = await flarumRequest(`/users/${userId}`, { auth: true });
         const groups = userJson?.data?.relationships?.groups?.data || [];
-        // 检查是否在管理员组（通常ID为1）
+        // 妫€鏌ユ槸鍚﹀湪绠＄悊鍛樼粍锛堥€氬父ID涓?锛?
         return groups.some(g => g.id === '1');
     } catch {
         return false;
     }
 }
 
-// 获取当前登录用户信息
+// 鑾峰彇褰撳墠鐧诲綍鐢ㄦ埛淇℃伅
 async function getCurrentUser() {
     const token = getFlarumToken();
     const userId = localStorage.getItem('flarumUserId');
@@ -1851,13 +1851,13 @@ async function getCurrentUser() {
             };
         }
     } catch (error) {
-        console.error('获取当前用户信息失败:', error);
+        console.error('鑾峰彇褰撳墠鐢ㄦ埛淇℃伅澶辫触:', error);
     }
     
     return null;
 }
 
-// 更新回复表单以反映登录状态
+// 鏇存柊鍥炲琛ㄥ崟浠ュ弽鏄犵櫥褰曠姸鎬?
 async function updateReplyFormForLoginStatus() {
     const isLoggedIn = !!getFlarumToken();
     const replyBox = document.getElementById('reply-box');
@@ -1865,11 +1865,11 @@ async function updateReplyFormForLoginStatus() {
     if (!replyBox) return;
     
     if (isLoggedIn) {
-        // 已登录：显示用户信息和回复表单
-        const username = localStorage.getItem('flarumUsername') || '已登录用户';
+        // 宸茬櫥褰曪細鏄剧ず鐢ㄦ埛淇℃伅鍜屽洖澶嶈〃鍗?
+        const username = localStorage.getItem('flarumUsername') || '宸茬櫥褰曠敤鎴?;
         
-        // 获取用户头像
-        let avatarUrl = 'images/用户头像.png';
+        // 鑾峰彇鐢ㄦ埛澶村儚
+        let avatarUrl = 'images/鐢ㄦ埛澶村儚.png';
         if (isFlarumConfigured()) {
             const user = await getCurrentUser();
             if (user && user.avatar) {
@@ -1878,38 +1878,38 @@ async function updateReplyFormForLoginStatus() {
         }
         
         replyBox.innerHTML = `
-            <h4>发表回复</h4>
+            <h4>鍙戣〃鍥炲</h4>
             <div class="current-user-info" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                <img src="${avatarUrl}" alt="头像" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                <img src="${avatarUrl}" alt="澶村儚" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                 <div>
                     <div style="font-weight: bold; color: #333;">${username}</div>
-                    <div style="font-size: 12px; color: #999;">Lv.1 新手上路</div>
+                    <div style="font-size: 12px; color: #999;">Lv.1 鏂版墜涓婅矾</div>
                 </div>
             </div>
             <form class="reply-form" id="reply-form">
-                <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
+                <textarea id="reply-content" placeholder="鍒嗕韩浣犵殑鐪嬫硶..."></textarea>
                 <input type="hidden" id="reply-target" name="reply-target" value="">
                 <div>
-                    <button type="submit">发表回复</button>
-                    <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
+                    <button type="submit">鍙戣〃鍥炲</button>
+                    <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">鍙栨秷鍥炲</a>
                 </div>
             </form>
         `;
-        // 重新绑定表单事件
+        // 閲嶆柊缁戝畾琛ㄥ崟浜嬩欢
         setupReplyForm();
     } else {
-        // 未登录：直接显示登录提示，替换整个回复区域
+        // 鏈櫥褰曪細鐩存帴鏄剧ず鐧诲綍鎻愮ず锛屾浛鎹㈡暣涓洖澶嶅尯鍩?
         replyBox.innerHTML = `
-            <h4>发表回复</h4>
+            <h4>鍙戣〃鍥炲</h4>
             <div style="padding: 20px; background: #fff3f3; border: 1px solid #ffcccc; border-radius: 4px; text-align: center;">
-                <div style="font-size: 16px; color: #cc0000; margin-bottom: 10px;">未登录用户不可回复</div>
-                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">点击登录</a>
+                <div style="font-size: 16px; color: #cc0000; margin-bottom: 10px;">鏈櫥褰曠敤鎴蜂笉鍙洖澶?/div>
+                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">鐐瑰嚮鐧诲綍</a>
             </div>
         `;
     }
 }
 
-// 设置回复表单事件（只绑定一次）
+// 璁剧疆鍥炲琛ㄥ崟浜嬩欢锛堝彧缁戝畾涓€娆★級
 function setupReplyForm() {
     const replyTargetInput = document.getElementById('reply-target');
     const cancelReply = document.getElementById('cancel-reply');
@@ -1918,13 +1918,13 @@ function setupReplyForm() {
     const replyForm = document.getElementById('reply-form');
     const replyNameInput = document.getElementById('reply-name');
 
-    // 初始化工具栏
+    // 鍒濆鍖栧伐鍏锋爮
     initToolbar();
     
-    // 检查用户权限，显示/隐藏图片按钮
+    // 妫€鏌ョ敤鎴锋潈闄愶紝鏄剧ず/闅愯棌鍥剧墖鎸夐挳
     checkImagePermission();
 
-    // 取消回复按钮
+    // 鍙栨秷鍥炲鎸夐挳
     cancelReply.removeEventListener('click', cancelReplyHandler);
     cancelReply.addEventListener('click', cancelReplyHandler);
 
@@ -1932,11 +1932,11 @@ function setupReplyForm() {
         e.preventDefault();
         replyTargetInput.value = '';
         replyContent.value = '';
-        replyBoxTitle.textContent = '发表回复';
+        replyBoxTitle.textContent = '鍙戣〃鍥炲';
         cancelReply.style.display = 'none';
     }
 
-    // 表单提交（使用事件委托或移除旧事件）
+    // 琛ㄥ崟鎻愪氦锛堜娇鐢ㄤ簨浠跺鎵樻垨绉婚櫎鏃т簨浠讹級
     replyForm.removeEventListener('submit', submitHandler);
     replyForm.addEventListener('submit', submitHandler);
 
@@ -1948,32 +1948,32 @@ function setupReplyForm() {
         const replyTo = replyTargetInput.value;
 
         if (!content) {
-            alert('请输入回复内容');
+            alert('璇疯緭鍏ュ洖澶嶅唴瀹?);
             return;
         }
 
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('id') || '1';
         
-        // 获取当前帖子数据（从内存或缓存，避免重新加载）
+        // 鑾峰彇褰撳墠甯栧瓙鏁版嵁锛堜粠鍐呭瓨鎴栫紦瀛橈紝閬垮厤閲嶆柊鍔犺浇锛?
         let postData = window.currentPostData;
         if (!postData) {
             postData = await loadPostData(postId);
             if (!postData) {
-                alert('无法获取帖子数据');
+                alert('鏃犳硶鑾峰彇甯栧瓙鏁版嵁');
                 return;
             }
             window.currentPostData = postData;
         }
 
-        // 显示提交中状态
+        // 鏄剧ず鎻愪氦涓姸鎬?
         const submitBtn = replyForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = '提交中...';
+        submitBtn.textContent = '鎻愪氦涓?..';
 
         try {
             const contentToSend = replyTo 
-                ? `回复 ${replyTo}：\n${content}`
+                ? `鍥炲 ${replyTo}锛歕n${content}`
                 : content;
 
             const response = await flarumRequest('/posts', {
@@ -1998,16 +1998,16 @@ function setupReplyForm() {
                 replyContent.value = '';
                 replyTargetInput.value = '';
                 cancelReply.style.display = 'none';
-                replyBoxTitle.textContent = '发表回复';
+                replyBoxTitle.textContent = '鍙戣〃鍥炲';
                 
-                // 重新加载帖子数据并更新UI
+                // 閲嶆柊鍔犺浇甯栧瓙鏁版嵁骞舵洿鏂癠I
                 const newPostData = await loadPostData(postId);
                 if (newPostData) {
                     window.currentPostData = newPostData;
                     renderForumThread(newPostData);
                 }
                 
-                // 滚动到最新回复
+                // 婊氬姩鍒版渶鏂板洖澶?
                 setTimeout(() => {
                     const posts = document.querySelectorAll('.post');
                     if (posts.length > 0) {
@@ -2016,7 +2016,7 @@ function setupReplyForm() {
                 }, 100);
             }
         } catch (error) {
-            console.error('提交失败:', error);
+            console.error('鎻愪氦澶辫触:', error);
             alert(getFriendlyErrorMessage(error, 'create_post'));
         } finally {
             submitBtn.textContent = originalBtnText;
@@ -2024,7 +2024,7 @@ function setupReplyForm() {
     }
 }
 
-// 初始化工具栏
+// 鍒濆鍖栧伐鍏锋爮
 function initToolbar() {
     const toolbar = document.querySelector('.toolbar');
     const emojiPicker = document.getElementById('emoji-picker');
@@ -2035,7 +2035,7 @@ function initToolbar() {
 
     if (!toolbar) return;
 
-    // 工具栏按钮点击事件
+    // 宸ュ叿鏍忔寜閽偣鍑讳簨浠?
     toolbar.addEventListener('click', function(e) {
         const target = e.target.closest('.toolbar-btn');
         if (!target) return;
@@ -2071,7 +2071,7 @@ function initToolbar() {
         }
     });
 
-    // emoji选择
+    // emoji閫夋嫨
     emojiPicker?.addEventListener('click', function(e) {
         const emojiItem = e.target.closest('.emoji-item');
         if (emojiItem) {
@@ -2080,7 +2080,7 @@ function initToolbar() {
         }
     });
 
-    // 点击外部关闭emoji选择器
+    // 鐐瑰嚮澶栭儴鍏抽棴emoji閫夋嫨鍣?
     document.addEventListener('click', function(e) {
         if (emojiPicker && emojiPicker.style.display === 'block') {
             const isInsideToolbar = e.target.closest('.toolbar');
@@ -2091,23 +2091,23 @@ function initToolbar() {
         }
     });
 
-    // 图片上传
+    // 鍥剧墖涓婁紶
     imageUpload?.addEventListener('change', async function(e) {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // 文件验证
+        // 鏂囦欢楠岃瘉
         if (!file.type.startsWith('image/')) {
-            alert('请选择图片文件');
+            alert('璇烽€夋嫨鍥剧墖鏂囦欢');
             return;
         }
         
         if (file.size > 2 * 1024 * 1024) {
-            alert('图片大小不能超过2MB');
+            alert('鍥剧墖澶у皬涓嶈兘瓒呰繃2MB');
             return;
         }
 
-        // 上传图片
+        // 涓婁紶鍥剧墖
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -2119,19 +2119,19 @@ function initToolbar() {
             });
 
             if (response && response.data?.attributes?.url) {
-                // 插入图片Markdown
+                // 鎻掑叆鍥剧墖Markdown
                 insertAtCursor(replyContent, `![${file.name}](${response.data.attributes.url})`);
             }
         } catch (error) {
-            console.error('图片上传失败:', error);
+            console.error('鍥剧墖涓婁紶澶辫触:', error);
             alert(getFriendlyErrorMessage(error, 'upload_image'));
         }
 
-        // 清空文件选择
+        // 娓呯┖鏂囦欢閫夋嫨
         imageUpload.value = '';
     });
 
-    // 快捷键支持
+    // 蹇嵎閿敮鎸?
     replyContent?.addEventListener('keydown', function(e) {
         if (e.ctrlKey || e.metaKey) {
             switch (e.key.toLowerCase()) {
@@ -2152,7 +2152,7 @@ function initToolbar() {
     });
 }
 
-// 切换emoji选择器显示
+// 鍒囨崲emoji閫夋嫨鍣ㄦ樉绀?
 function toggleEmojiPicker() {
     const emojiPicker = document.getElementById('emoji-picker');
     if (emojiPicker) {
@@ -2160,7 +2160,7 @@ function toggleEmojiPicker() {
     }
 }
 
-// 在光标位置插入文本
+// 鍦ㄥ厜鏍囦綅缃彃鍏ユ枃鏈?
 function insertAtCursor(textarea, text) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -2168,12 +2168,12 @@ function insertAtCursor(textarea, text) {
     const after = textarea.value.substring(end);
     textarea.value = before + text + after;
     
-    // 设置光标位置
+    // 璁剧疆鍏夋爣浣嶇疆
     textarea.selectionStart = textarea.selectionEnd = start + text.length;
     textarea.focus();
 }
 
-// 包裹选中的文本
+// 鍖呰９閫変腑鐨勬枃鏈?
 function wrapSelection(textarea, before, after, newLine = false) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -2183,7 +2183,7 @@ function wrapSelection(textarea, before, after, newLine = false) {
     
     let newText;
     if (newLine) {
-        // 引用需要在新行开始
+        // 寮曠敤闇€瑕佸湪鏂拌寮€濮?
         const lineStart = beforeText.lastIndexOf('\n') + 1;
         const lineBefore = beforeText.substring(0, lineStart);
         const lineAfter = beforeText.substring(lineStart);
@@ -2201,7 +2201,7 @@ function wrapSelection(textarea, before, after, newLine = false) {
     textarea.focus();
 }
 
-// 检查用户是否有图片上传权限
+// 妫€鏌ョ敤鎴锋槸鍚︽湁鍥剧墖涓婁紶鏉冮檺
 async function checkImagePermission() {
     const insertImageBtn = document.getElementById('insert-image-btn');
     if (!insertImageBtn) return;
@@ -2221,7 +2221,7 @@ async function checkImagePermission() {
     try {
         const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`, { auth: true });
         const groups = userJson?.data?.relationships?.groups?.data || [];
-        // 检查是否在管理员或版主组
+        // 妫€鏌ユ槸鍚﹀湪绠＄悊鍛樻垨鐗堜富缁?
         const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id));
         insertImageBtn.style.display = isAdminOrMod ? 'inline-block' : 'none';
     } catch {
@@ -2229,19 +2229,19 @@ async function checkImagePermission() {
     }
 }
 
-// 将新评论直接插入到页面中（无需重新渲染整个帖子）
+// 灏嗘柊璇勮鐩存帴鎻掑叆鍒伴〉闈腑锛堟棤闇€閲嶆柊娓叉煋鏁翠釜甯栧瓙锛?
 function insertNewCommentToPage(comment, postData) {
     const threadContainer = document.querySelector('.forum-thread');
     if (!threadContainer) return;
     
-    // 更新评论计数
+    // 鏇存柊璇勮璁℃暟
     const commentCountElement = document.querySelector('.post-stats span:last-child');
     if (commentCountElement) {
         const currentCount = postData.comments.length;
-        commentCountElement.textContent = `评论: ${currentCount}`;
+        commentCountElement.textContent = `璇勮: ${currentCount}`;
     }
     
-    // 生成新评论的HTML
+    // 鐢熸垚鏂拌瘎璁虹殑HTML
     const allPosts = [{
         id: 0,
         userId: null,
@@ -2258,19 +2258,19 @@ function insertNewCommentToPage(comment, postData) {
         isOp: isOriginalPosterReply(item, postData)
     }))];
     
-    // 递归生成引用 HTML
+    // 閫掑綊鐢熸垚寮曠敤 HTML
     function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
         if (!replyToFloor || depth >= 3) return '';
         const target = allPosts.find(p => p.floor === replyToFloor);
         if (!target) return '';
 
-        // 检查目标楼层是否被删除
+        // 妫€鏌ョ洰鏍囨ゼ灞傛槸鍚﹁鍒犻櫎
         const deletedInfo = parseDeletedContent(target.content);
         if (deletedInfo) {
             return `
                 <div class="quote-box quote-level-${depth}">
-                    <div class="quote-author">引用 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}楼</span>) 的发言：</div>
-                    <div class="quote-content" style="color: #999;">该楼层已被删除</div>
+                    <div class="quote-author">寮曠敤 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}妤?/span>) 鐨勫彂瑷€锛?/div>
+                    <div class="quote-content" style="color: #999;">璇ユゼ灞傚凡琚垹闄?/div>
                 </div>
             `;
         }
@@ -2281,7 +2281,7 @@ function insertNewCommentToPage(comment, postData) {
         return `
             <div class="quote-box quote-level-${depth}">
                 ${parentQuote}
-                <div class="quote-author">引用 ${target.author}(<a href="#post-${target.floor}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}楼</a>) 的发言：</div>
+                <div class="quote-author">寮曠敤 ${target.author}(<a href="#post-${target.floor}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}妤?/a>) 鐨勫彂瑷€锛?/div>
                 <div class="quote-content">${plainContent}${target.content.replace(/<[^>]*>/g, '').length > 100 ? '...' : ''}</div>
             </div>
         `;
@@ -2295,15 +2295,15 @@ function insertNewCommentToPage(comment, postData) {
         <div class="post" id="post-${comment.floor}">
             <div class="post-header">
                 <div class="post-author">
-                    <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
+                    <img src="${comment.authorAvatar}" alt="澶村儚" class="author-avatar">
                     <div class="author-info">
-                        <div class="author-name">${comment.author}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
+                        <div class="author-name">${comment.author}${isOpReply ? '<span class="op-badge">妤间富</span>' : ''}</div>
                         <div class="author-level">${comment.authorLevel}</div>
                     </div>
                 </div>
                 <div class="post-meta">
                     <span class="post-time">${comment.time}</span>
-                    <span class="post-floor">${comment.floor}楼</span>
+                    <span class="post-floor">${comment.floor}妤?/span>
                 </div>
             </div>
             <div class="post-content">
@@ -2311,15 +2311,15 @@ function insertNewCommentToPage(comment, postData) {
                 ${comment.content}
             </div>
             <div class="post-actions">
-                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${comment.author}" data-content="${comment.content.replace(/"/g, '&quot;')}">回复</a>
+                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${comment.author}" data-content="${comment.content.replace(/"/g, '&quot;')}">鍥炲</a>
             </div>
         </div>
     `;
     
-    // 插入到帖子列表末尾
+    // 鎻掑叆鍒板笘瀛愬垪琛ㄦ湯灏?
     threadContainer.insertAdjacentHTML('beforeend', commentHTML);
     
-    // 为新插入的回复按钮绑定事件
+    // 涓烘柊鎻掑叆鐨勫洖澶嶆寜閽粦瀹氫簨浠?
     const newReplyLink = threadContainer.querySelector(`#post-${comment.floor} .reply-link`);
     if (newReplyLink) {
         newReplyLink.addEventListener('click', function(e) {
@@ -2333,8 +2333,8 @@ function insertNewCommentToPage(comment, postData) {
             
             if (replyTargetInput && replyContent && replyBoxTitle) {
                 replyTargetInput.value = floor;
-                replyContent.value = `回复 ${author}(${floor}楼)：`;
-                replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
+                replyContent.value = `鍥炲 ${author}(${floor}妤?锛歚;
+                replyBoxTitle.textContent = `鍥炲 ${author}(${floor}妤?`;
                 document.getElementById('cancel-reply').style.display = 'inline';
                 replyContent.focus();
             }
@@ -2342,7 +2342,7 @@ function insertNewCommentToPage(comment, postData) {
     }
 }
 
-// 更新用户导航链接
+// 鏇存柊鐢ㄦ埛瀵艰埅閾炬帴
 function updateUserLinks() {
     const userLinksContainer = document.getElementById('user-links-container');
     if (!userLinksContainer) return;
@@ -2351,8 +2351,8 @@ function updateUserLinks() {
     
     if (userLoggedIn) {
         userLinksContainer.innerHTML = `
-            <a href="profile.html">个人资料</a>
-            <a href="#" id="nav-logout-btn">退出登录</a>
+            <a href="profile.html">涓汉璧勬枡</a>
+            <a href="#" id="nav-logout-btn">閫€鍑虹櫥褰?/a>
         `;
         
         const logoutBtn = document.getElementById('nav-logout-btn');
@@ -2360,13 +2360,13 @@ function updateUserLinks() {
             logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 clearFlarumToken();
-                window.location.href = 'index.html';
+                window.location.href = '/';
             });
         }
     } else {
         userLinksContainer.innerHTML = `
-            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" id="login-btn">登录</a>
-            <a href="register.html" id="register-btn">注册</a>
+            <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" id="login-btn">鐧诲綍</a>
+            <a href="register.html" id="register-btn">娉ㄥ唽</a>
         `;
     }
 }
@@ -2391,8 +2391,8 @@ function refreshAuthDependentUI() {
 
 window.addEventListener('flarum-auth-changed', refreshAuthDependentUI);
 
-// 浏览器从 bfcache 恢复页面时，DOMContentLoaded 不会再次触发。
-// 在 pageshow/focus 阶段主动刷新登录态，避免顶部导航显示旧状态。
+// 娴忚鍣ㄤ粠 bfcache 鎭㈠椤甸潰鏃讹紝DOMContentLoaded 涓嶄細鍐嶆瑙﹀彂銆?
+// 鍦?pageshow/focus 闃舵涓诲姩鍒锋柊鐧诲綍鎬侊紝閬垮厤椤堕儴瀵艰埅鏄剧ず鏃х姸鎬併€?
 window.addEventListener('pageshow', refreshAuthDependentUI);
 window.addEventListener('focus', refreshAuthDependentUI);
 
@@ -2402,7 +2402,7 @@ window.addEventListener('storage', function(e) {
     }
 });
 
-// 设置平滑滚动
+// 璁剧疆骞虫粦婊氬姩
 function setupSmoothScroll() {
     const links = document.querySelectorAll('a[href^="#"]');
     
@@ -2421,21 +2421,21 @@ function setupSmoothScroll() {
     });
 }
 
-// 设置浮窗导航图标
+// 璁剧疆娴獥瀵艰埅鍥炬爣
 function setupFloatingAd() {
     const ad = document.querySelector('.floating-ad');
     if (!ad) return;
     
-    // 立即显示浮窗导航图标
+    // 绔嬪嵆鏄剧ず娴獥瀵艰埅鍥炬爣
     ad.style.display = 'block';
-    ad.style.position = 'fixed'; // 确保是 fixed 布局
+    ad.style.position = 'fixed'; // 纭繚鏄?fixed 甯冨眬
     
     let adWidth = 0;
     let adHeight = 0;
     let windowWidth = 0;
     let windowHeight = 0;
     
-    // 随机初始位置和速度
+    // 闅忔満鍒濆浣嶇疆鍜岄€熷害
     let x = Math.random() * (window.innerWidth - 100);
     let y = Math.random() * (window.innerHeight - 100);
     let dx = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.3);
@@ -2453,7 +2453,7 @@ function setupFloatingAd() {
     function animate() {
         if (isPaused) return;
 
-        // 边界检测和反弹
+        // 杈圭晫妫€娴嬪拰鍙嶅脊
         if (x + adWidth >= windowWidth) {
             x = windowWidth - adWidth;
             dx = -Math.abs(dx);
@@ -2480,7 +2480,7 @@ function setupFloatingAd() {
         animationId = requestAnimationFrame(animate);
     }
     
-    // 等待加载后开始
+    // 绛夊緟鍔犺浇鍚庡紑濮?
     window.addEventListener('load', function() {
         updateDimensions();
         animate();
@@ -2499,12 +2499,12 @@ function setupFloatingAd() {
     window.addEventListener('resize', updateDimensions);
 }
 
-// 设置浮窗广告2
+// 璁剧疆娴獥骞垮憡2
 function setupFloatingAd2() {
     const ad = document.querySelector('.floating-ad2');
     if (!ad) return;
     
-    // 立即显示浮窗广告
+    // 绔嬪嵆鏄剧ず娴獥骞垮憡
     ad.style.display = 'block';
     ad.style.position = 'fixed';
     
@@ -2513,7 +2513,7 @@ function setupFloatingAd2() {
     let windowWidth = 0;
     let windowHeight = 0;
     
-    // 随机初始位置和速度
+    // 闅忔満鍒濆浣嶇疆鍜岄€熷害
     let x = Math.random() * (window.innerWidth - 100);
     let y = Math.random() * (window.innerHeight - 100);
     let dx = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.3);
@@ -2531,7 +2531,7 @@ function setupFloatingAd2() {
     function animate() {
         if (isPaused) return;
 
-        // 边界检测和反弹
+        // 杈圭晫妫€娴嬪拰鍙嶅脊
         if (x + adWidth >= windowWidth) {
             x = windowWidth - adWidth;
             dx = -Math.abs(dx);
@@ -2558,7 +2558,7 @@ function setupFloatingAd2() {
         animationId = requestAnimationFrame(animate);
     }
     
-    // 等待加载后开始
+    // 绛夊緟鍔犺浇鍚庡紑濮?
     window.addEventListener('load', function() {
         updateDimensions();
         animate();
@@ -2577,7 +2577,7 @@ function setupFloatingAd2() {
     window.addEventListener('resize', updateDimensions);
 }
 
-// 设置右下角弹窗广告
+// 璁剧疆鍙充笅瑙掑脊绐楀箍鍛?
 function setupPopupAd() {
     const popupAd = document.querySelector('.popup-ad');
     if (!popupAd) return;
@@ -2588,7 +2588,7 @@ function setupPopupAd() {
     const leftCloseBtn = document.querySelector('.left-close-btn');
     const popupAudio = document.getElementById('popup-audio');
     
-    // 设置弹窗广告音量为1/3
+    // 璁剧疆寮圭獥骞垮憡闊抽噺涓?/3
     if (popupAudio) {
         popupAudio.volume = 1/3;
     }
@@ -2601,7 +2601,7 @@ function setupPopupAd() {
         }
     }
     
-    // 立即显示弹窗广告和左侧假关闭按钮
+    // 绔嬪嵆鏄剧ず寮圭獥骞垮憡鍜屽乏渚у亣鍏抽棴鎸夐挳
     setTimeout(function() {
         console.log('Showing popup ad...');
         popupAd.style.display = 'block';
@@ -2615,18 +2615,18 @@ function setupPopupAd() {
         }
     }, 3000);
     
-    // 鼠标悬停时开始动画和播放音频
+    // 榧犳爣鎮仠鏃跺紑濮嬪姩鐢诲拰鎾斁闊抽
     popupAd.addEventListener('mouseenter', function() {
         popupAd.style.animation = 'pulse 0.5s infinite ease-in-out';
         if (popupAudio) {
-            popupAudio.volume = 1/3; // 在播放前再次设置音量
+            popupAudio.volume = 1/3; // 鍦ㄦ挱鏀惧墠鍐嶆璁剧疆闊抽噺
             popupAudio.play().catch(function(error) {
                 console.log('Popup audio playback prevented:', error);
             });
         }
     });
     
-    // 鼠标移开时停止动画和暂停音频
+    // 榧犳爣绉诲紑鏃跺仠姝㈠姩鐢诲拰鏆傚仠闊抽
     popupAd.addEventListener('mouseleave', function() {
         popupAd.style.animation = 'none';
         if (popupAudio) {
@@ -2634,7 +2634,7 @@ function setupPopupAd() {
         }
     });
     
-    // 监听窗口大小变化，更新假关闭按钮位置
+    // 鐩戝惉绐楀彛澶у皬鍙樺寲锛屾洿鏂板亣鍏抽棴鎸夐挳浣嶇疆
     window.addEventListener('resize', function() {
         updateLeftCloseBtnPosition();
     });
@@ -2650,7 +2650,7 @@ function setupPopupAd() {
         }
     });
 
-    // 处理假关闭按钮的点击跳转
+    // 澶勭悊鍋囧叧闂寜閽殑鐐瑰嚮璺宠浆
     const fakeCloseBtn = popupAd.querySelector('.fake-close-btn');
     if (fakeCloseBtn) {
         fakeCloseBtn.addEventListener('click', function(e) {
@@ -2669,3 +2669,4 @@ function setupPopupAd() {
         }
     }
 }
+
