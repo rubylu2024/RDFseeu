@@ -1365,10 +1365,13 @@ function setupAudio() {
 async function loadPostDetailsFromJson() {
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id') || '1';
+
+    document.title = '红蜻蜓论坛 - 帖子加载中...';
     
     const postData = await loadPostData(postId);
     if (!postData) {
         console.error('无法加载帖子数据');
+        document.title = '红蜻蜓论坛 - 帖子';
         return;
     }
     
