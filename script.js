@@ -65,7 +65,9 @@ function getAuthRedirectParamUrl() {
 }
 
 function resolveAuthReturnUrl() {
-    return getAuthRedirectParamUrl() || consumeAuthReturnUrl() || getSafeSameOriginUrl(document.referrer) || 'index.html';
+    const stored = consumeAuthReturnUrl();
+    const fromParam = getAuthRedirectParamUrl();
+    return fromParam || stored || getSafeSameOriginUrl(document.referrer) || 'index.html';
 }
 
 function ensureToastOverlay() {
