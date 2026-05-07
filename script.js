@@ -561,10 +561,11 @@ async function flarumLoadDiscussion(postId) {
     const id = String(postId);
 
     try {
+        const readWithAuth = !!getFlarumToken();
         // 获取 discussion 基本信息
         const discussionJson = await flarumRequest(
             `/discussions/${encodeURIComponent(id)}?include=user`,
-            { auth: false }
+            { auth: readWithAuth }
         );
 
         if (!discussionJson?.data) {
@@ -603,7 +604,7 @@ async function flarumLoadDiscussion(postId) {
 
 async function flarumLoadDiscussionList() {
     try {
-        const json = await flarumRequest('/discussions?sort=-createdAt&page[limit]=20&include=user', { auth: false });
+        const json = await flarumRequest('/discussions?sort=-createdAt&page[limit]=20&include=user', { auth: !!getFlarumToken() });
         const discussions = Array.isArray(json?.data) ? json.data : [];
         const included = json?.included || [];
 
@@ -686,10 +687,11 @@ async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limi
     const filterQSafe = typeof filterQ === 'string' ? filterQ.trim() : '';
     const filterPart = filterQSafe ? `&filter[q]=${encodeURIComponent(filterQSafe)}` : '';
 
+    const readWithAuth = !!getFlarumToken();
     let lastError = null;
     for (const sort of buildSortCandidates()) {
         try {
-            const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&${baseQuery}${filterPart}`, { auth: false });
+            const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&${baseQuery}${filterPart}`, { auth: readWithAuth });
             return { json, usedSort: sort, usedFallbackSort: false };
         } catch (error) {
             lastError = error;
@@ -697,7 +699,7 @@ async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limi
     }
 
     const fallbackSort = order === 'desc' ? '-createdAt' : 'createdAt';
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(fallbackSort)}&${baseQuery}${filterPart}`, { auth: false });
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(fallbackSort)}&${baseQuery}${filterPart}`, { auth: readWithAuth });
     return { json, usedSort: fallbackSort, usedFallbackSort: field === 'views', fallbackError: lastError };
 }
 
@@ -739,7 +741,7 @@ async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder
     const safeOffset = typeof offset === 'number' && isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}&include=user`, { auth: false });
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}&include=user`, { auth: !!getFlarumToken() });
     return { json };
 }
 
@@ -819,6 +821,57 @@ function matchesAllTokens(haystack, tokens) {
     return tokens.every((t) => h.includes(String(t).toLowerCase()));
 }
 
+function stripHtmlToText(rawHtml) {
+    const raw = typeof rawHtml === 'string' ? rawHtml : '';
+    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isDeletedPostResource(post) {
+    const attrs = post?.attributes || {};
+    if (attrs.isHidden === true) return true;
+    if (attrs.hiddenAt || attrs.deletedAt) return true;
+
+    const text = stripHtmlToText(attrs.contentHtml || attrs.content || '').toLowerCase();
+    if (!text) return false;
+    if (text.includes('[deleted')) return true;
+    if (text.includes('deletedby') || text.includes('deletedat')) return true;
+    if (text.includes('内容已被删除') || text.includes('该帖已被删除')) return true;
+    return false;
+}
+
+function buildHighlightedSnippetHtml(text, tokens, maxLen = 60) {
+    const raw = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
+    if (!raw) return '';
+    const uniqTokens = Array.from(new Set((tokens || []).map((t) => String(t).trim()).filter(Boolean)));
+
+    const lower = raw.toLowerCase();
+    let hitIndex = -1;
+    for (const t of uniqTokens) {
+        const idx = lower.indexOf(t.toLowerCase());
+        if (idx >= 0 && (hitIndex === -1 || idx < hitIndex)) hitIndex = idx;
+    }
+
+    const windowBefore = 20;
+    const start = Math.max(0, (hitIndex >= 0 ? hitIndex - windowBefore : 0));
+    const end = Math.min(raw.length, start + maxLen);
+    const snippet = raw.slice(start, end);
+    const prefix = start > 0 ? '…' : '';
+    const suffix = end < raw.length ? '…' : '';
+
+    let escaped = escapeHtml(snippet);
+    uniqTokens.forEach((t) => {
+        const pattern = escapeRegExp(escapeHtml(t));
+        if (!pattern) return;
+        escaped = escaped.replace(new RegExp(pattern, 'gi'), '<span class="hl">$&</span>');
+    });
+
+    return `${escapeHtml(prefix)}${escaped}${escapeHtml(suffix)}`;
+}
+
 async function flarumLoadRecentDiscussionsForFuzzy(maxItems = 300) {
     const take = typeof maxItems === 'number' && isFinite(maxItems) && maxItems > 0 ? Math.floor(maxItems) : 300;
     const pageLimit = 50;
@@ -828,7 +881,7 @@ async function flarumLoadRecentDiscussionsForFuzzy(maxItems = 300) {
 
     let offset = 0;
     while (discussions.length < take) {
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user`, { auth: false });
+        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user`, { auth: !!getFlarumToken() });
         const data = Array.isArray(json?.data) ? json.data : [];
         const included = Array.isArray(json?.included) ? json.included : [];
 
@@ -1079,10 +1132,13 @@ async function renderSearchPage() {
         usersOffset: 0,
         discussionsPrev: null,
         discussionsNext: null,
+        discussionsLast: null,
         postsPrev: null,
         postsNext: null,
+        postsLast: null,
         usersPrev: null,
         usersNext: null,
+        usersLast: null,
         usersFuzzyMode: false,
         usersFuzzyList: null,
         postsFuzzyMode: false,
@@ -1133,6 +1189,7 @@ async function renderSearchPage() {
         const included = Array.isArray(json?.included) ? json.included : [];
         state.discussionsPrev = parseOffsetFromPageLink(json?.links?.prev);
         state.discussionsNext = parseOffsetFromPageLink(json?.links?.next);
+        state.discussionsLast = parseOffsetFromPageLink(json?.links?.last);
 
         const rows = discussions.map((d) => {
             const userId = d.relationships?.user?.data?.id;
@@ -1174,7 +1231,11 @@ async function renderSearchPage() {
 
         if (discussionInfo) {
             const pageNumber = Math.floor(state.discussionsOffset / state.limit) + 1;
-            discussionInfo.textContent = `第 ${pageNumber} 页，每页最多 15 条`;
+            const lastOffset = state.discussionsLast;
+            const totalPages = lastOffset == null
+                ? ((state.discussionsPrev == null && state.discussionsNext == null) ? 1 : null)
+                : (Math.floor(lastOffset / state.limit) + 1);
+            discussionInfo.textContent = `第 ${pageNumber} 页 / 共 ${totalPages == null ? '?' : totalPages} 页，每页最多 15 条`;
         }
 
         safeEnable(discussionPrev, state.discussionsPrev != null);
@@ -1206,18 +1267,27 @@ async function renderSearchPage() {
                 limit: state.limit,
                 sortOrder: 'desc'
             });
-            posts = Array.isArray(json?.data) ? json.data : [];
+            posts = (Array.isArray(json?.data) ? json.data : []).filter((p) => !isDeletedPostResource(p));
             included = Array.isArray(json?.included) ? json.included : [];
             state.postsPrev = parseOffsetFromPageLink(json?.links?.prev);
             state.postsNext = parseOffsetFromPageLink(json?.links?.next);
+            state.postsLast = parseOffsetFromPageLink(json?.links?.last);
+
+            if (tokens.length > 0) {
+                posts = posts.filter((p) => {
+                    const text = stripHtmlToText(p?.attributes?.contentHtml || p?.attributes?.content || '');
+                    return matchesAllTokens(text, tokens);
+                });
+            }
 
             if (posts.length === 0 && tokens.length > 0) {
                 const fuzzy = await flarumLoadPostsForFuzzy(200);
-                const filtered = fuzzy.posts.filter((p) => {
-                    const html = p?.attributes?.contentHtml || p?.attributes?.content || '';
-                    const text = html.replace(/<[^>]*>/g, ' ');
-                    return matchesAllTokens(text, tokens);
-                });
+                const filtered = fuzzy.posts
+                    .filter((p) => !isDeletedPostResource(p))
+                    .filter((p) => {
+                        const text = stripHtmlToText(p?.attributes?.contentHtml || p?.attributes?.content || '');
+                        return matchesAllTokens(text, tokens);
+                    });
                 state.postsFuzzyMode = true;
                 state.postsFuzzyList = filtered;
                 state.postsFuzzyIncluded = fuzzy.included;
@@ -1241,7 +1311,8 @@ async function renderSearchPage() {
             const floor = typeof p.attributes?.number === 'number' ? p.attributes.number : 1;
             const createdAt = p.attributes?.createdAt || '';
             const html = p.attributes?.contentHtml || p.attributes?.content || '';
-            const preview = html.replace(/<[^>]*>/g, '').trim().slice(0, 60) || '无内容';
+            const text = stripHtmlToText(html);
+            const previewHtml = buildHighlightedSnippetHtml(text, tokens, 60) || escapeHtml('无内容');
             const userId = p.relationships?.user?.data?.id;
             const user = userId ? pickIncluded(included, 'users', userId) : null;
             const author = getPreferredDisplayName(user?.attributes);
@@ -1250,7 +1321,7 @@ async function renderSearchPage() {
 
             return `
                 <tr>
-                    <td style="width: 34%;"><a href="${href}">${escapeHtml(preview)}</a></td>
+                    <td style="width: 34%;"><a href="${href}">${previewHtml}</a></td>
                     <td style="width: 14%;">${authorHtml || ''}</td>
                     <td style="width: 16%;">${escapeHtml(createdAt.slice(0, 16).replace('T', ' '))}</td>
                     <td style="width: 36%;"><a href="post.html?id=${encodeURIComponent(discussionId)}">${escapeHtml(discussionTitle)}</a></td>
@@ -1277,7 +1348,14 @@ async function renderSearchPage() {
         if (postInfo) {
             const pageNumber = Math.floor(state.postsOffset / state.limit) + 1;
             const suffix = state.postsFuzzyMode ? '（关键词匹配范围：最近 200 楼）' : '';
-            postInfo.textContent = `第 ${pageNumber} 页，每页最多 15 条${suffix}`;
+            const totalPages = state.postsFuzzyMode && Array.isArray(state.postsFuzzyList)
+                ? Math.max(1, Math.ceil(state.postsFuzzyList.length / state.limit))
+                : (() => {
+                    const lastOffset = state.postsLast;
+                    if (lastOffset == null) return (state.postsPrev == null && state.postsNext == null) ? 1 : null;
+                    return Math.floor(lastOffset / state.limit) + 1;
+                })();
+            postInfo.textContent = `第 ${pageNumber} 页 / 共 ${totalPages == null ? '?' : totalPages} 页，每页最多 15 条${suffix}`;
         }
 
         safeEnable(postPrev, state.postsPrev != null);
@@ -1312,6 +1390,7 @@ async function renderSearchPage() {
             users = Array.isArray(json?.data) ? json.data : [];
             state.usersPrev = parseOffsetFromPageLink(json?.links?.prev);
             state.usersNext = parseOffsetFromPageLink(json?.links?.next);
+            state.usersLast = parseOffsetFromPageLink(json?.links?.last);
 
             if (users.length === 0 && tokens.length > 0) {
                 const fuzzyUsers = await flarumLoadUsersForFuzzy(200);
@@ -1380,7 +1459,14 @@ async function renderSearchPage() {
         if (userInfo) {
             const pageNumber = Math.floor(state.usersOffset / state.limit) + 1;
             const suffix = usingFuzzy ? `（昵称匹配范围：${fuzzySourceCount} 人）` : '';
-            userInfo.textContent = `第 ${pageNumber} 页，每页最多 15 条${suffix}`;
+            const totalPages = usingFuzzy && Array.isArray(state.usersFuzzyList)
+                ? Math.max(1, Math.ceil(state.usersFuzzyList.length / state.limit))
+                : (() => {
+                    const lastOffset = state.usersLast;
+                    if (lastOffset == null) return (state.usersPrev == null && state.usersNext == null) ? 1 : null;
+                    return Math.floor(lastOffset / state.limit) + 1;
+                })();
+            userInfo.textContent = `第 ${pageNumber} 页 / 共 ${totalPages == null ? '?' : totalPages} 页，每页最多 15 条${suffix}`;
         }
 
         safeEnable(userPrev, state.usersPrev != null);
