@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>涓汉璧勬枡 - 绾㈣溁铚撹鍧?/title>
+    <title>个人资料 - 红蜻蜓论坛</title>
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
         .profile-page {
@@ -79,7 +79,7 @@
         .avatar-placeholder {
             width: 100%;
             height: 100%;
-            background: #f2e8d4 url('images/鐢ㄦ埛澶村儚.png') no-repeat center center;
+            background: #f2e8d4 url('images/用户头像.png') no-repeat center center;
             background-size: cover;
         }
 
@@ -97,6 +97,12 @@
 
         #avatar-upload-input {
             display: none;
+        }
+
+        .profile-side-note {
+            font-size: 12px;
+            line-height: 1.7;
+            color: #705533;
         }
 
         .profile-main {
@@ -144,7 +150,8 @@
 
         .profile-meta-chips,
         .profile-status-tags,
-        .profile-action-row {
+        .profile-action-row,
+        .quick-links {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -184,7 +191,8 @@
         }
 
         .retro-btn,
-        .retro-link-btn {
+        .retro-link-btn,
+        .upload-avatar-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -201,12 +209,14 @@
         }
 
         .retro-btn:hover,
-        .retro-link-btn:hover {
+        .retro-link-btn:hover,
+        .upload-avatar-btn:hover {
             background: linear-gradient(to bottom, #bf3a2a 0%, #9f2317 100%);
         }
 
         .retro-btn.secondary,
-        .retro-link-btn.secondary {
+        .retro-link-btn.secondary,
+        .upload-avatar-btn.secondary {
             border-color: #8a6a45;
             background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
             color: #5d432f;
@@ -214,7 +224,8 @@
         }
 
         .retro-btn.secondary:hover,
-        .retro-link-btn.secondary:hover {
+        .retro-link-btn.secondary:hover,
+        .upload-avatar-btn.secondary:hover {
             background: linear-gradient(to bottom, #efe2c6 0%, #e3cda4 100%);
         }
 
@@ -300,6 +311,11 @@
             color: #6b2d23;
         }
 
+        .panel-subtitle {
+            font-size: 12px;
+            color: #7a6048;
+        }
+
         .panel-body {
             padding: 14px;
         }
@@ -383,16 +399,6 @@
             line-height: 1.6;
         }
 
-        .form-static {
-            min-height: 40px;
-            padding: 9px 10px;
-            border: 1px solid #d8c4a3;
-            background: #f6efe1;
-            color: #5f4a38;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
         .profile-form input,
         .profile-form textarea {
             width: 100%;
@@ -420,6 +426,12 @@
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
+        }
+
+        .form-hint {
+            color: #866953;
+            font-size: 12px;
+            line-height: 1.7;
         }
 
         .tab-bar {
@@ -511,59 +523,6 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: rgba(48, 28, 18, 0.62);
-            z-index: 10020;
-        }
-
-        .modal-overlay.open {
-            display: flex;
-        }
-
-        .modal-card {
-            width: 100%;
-            max-width: 560px;
-            border: 1px solid #7c5b3d;
-            background: #fffaf0;
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
-        }
-
-        .modal-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 14px;
-            border-bottom: 1px solid #c7af88;
-            background: linear-gradient(to bottom, #efe2c6 0%, #e4cfaa 100%);
-        }
-
-        .modal-head h3 {
-            font-size: 16px;
-            color: #6b2d23;
-        }
-
-        .modal-close {
-            width: 34px;
-            height: 34px;
-            border: 1px solid #8a6a45;
-            background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
-            color: #5d432f;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        .modal-body {
-            padding: 16px 14px;
         }
 
         .empty-state {
@@ -659,7 +618,7 @@
     </style>
 </head>
 <body>
-    <audio id="background-music" src="audio/绾㈣溁铚?mp3" loop>
+    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
         Your browser does not support the audio element.
     </audio>
 
@@ -670,29 +629,29 @@
                     <div class="top-nav-container">
                         <div class="logo">
                             <div class="logo-image"></div>
-                            <a href="/">绾㈣溁铚撹鍧?/a>
-                            <a href="/" class="logo-sub">www.reddragonfly.cyou</a>
+                            <a href="index.html">红蜻蜓论坛</a>
+                            <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
                         </div>
                         <div class="top-links">
-                            <a href="/">璁哄潧</a>
-                            <a href="#">鍗氬</a>
-                            <a href="#">闂瓟</a>
-                            <a href="https://www.4399.com" target="_blank">娓告垙鍘?/a>
-                            <a href="#">鍝佺墝</a>
-                            <a href="#">鏇村</a>
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
                         </div>
                         <div class="search-box">
-                            <input type="text" placeholder="鎼滃笘銆佹壘浜恒€佹悳鐗堝潡">
-                            <button>鎼滅储</button>
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
                         </div>
                         <div class="user-links">
                             <button id="audio-toggle" class="audio-toggle">
-                                <span class="audio-icon">鈾?/span>
+                                <span class="audio-icon">♪</span>
                             </button>
-                            <a href="#">鏈嶅姟</a>
+                            <a href="#">服务</a>
                             <div id="user-links-container">
-                                <a href="login.html" id="login-btn">鐧诲綍</a>
-                                <a href="register.html" id="register-btn">娉ㄥ唽</a>
+                                <a href="login.html" id="login-btn">登录</a>
+                                <a href="register.html" id="register-btn">注册</a>
                             </div>
                         </div>
                     </div>
@@ -704,7 +663,7 @@
                             <div class="main-content" style="width: 100%; min-height: 640px;">
                                 <div class="profile-page">
                                     <div class="profile-breadcrumb">
-                                        <a href="/">璁哄潧棣栭〉</a> &gt; <span>涓汉璧勬枡</span>
+                                        <a href="index.html">论坛首页</a> &gt; <span>个人资料</span>
                                     </div>
 
                                     <div id="page-message" class="profile-message"></div>
@@ -717,54 +676,58 @@
                                         <div class="profile-banner">
                                             <div class="avatar-card">
                                                 <div class="avatar-shell">
-                                                    <div class="avatar-container" id="avatar-trigger" role="button" tabindex="0" aria-label="涓婁紶澶村儚">
+                                                    <div class="avatar-container" id="avatar-trigger" role="button" tabindex="0" aria-label="上传头像">
                                                         <div id="user-avatar" class="avatar-placeholder"></div>
-                                                        <div class="avatar-upload-overlay">鐐瑰嚮鏇存崲澶村儚</div>
+                                                        <div class="avatar-upload-overlay">点击更换头像</div>
                                                     </div>
                                                 </div>
                                                 <input type="file" id="avatar-upload-input" accept="image/*">
+                                                <button type="button" class="upload-avatar-btn secondary" id="upload-avatar-btn">上传头像</button>
+                                                <div class="profile-side-note" style="margin-top: 12px;">
+                                                    支持常见图片格式，大小不超过 2MB。头像修改后会立即同步到论坛显示。
+                                                </div>
                                             </div>
 
                                             <div class="profile-main">
                                                 <div class="profile-name-row">
-                                                    <h2 id="user-name">鐢ㄦ埛</h2>
+                                                    <h2 id="user-name">用户</h2>
                                                     <span id="user-group-badge"></span>
                                                 </div>
-                                                <div class="profile-subtitle" id="user-title">鐢ㄦ埛澶磋</div>
+                                                <div class="profile-subtitle" id="user-title">用户头衔</div>
 
                                                 <div class="profile-meta-chips">
-                                                    <span class="meta-chip">璐﹀彿锛?span id="meta-username">-</span></span>
-                                                    <span class="meta-chip">鐢ㄦ埛 ID锛?span id="meta-user-id">-</span></span>
-                                                    <span class="meta-chip">娉ㄥ唽浜庯細<span id="meta-joined">-</span></span>
+                                                    <span class="meta-chip">账号：<span id="meta-username">-</span></span>
+                                                    <span class="meta-chip">用户 ID：<span id="meta-user-id">-</span></span>
+                                                    <span class="meta-chip">注册于：<span id="meta-joined">-</span></span>
                                                 </div>
 
                                                 <div class="profile-status-tags" id="profile-status-tags"></div>
 
-                                                <div id="user-signature" class="profile-signature">杩欎釜鐢ㄦ埛寰堟噿锛岃繕娌℃湁鐣欎笅涓€х鍚嶃€?/div>
+                                                <div id="user-signature" class="profile-signature">这个用户很懒，还没有留下个性签名。</div>
 
                                                 <div class="profile-action-row">
-                                                    <a href="new-post.html" class="retro-link-btn">鍘诲彂鏂板笘</a>
-                                                    <a href="/" class="retro-link-btn secondary">杩斿洖棣栭〉</a>
-                                                    <button type="button" class="retro-btn secondary" id="logout-btn">閫€鍑虹櫥褰?/button>
+                                                    <a href="new-post.html" class="retro-link-btn">去发新帖</a>
+                                                    <a href="index.html" class="retro-link-btn secondary">返回首页</a>
+                                                    <button type="button" class="retro-btn secondary" id="logout-btn">退出登录</button>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="profile-stats">
                                             <div class="stat-card">
-                                                <div class="stat-label">鍙戝笘鏁?/div>
+                                                <div class="stat-label">发帖数</div>
                                                 <div class="stat-number" id="stat-posts">0</div>
                                             </div>
                                             <div class="stat-card">
-                                                <div class="stat-label">鍥炲鏁?/div>
+                                                <div class="stat-label">回复数</div>
                                                 <div class="stat-number" id="stat-comments">0</div>
                                             </div>
                                             <div class="stat-card">
-                                                <div class="stat-label">鑾疯禐鏁?/div>
+                                                <div class="stat-label">获赞数</div>
                                                 <div class="stat-number" id="stat-likes">0</div>
                                             </div>
                                             <div class="stat-card">
-                                                <div class="stat-label">澹版湜</div>
+                                                <div class="stat-label">声望</div>
                                                 <div class="stat-number" id="stat-reputation">0</div>
                                             </div>
                                         </div>
@@ -773,47 +736,55 @@
                                             <div class="profile-column">
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
-                                                        <h3>鍩烘湰璧勬枡</h3>
+                                                        <h3>基本资料</h3>
+                                                        <span class="panel-subtitle">论坛展示与账号信息</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="info-table">
-                                                            <div class="info-row"><div class="info-label">鐢ㄦ埛鍚?/div><div class="info-value" id="info-username">-</div></div>
-                                                            <div class="info-row"><div class="info-label">鏄电О</div><div class="info-value" id="info-displayname">-</div></div>
-                                                            <div class="info-row"><div class="info-label">閭</div><div class="info-value" id="info-email">-</div></div>
-                                                            <div class="info-row"><div class="info-label">鐢ㄦ埛缁?/div><div class="info-value" id="info-group">-</div></div>
-                                                            <div class="info-row"><div class="info-label">淇′换绛夌骇</div><div class="info-value" id="info-trust">-</div></div>
+                                                            <div class="info-row"><div class="info-label">用户名</div><div class="info-value" id="info-username">-</div></div>
+                                                            <div class="info-row"><div class="info-label">昵称</div><div class="info-value" id="info-displayname">-</div></div>
+                                                            <div class="info-row"><div class="info-label">邮箱</div><div class="info-value" id="info-email">-</div></div>
+                                                            <div class="info-row"><div class="info-label">个性签名</div><div class="info-value" id="info-signature">-</div></div>
+                                                            <div class="info-row"><div class="info-label">用户组</div><div class="info-value" id="info-group">-</div></div>
+                                                            <div class="info-row"><div class="info-label">信任等级</div><div class="info-value" id="info-trust">-</div></div>
                                                         </div>
                                                     </div>
                                                 </section>
 
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
-                                                        <h3>璧勬枡璁剧疆</h3>
+                                                        <h3>资料设置</h3>
+                                                        <span class="panel-subtitle">修改后端保存的昵称与签名</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <form id="profile-form" class="profile-form">
                                                             <div class="form-grid">
                                                                 <div class="form-group">
-                                                                    <label>鐢ㄦ埛鍚?/label>
-                                                                    <div class="form-static" id="editor-username">-</div>
+                                                                    <label for="editor-username">用户名</label>
+                                                                    <input type="text" id="editor-username" readonly>
+                                                                    <small>用户名用于登录，当前页面不提供修改。</small>
                                                                 </div>
                                                                 <div class="form-group">
-                                                                    <label>閭</label>
-                                                                    <div class="form-static" id="editor-email">-</div>
+                                                                    <label for="editor-email">邮箱</label>
+                                                                    <input type="text" id="editor-email" readonly>
+                                                                    <small>用于账号激活与找回密码。</small>
                                                                 </div>
                                                                 <div class="form-group full">
-                                                                    <label for="editor-nickname">鏄电О</label>
-                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="甯栧瓙閲屾樉绀虹殑鍚嶅瓧锛岀暀绌哄皢榛樿浣跨敤鐢ㄦ埛鍚?>
+                                                                    <label for="editor-nickname">昵称</label>
+                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="帖子里显示的名字，留空将默认使用用户名">
+                                                                    <small>保存后，帖子列表、帖子页和回复区会优先显示这里的昵称。</small>
                                                                 </div>
                                                                 <div class="form-group full">
-                                                                    <label for="editor-signature">涓€х鍚?/label>
-                                                                    <textarea id="editor-signature" maxlength="200" placeholder="鍐欎竴鍙ョ畝鍗曠殑鑷垜浠嬬粛銆佸績鎯呯鍚嶆垨甯哥敤璇存槑"></textarea>
+                                                                    <label for="editor-signature">个性签名</label>
+                                                                    <textarea id="editor-signature" maxlength="200" placeholder="写一句简单的自我介绍、心情签名或常用说明"></textarea>
+                                                                    <small>如果你的论坛后端未开启签名字段，保存时会给出提示。</small>
                                                                 </div>
                                                             </div>
                                                             <div class="form-actions">
-                                                                <button type="submit" class="retro-btn" id="save-profile-btn">淇濆瓨璧勬枡</button>
-                                                                <button type="button" class="retro-btn secondary" id="reset-profile-btn">鎭㈠褰撳墠璧勬枡</button>
+                                                                <button type="submit" class="retro-btn" id="save-profile-btn">保存资料</button>
+                                                                <button type="button" class="retro-btn secondary" id="reset-profile-btn">恢复当前资料</button>
                                                             </div>
+                                                            <div class="form-hint">资料保存后会立即刷新页面中的昵称与签名显示。</div>
                                                         </form>
                                                     </div>
                                                 </section>
@@ -822,29 +793,71 @@
                                             <div class="profile-column">
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
-                                                        <h3>璐﹀彿鐘舵€?/h3>
+                                                        <h3>账号状态</h3>
+                                                        <span class="panel-subtitle">当前登录与激活情况</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="status-list">
-                                                            <div class="status-item"><strong>鐧诲綍鐘舵€?/strong><span id="status-login">-</span></div>
-                                                            <div class="status-item"><strong>璐﹀彿婵€娲?/strong><span id="status-activation">-</span></div>
-                                                            <div class="status-item"><strong>鏈€鍚庢椿璺?/strong><span id="info-last-active">-</span></div>
-                                                            <div class="status-item"><strong>璁哄潧澶磋</strong><span id="status-title">-</span></div>
+                                                            <div class="status-item"><strong>登录状态</strong><span id="status-login">-</span></div>
+                                                            <div class="status-item"><strong>账号激活</strong><span id="status-activation">-</span></div>
+                                                            <div class="status-item"><strong>注册时间</strong><span id="info-joined">-</span></div>
+                                                            <div class="status-item"><strong>最后活跃</strong><span id="info-last-active">-</span></div>
+                                                            <div class="status-item"><strong>论坛头衔</strong><span id="status-title">-</span></div>
+                                                            <div class="status-item"><strong>当前可见名称</strong><span id="status-visible-name">-</span></div>
                                                         </div>
                                                     </div>
                                                 </section>
 
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
-                                                        <h3>璐﹀彿瀹夊叏</h3>
+                                                        <h3>快捷入口</h3>
+                                                        <span class="panel-subtitle">常用个人中心操作</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <div class="quick-links">
+                                                            <a href="new-post.html" class="retro-link-btn">发表新帖</a>
+                                                            <a href="index.html" class="retro-link-btn secondary">浏览论坛</a>
+                                                            <a href="message.html" class="retro-link-btn secondary">查看消息</a>
+                                                            <a href="rules.html" class="retro-link-btn secondary">论坛规则</a>
+                                                        </div>
+                                                        <div class="form-hint" style="margin-top: 12px;">
+                                                            资料页会实时读取你的论坛数据；如果刚修改过昵称或头像，刷新后仍未变化，可以稍等片刻再查看。
+                                                        </div>
+                                                    </div>
+                                                </section>
+
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>账号安全</h3>
+                                                        <span class="panel-subtitle">常见账号保护与密码修改</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="status-list" style="margin-bottom: 14px;">
-                                                            <div class="status-item"><strong>鐧诲綍璐﹀彿</strong><span id="security-username">-</span></div>
-                                                            <div class="status-item"><strong>缁戝畾閭</strong><span id="security-email">-</span></div>
-                                                            <div class="status-item"><strong>瀵嗙爜鐘舵€?/strong><span>宸茶缃櫥褰曞瘑鐮?/span></div>
+                                                            <div class="status-item"><strong>登录账号</strong><span id="security-username">-</span></div>
+                                                            <div class="status-item"><strong>绑定邮箱</strong><span id="security-email">-</span></div>
+                                                            <div class="status-item"><strong>密码状态</strong><span>已设置登录密码</span></div>
                                                         </div>
-                                                        <button type="button" class="retro-btn" id="open-password-modal-btn">淇敼瀵嗙爜</button>
+                                                        <form id="password-form" class="profile-form">
+                                                            <div class="form-grid">
+                                                                <div class="form-group full">
+                                                                    <label for="current-password">当前密码</label>
+                                                                    <input type="password" id="current-password" autocomplete="current-password" placeholder="请输入当前登录密码">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="new-password">新密码</label>
+                                                                    <input type="password" id="new-password" autocomplete="new-password" placeholder="至少 8 位，建议包含字母和数字">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="confirm-new-password">确认新密码</label>
+                                                                    <input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="请再次输入新的密码">
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-actions">
+                                                                <button type="submit" class="retro-btn" id="save-password-btn">修改密码</button>
+                                                                <button type="button" class="retro-btn secondary" id="reset-password-btn">清空输入</button>
+                                                            </div>
+                                                            <div class="form-hint">如果论坛后端暂未开放密码修改接口，提交后会直接提示你当前账号暂无此权限。</div>
+                                                        </form>
                                                     </div>
                                                 </section>
                                             </div>
@@ -852,21 +865,22 @@
 
                                         <section class="profile-panel" style="margin-bottom: 16px;">
                                             <div class="panel-head">
-                                                <h3>鎴戠殑鍐呭</h3>
+                                                <h3>我的内容</h3>
+                                                <span class="panel-subtitle">切换查看我的主题与我的回复</span>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="tab-bar">
-                                                    <button type="button" class="tab-btn active" id="tab-discussions" data-tab="discussions">鎴戠殑涓婚</button>
-                                                    <button type="button" class="tab-btn" id="tab-comments" data-tab="comments">鎴戠殑鍥炲</button>
+                                                    <button type="button" class="tab-btn active" id="tab-discussions" data-tab="discussions">我的主题</button>
+                                                    <button type="button" class="tab-btn" id="tab-comments" data-tab="comments">我的回复</button>
                                                 </div>
                                                 <ul id="activity-list" class="content-list">
-                                                    <li class="empty-state">鏆傛棤鍥炲</li>
+                                                    <li class="empty-state">暂无回复</li>
                                                 </ul>
                                                 <div class="pagination-bar">
-                                                    <div class="pagination-info" id="activity-page-info">绗?1 椤?/div>
+                                                    <div class="pagination-info" id="activity-page-info">第 1 页</div>
                                                     <div class="pagination-actions">
-                                                        <button type="button" class="retro-btn secondary" id="activity-prev-btn">涓婁竴椤?/button>
-                                                        <button type="button" class="retro-btn secondary" id="activity-next-btn">涓嬩竴椤?/button>
+                                                        <button type="button" class="retro-btn secondary" id="activity-prev-btn">上一页</button>
+                                                        <button type="button" class="retro-btn secondary" id="activity-next-btn">下一页</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -883,48 +897,17 @@
 
             <div class="status-bar">
                 <div class="status-container">
-                    <span>鎴戠殑绾㈣溁铚?/span>
-                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">娑堟伅<span class="unread-badge">1</span></span>
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="password-modal" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
-            <div class="modal-head">
-                <h3 id="password-modal-title">淇敼瀵嗙爜</h3>
-                <button type="button" class="modal-close" id="close-password-modal-btn" aria-label="鍏抽棴">脳</button>
-            </div>
-            <div class="modal-body">
-                <form id="password-form" class="profile-form">
-                    <div class="form-grid">
-                        <div class="form-group full">
-                            <label for="current-password">褰撳墠瀵嗙爜</label>
-                            <input type="password" id="current-password" autocomplete="current-password" placeholder="璇疯緭鍏ュ綋鍓嶇櫥褰曞瘑鐮?>
-                        </div>
-                        <div class="form-group">
-                            <label for="new-password">鏂板瘑鐮?/label>
-                            <input type="password" id="new-password" autocomplete="new-password" placeholder="鑷冲皯 8 浣嶏紝寤鸿鍖呭惈瀛楁瘝鍜屾暟瀛?>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm-new-password">纭鏂板瘑鐮?/label>
-                            <input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="璇峰啀娆¤緭鍏ユ柊鐨勫瘑鐮?>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="retro-btn" id="save-password-btn">淇敼瀵嗙爜</button>
-                        <button type="button" class="retro-btn secondary" id="reset-password-btn">娓呯┖杈撳叆</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 
     <script src="script.js?v=20260507-7"></script>
     <script>
-        const PROFILE_TRUST_TITLES = ['鏂版墜涓婅矾', '鍒濈骇浼氬憳', '涓骇浼氬憳', '楂樼骇浼氬憳', '璧勬繁浼氬憳', '绮捐嫳浼氬憳'];
-        const PROFILE_USER_TITLES = ['鍒濇潵涔嶅埌', '娓愬叆浣冲', '鐧诲爞鍏ュ', '鐐夌伀绾潚', '鍑虹鍏ュ寲', '鍚嶅姩涓€鏂?];
+        const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
+        const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
         let currentProfileContext = null;
         let pendingProfileMessage = null;
         const activityState = {
@@ -957,7 +940,7 @@
             pageMessage.className = 'profile-message';
 
             if (!token || !userId) {
-                showProfileError('璇峰厛鐧诲綍鍚庡啀鏌ョ湅涓汉璧勬枡銆?, true);
+                showProfileError('请先登录后再查看个人资料。', true);
                 loadingOverlay.style.display = 'none';
                 return;
             }
@@ -971,7 +954,7 @@
                 ]);
 
                 if (!userData || !userData.data) {
-                    throw new Error('鏈幏鍙栧埌鐢ㄦ埛璧勬枡');
+                    throw new Error('未获取到用户资料');
                 }
 
                 const context = buildProfileContext(userData);
@@ -993,10 +976,10 @@
                     pendingProfileMessage = null;
                 }
             } catch (error) {
-                console.error('鍔犺浇涓汉璧勬枡澶辫触:', error);
+                console.error('加载个人资料失败:', error);
                 const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'profile')
-                    : '涓汉璧勬枡鏆傛椂鏃犳硶鍔犺浇锛岃绋嶅悗鍐嶈瘯銆?;
+                    : '个人资料暂时无法加载，请稍后再试。';
                 const showLoginLink = Boolean(error?.httpStatus === 401 || error?.apiError?.status === 401);
                 showProfileError(friendlyMessage, showLoginLink);
             } finally {
@@ -1008,7 +991,7 @@
             const user = userData.data;
             const included = userData.included || [];
             const attributes = user?.attributes || {};
-            const username = attributes.username || '鏈缃?;
+            const username = attributes.username || '未设置';
             const displayName = typeof getPreferredDisplayName === 'function'
                 ? getPreferredDisplayName(attributes, username)
                 : (attributes.nickname || attributes.displayName || username);
@@ -1017,7 +1000,7 @@
             const trustLevel = Number(attributes.trustLevel || 0);
             const email = attributes.email || '-';
             const isActivated = attributes.isEmailConfirmed !== false;
-            const title = attributes.title || PROFILE_USER_TITLES[trustLevel] || '鏂版墜涓婅矾';
+            const title = attributes.title || PROFILE_USER_TITLES[trustLevel] || '新手上路';
             const avatarUrl = attributes.avatarUrl || '';
             const groupRefs = user?.relationships?.groups?.data || [];
             const groupNames = [];
@@ -1030,9 +1013,9 @@
                     groupNames.push(groupName);
                 }
                 if (String(groupRef.id) === '1') {
-                    badgeHTML = '<span class="group-badge admin">绠＄悊鍛?/span>';
+                    badgeHTML = '<span class="group-badge admin">管理员</span>';
                 } else if (String(groupRef.id) === '2' && !badgeHTML) {
-                    badgeHTML = '<span class="group-badge mod">鐗堜富</span>';
+                    badgeHTML = '<span class="group-badge mod">版主</span>';
                 }
             });
 
@@ -1044,12 +1027,12 @@
                 email,
                 signature,
                 trustLevel,
-                trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '鏂版墜涓婅矾',
+                trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '新手上路',
                 title,
                 avatarUrl,
                 joinedAt: attributes.joinedAt || '',
                 lastActiveAt: attributes.lastSeenAt || attributes.lastActivityAt || '',
-                groupNames: groupNames.length ? groupNames : ['鏅€氫細鍛?],
+                groupNames: groupNames.length ? groupNames : ['普通会员'],
                 badgeHTML,
                 isActivated
             };
@@ -1066,17 +1049,22 @@
             document.getElementById('info-username').textContent = context.username;
             document.getElementById('info-displayname').textContent = context.displayName;
             document.getElementById('info-email').textContent = context.email;
-            document.getElementById('info-group').textContent = context.groupNames.join('锛?);
+            document.getElementById('info-signature').textContent = context.signature && context.signature.trim()
+                ? context.signature.trim()
+                : '这个用户还没有填写个性签名。';
+            document.getElementById('info-group').textContent = context.groupNames.join('，');
             document.getElementById('info-trust').textContent = context.trustTitle;
+            document.getElementById('info-joined').textContent = formatProfileDate(context.joinedAt);
             document.getElementById('info-last-active').textContent = formatProfileDate(context.lastActiveAt);
-            document.getElementById('status-login').textContent = '宸茬櫥褰?;
-            document.getElementById('status-activation').textContent = context.isActivated ? '宸叉縺娲? : '寰呮縺娲?;
+            document.getElementById('status-login').textContent = '已登录';
+            document.getElementById('status-activation').textContent = context.isActivated ? '已激活' : '待激活';
             document.getElementById('status-title').textContent = context.title;
+            document.getElementById('status-visible-name').textContent = context.displayName;
 
             const tags = [
-                '<span class="status-tag ok">褰撳墠宸茬櫥褰?/span>',
-                `<span class="status-tag ${context.isActivated ? 'ok' : 'warn'}">${context.isActivated ? '璐﹀彿宸叉縺娲? : '璐﹀彿寰呮縺娲?}</span>`,
-                `<span class="status-tag">${escapeHtml(context.groupNames.join('锛?))}</span>`,
+                '<span class="status-tag ok">当前已登录</span>',
+                `<span class="status-tag ${context.isActivated ? 'ok' : 'warn'}">${context.isActivated ? '账号已激活' : '账号待激活'}</span>`,
+                `<span class="status-tag">${escapeHtml(context.groupNames.join('，'))}</span>`,
                 `<span class="status-tag">${escapeHtml(context.trustTitle)}</span>`
             ];
             document.getElementById('profile-status-tags').innerHTML = tags.join('');
@@ -1084,12 +1072,12 @@
             const signatureEl = document.getElementById('user-signature');
             signatureEl.textContent = context.signature && context.signature.trim()
                 ? context.signature.trim()
-                : '杩欎釜鐢ㄦ埛寰堟噿锛岃繕娌℃湁鐣欎笅涓€х鍚嶃€?;
+                : '这个用户很懒，还没有留下个性签名。';
 
             const avatarEl = document.getElementById('user-avatar');
             if (context.avatarUrl) {
                 avatarEl.className = '';
-                avatarEl.innerHTML = `<img src="${context.avatarUrl}" alt="澶村儚">`;
+                avatarEl.innerHTML = `<img src="${context.avatarUrl}" alt="头像">`;
             } else {
                 avatarEl.className = 'avatar-placeholder';
                 avatarEl.innerHTML = '';
@@ -1097,8 +1085,8 @@
         }
 
         function renderProfileEditor(context) {
-            document.getElementById('editor-username').textContent = context.username;
-            document.getElementById('editor-email').textContent = context.email;
+            document.getElementById('editor-username').value = context.username;
+            document.getElementById('editor-email').value = context.email;
             document.getElementById('editor-nickname').value = context.rawNickname;
             document.getElementById('editor-signature').value = context.signature;
             document.getElementById('security-username').textContent = context.username;
@@ -1136,11 +1124,11 @@
 
             if (items.length === 0) {
                 list.innerHTML = isDiscussionTab
-                    ? '<li class="empty-state">浣犺繕娌℃湁鍙戝竷杩囦富棰橈紝鍘婚椤佃瘯璇曞彂绗竴甯栧惂銆?/li>'
-                    : '<li class="empty-state">浣犺繕娌℃湁鍙戣〃杩囧洖澶嶏紝鐪嬪埌鎰熷叴瓒ｇ殑甯栧瓙灏卞幓鍙備笌璁ㄨ鍚с€?/li>';
+                    ? '<li class="empty-state">你还没有发布过主题，去首页试试发第一帖吧。</li>'
+                    : '<li class="empty-state">你还没有发表过回复，看到感兴趣的帖子就去参与讨论吧。</li>';
             } else if (isDiscussionTab) {
                 list.innerHTML = items.map((post) => {
-                    const title = post?.attributes?.title || '鏃犳爣棰?;
+                    const title = post?.attributes?.title || '无标题';
                     const createdAt = formatProfileDate(post?.attributes?.createdAt);
                     const commentCount = typeof post?.attributes?.commentCount === 'number' ? post.attributes.commentCount : 0;
                     const viewCount = typeof post?.attributes?.viewCount === 'number' ? post.attributes.viewCount : 0;
@@ -1148,9 +1136,9 @@
                         <li class="content-item">
                             <a href="post.html?id=${encodeURIComponent(post.id)}" class="content-title">${escapeHtml(title)}</a>
                             <div class="content-meta">
-                                <span>鍙戝竷鏃堕棿锛?{createdAt}</span>
-                                <span>鍥炲锛?{commentCount}</span>
-                                <span>娴忚锛?{viewCount}</span>
+                                <span>发布时间：${createdAt}</span>
+                                <span>回复：${commentCount}</span>
+                                <span>浏览：${viewCount}</span>
                             </div>
                         </li>
                     `;
@@ -1160,23 +1148,23 @@
                     const discussionId = comment?.relationships?.discussion?.data?.id;
                     const floor = comment?.attributes?.number || 1;
                     const rawContent = comment?.attributes?.contentHtml || comment?.attributes?.content || '';
-                    const preview = buildPreviewText(rawContent) || '鏃犲唴瀹?;
+                    const preview = buildPreviewText(rawContent) || '无内容';
                     const createdAt = formatProfileDate(comment?.attributes?.createdAt);
                     const discussion = Array.isArray(activityState.commentIncluded)
                         ? activityState.commentIncluded.find((item) => item.type === 'discussions' && item.id === discussionId)
                         : null;
-                    const discussionTitle = discussion?.attributes?.title || '鎵€灞炲笘瀛?;
+                    const discussionTitle = discussion?.attributes?.title || '所属帖子';
                     const link = typeof buildPostFloorLink === 'function'
                         ? buildPostFloorLink(discussionId, floor)
                         : `post.html?id=${encodeURIComponent(discussionId)}#post-${floor}`;
 
                     return `
                         <li class="content-item">
-                            <a href="${link}" class="content-title">鍥炲浜庛€?{escapeHtml(discussionTitle)}銆?/a>
+                            <a href="${link}" class="content-title">回复于《${escapeHtml(discussionTitle)}》</a>
                             <div class="content-preview">${escapeHtml(preview)}</div>
                             <div class="content-meta">
-                                <span>妤煎眰锛?{floor} 妤?/span>
-                                <span>鍥炲鏃堕棿锛?{createdAt}</span>
+                                <span>楼层：${floor} 楼</span>
+                                <span>回复时间：${createdAt}</span>
                             </div>
                         </li>
                     `;
@@ -1184,8 +1172,8 @@
             }
 
             pageInfo.textContent = totalItems
-                ? `绗?${activityState.page} / ${totalPages} 椤碉紝鍏?${totalItems} 鏉
-                : '鏆傛棤鍐呭';
+                ? `第 ${activityState.page} / ${totalPages} 页，共 ${totalItems} 条`
+                : '暂无内容';
             prevBtn.disabled = activityState.page <= 1;
             nextBtn.disabled = activityState.page >= totalPages || totalItems === 0;
         }
@@ -1194,13 +1182,11 @@
             const logoutBtn = document.getElementById('logout-btn');
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
+            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
             const profileForm = document.getElementById('profile-form');
             const resetProfileBtn = document.getElementById('reset-profile-btn');
             const passwordForm = document.getElementById('password-form');
             const resetPasswordBtn = document.getElementById('reset-password-btn');
-            const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
-            const closePasswordModalBtn = document.getElementById('close-password-modal-btn');
-            const passwordModal = document.getElementById('password-modal');
             const tabDiscussions = document.getElementById('tab-discussions');
             const tabComments = document.getElementById('tab-comments');
             const activityPrevBtn = document.getElementById('activity-prev-btn');
@@ -1214,7 +1200,7 @@
                     localStorage.removeItem('flarumUserId');
                     localStorage.removeItem('flarumUsername');
                 }
-                window.location.href = '/';
+                window.location.href = 'index.html';
             };
 
             avatarTrigger.onclick = function() {
@@ -1228,6 +1214,10 @@
                 }
             };
 
+            uploadAvatarBtn.onclick = function() {
+                avatarInput.click();
+            };
+
             avatarInput.onchange = function() {
                 handleAvatarUpload(this);
             };
@@ -1238,19 +1228,11 @@
             resetProfileBtn.onclick = function() {
                 if (currentProfileContext) {
                     renderProfileEditor(currentProfileContext);
-                    showPageMessage('宸叉仮澶嶄负褰撳墠淇濆瓨鐨勮祫鏂欏唴瀹广€?, 'success');
+                    showPageMessage('已恢复为当前保存的资料内容。', 'success');
                 }
             };
 
             resetPasswordBtn.onclick = resetPasswordForm;
-            openPasswordModalBtn.onclick = openPasswordModal;
-            closePasswordModalBtn.onclick = closePasswordModal;
-
-            passwordModal.onclick = function(event) {
-                if (event.target === passwordModal) {
-                    closePasswordModal();
-                }
-            };
 
             tabDiscussions.onclick = function() {
                 switchActivityTab('discussions');
@@ -1293,7 +1275,7 @@
                 stats.reputation = userData?.data?.attributes?.reputation || 0;
                 stats.likes = userData?.data?.attributes?.likesCount || 0;
             } catch (error) {
-                console.error('鑾峰彇鐢ㄦ埛缁熻澶辫触:', error);
+                console.error('获取用户统计失败:', error);
             }
 
             return stats;
@@ -1304,7 +1286,7 @@
                 const data = await flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=30&include=user`, { auth: true });
                 return data?.data || [];
             } catch (error) {
-                console.error('鑾峰彇鐢ㄦ埛甯栧瓙澶辫触:', error);
+                console.error('获取用户帖子失败:', error);
                 return [];
             }
         }
@@ -1317,7 +1299,7 @@
                 comments.included = data?.included || [];
                 return comments;
             } catch (error) {
-                console.error('鑾峰彇鐢ㄦ埛鍥炲澶辫触:', error);
+                console.error('获取用户回复失败:', error);
                 return [];
             }
         }
@@ -1337,79 +1319,64 @@
             const effectiveNickname = normalizedNickname || fallbackNickname;
 
             if (effectiveNickname.length > 30) {
-                showPageMessage('鏄电О鏈€澶氬彲濉啓 30 涓瓧绗︺€?, 'error');
+                showPageMessage('昵称最多可填写 30 个字符。', 'error');
                 nicknameInput.focus();
                 return;
             }
 
             if (normalizedSignature.length > 200) {
-                showPageMessage('涓€х鍚嶆渶澶氬彲濉啓 200 涓瓧绗︺€?, 'error');
+                showPageMessage('个性签名最多可填写 200 个字符。', 'error');
                 signatureInput.focus();
                 return;
             }
 
-            const previousEffectiveNickname = currentProfileContext.rawNickname || currentProfileContext.username;
-            const nicknameChanged = effectiveNickname !== previousEffectiveNickname;
+            const nicknameChanged = effectiveNickname !== (currentProfileContext.rawNickname || currentProfileContext.username);
             const signatureChanged = normalizedSignature !== (currentProfileContext.signature || '');
 
             if (!nicknameChanged && !signatureChanged) {
-                showPageMessage('璧勬枡娌℃湁鍙樺寲锛屾棤闇€閲嶅淇濆瓨銆?, 'success');
+                showPageMessage('资料没有变化，无需重复保存。', 'success');
                 return;
             }
 
             saveBtn.disabled = true;
-            saveBtn.textContent = '淇濆瓨涓?..';
+            saveBtn.textContent = '保存中...';
+
+            let nicknameSaved = false;
+            let signatureSaved = false;
 
             try {
-                const attributesToUpdate = {};
                 if (nicknameChanged) {
-                    attributesToUpdate.nickname = effectiveNickname;
+                    await updateUserAttributes(userId, { nickname: effectiveNickname });
+                    nicknameSaved = true;
                 }
+
                 if (signatureChanged) {
-                    attributesToUpdate.signature = normalizedSignature;
+                    await updateUserAttributes(userId, { signature: normalizedSignature });
+                    signatureSaved = true;
                 }
 
-                await updateUserAttributes(userId, attributesToUpdate);
-
-                const refreshedUserData = await fetchUserData(userId);
-                const refreshedContext = buildProfileContext(refreshedUserData);
-                const refreshedEffectiveNickname = refreshedContext.rawNickname || refreshedContext.username;
-                const nicknameApplied = !nicknameChanged || refreshedEffectiveNickname === effectiveNickname;
-                const signatureApplied = !signatureChanged || (refreshedContext.signature || '') === normalizedSignature;
-
-                if (!nicknameApplied && !signatureApplied) {
-                    throw new Error('璧勬枡鏈疄闄呬繚瀛樻垚鍔?);
-                }
-
-                localStorage.setItem('flarumUsername', refreshedContext.displayName);
+                localStorage.setItem('flarumUsername', effectiveNickname);
                 window.dispatchEvent(new Event('flarum-auth-changed'));
 
-                let successText = '';
-                if (nicknameApplied && signatureApplied) {
-                    successText = nicknameChanged && signatureChanged
-                        ? '鏄电О鍜屼釜鎬х鍚嶅凡淇濆瓨銆?
-                        : (nicknameChanged ? '鏄电О宸蹭繚瀛樸€? : '涓€х鍚嶅凡淇濆瓨銆?);
-                } else if (nicknameApplied) {
-                    successText = '鏄电О宸蹭繚瀛橈紝浣嗕釜鎬х鍚嶆殏鏈敓鏁堬紝鍙兘鏄鍧涘悗绔殏鏈紑鍚瀛楁銆?;
-                } else {
-                    successText = '涓€х鍚嶅凡淇濆瓨锛屼絾鏄电О鏆傛湭鐢熸晥锛岃绋嶅悗閲嶈瘯銆?;
-                }
-
-                pendingProfileMessage = { message: successText, type: nicknameApplied && signatureApplied ? 'success' : 'error' };
+                const successText = nicknameChanged && signatureChanged
+                    ? '昵称和个性签名已保存。'
+                    : (nicknameChanged ? '昵称已保存。' : '个性签名已保存。');
+                pendingProfileMessage = { message: successText, type: 'success' };
                 await initProfilePage();
             } catch (error) {
-                console.error('淇濆瓨涓汉璧勬枡澶辫触:', error);
+                console.error('保存个人资料失败:', error);
                 let message = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'profile')
-                    : '涓汉璧勬枡淇濆瓨澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
-                if (/鏈疄闄呬繚瀛樻垚鍔?.test(String(error?.message || ''))) {
-                    message = '璧勬枡鎻愪氦鎴愬姛浜嗭紝浣嗗悗绔病鏈夊疄闄呬繚瀛樿繖娆′慨鏀癸紝璇风◢鍚庨噸璇曟垨鑱旂郴缃戠妫€鏌ュ搴斿瓧娈垫槸鍚﹀凡寮€鍚€?;
+                    : '个人资料保存失败，请稍后再试。';
+
+                if ((nicknameSaved && !signatureSaved) || (!nicknameSaved && signatureSaved)) {
+                    message = '部分资料已保存，但有一项更新失败。请刷新页面确认结果后重试。';
                 }
 
                 showPageMessage(message, 'error');
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = '淇濆瓨璧勬枡';
+                saveBtn.textContent = '保存资料';
             }
         }
 
@@ -1440,37 +1407,37 @@
             const confirmPassword = confirmInput.value;
 
             if (!currentPassword) {
-                showPageMessage('璇疯緭鍏ュ綋鍓嶅瘑鐮佸悗鍐嶄慨鏀广€?, 'error');
+                showPageMessage('请输入当前密码后再修改。', 'error');
                 currentPasswordInput.focus();
                 return;
             }
 
             if (!newPassword || newPassword.length < 8) {
-                showPageMessage('鏂板瘑鐮侀暱搴﹁嚦灏戦渶瑕?8 浣嶃€?, 'error');
+                showPageMessage('新密码长度至少需要 8 位。', 'error');
                 newPasswordInput.focus();
                 return;
             }
 
             if (!/[a-zA-Z]/.test(newPassword)) {
-                showPageMessage('鏂板瘑鐮佸缓璁嚦灏戝寘鍚竴涓瓧姣嶃€?, 'error');
+                showPageMessage('新密码建议至少包含一个字母。', 'error');
                 newPasswordInput.focus();
                 return;
             }
 
             if (newPassword !== confirmPassword) {
-                showPageMessage('涓ゆ杈撳叆鐨勬柊瀵嗙爜涓嶄竴鑷淬€?, 'error');
+                showPageMessage('两次输入的新密码不一致。', 'error');
                 confirmInput.focus();
                 return;
             }
 
             if (newPassword === currentPassword) {
-                showPageMessage('鏂板瘑鐮佷笉鑳戒笌褰撳墠瀵嗙爜瀹屽叏鐩稿悓銆?, 'error');
+                showPageMessage('新密码不能与当前密码完全相同。', 'error');
                 newPasswordInput.focus();
                 return;
             }
 
             savePasswordBtn.disabled = true;
-            savePasswordBtn.textContent = '鎻愪氦涓?..';
+            savePasswordBtn.textContent = '提交中...';
 
             try {
                 await updateUserAttributes(userId, {
@@ -1478,25 +1445,24 @@
                     currentPassword
                 });
                 resetPasswordForm();
-                closePasswordModal();
-                showPageMessage('瀵嗙爜宸叉彁浜や慨鏀癸紝璇蜂娇鐢ㄦ柊瀵嗙爜閲嶆柊鐧诲綍鏃舵敞鎰忓尯鍒嗗ぇ灏忓啓銆?, 'success');
+                showPageMessage('密码已提交修改，请使用新密码重新登录时注意区分大小写。', 'success');
             } catch (error) {
-                console.error('淇敼瀵嗙爜澶辫触:', error);
+                console.error('修改密码失败:', error);
                 let message = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'profile')
-                    : '瀵嗙爜淇敼澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
+                    : '密码修改失败，请稍后再试。';
 
                 const detail = String(error?.apiError?.detail || error?.detail || '');
                 if (/password|currentPassword|validation/i.test(detail)) {
-                    message = '瀵嗙爜淇敼澶辫触锛岃纭褰撳墠瀵嗙爜姝ｇ‘锛屽苟妫€鏌ユ柊瀵嗙爜鏄惁绗﹀悎璁哄潧瑕佹眰銆?;
+                    message = '密码修改失败，请确认当前密码正确，并检查新密码是否符合论坛要求。';
                 } else if (error?.httpStatus === 403) {
-                    message = '褰撳墠璐﹀彿鏆傛椂娌℃湁淇敼瀵嗙爜鐨勬潈闄愶紝璇风‘璁よ处鍙峰凡婵€娲伙紝濡備粛鏈夐棶棰樿鑱旂郴缃戠銆?;
+                    message = '当前账号暂时没有修改密码的权限，请确认账号已激活，如仍有问题请联系网管。';
                 }
 
                 showPageMessage(message, 'error');
             } finally {
                 savePasswordBtn.disabled = false;
-                savePasswordBtn.textContent = '淇敼瀵嗙爜';
+                savePasswordBtn.textContent = '修改密码';
             }
         }
 
@@ -1509,14 +1475,14 @@
 
         function showProfileError(message, showLoginLink) {
             const errorContent = document.getElementById('error-content');
-            errorContent.innerHTML = `<p>${escapeHtml(message)}</p>${showLoginLink ? '<p><a href="login.html">鐐瑰嚮鐧诲綍</a></p>' : ''}`;
+            errorContent.innerHTML = `<p>${escapeHtml(message)}</p>${showLoginLink ? '<p><a href="login.html">点击登录</a></p>' : ''}`;
             errorContent.style.display = 'block';
         }
 
         function formatProfileDate(value) {
-            if (!value) return '鏆傛棤璁板綍';
+            if (!value) return '暂无记录';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return '鏆傛棤璁板綍';
+            if (Number.isNaN(date.getTime())) return '暂无记录';
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
@@ -1538,23 +1504,6 @@
             document.getElementById('current-password').value = '';
             document.getElementById('new-password').value = '';
             document.getElementById('confirm-new-password').value = '';
-        }
-
-        function openPasswordModal() {
-            const modal = document.getElementById('password-modal');
-            modal.classList.add('open');
-            modal.setAttribute('aria-hidden', 'false');
-            setTimeout(() => {
-                const currentPasswordInput = document.getElementById('current-password');
-                if (currentPasswordInput) currentPasswordInput.focus();
-            }, 0);
-        }
-
-        function closePasswordModal() {
-            const modal = document.getElementById('password-modal');
-            modal.classList.remove('open');
-            modal.setAttribute('aria-hidden', 'true');
-            resetPasswordForm();
         }
 
         function maskEmail(email) {
@@ -1583,13 +1532,13 @@
             if (!file) return;
 
             if (!file.type.startsWith('image/')) {
-                showPageMessage('璇烽€夋嫨鍥剧墖鏂囦欢鍚庡啀涓婁紶澶村儚銆?, 'error');
+                showPageMessage('请选择图片文件后再上传头像。', 'error');
                 input.value = '';
                 return;
             }
 
             if (file.size > 2 * 1024 * 1024) {
-                showPageMessage('澶村儚鍥剧墖澶у皬涓嶈兘瓒呰繃 2MB銆?, 'error');
+                showPageMessage('头像图片大小不能超过 2MB。', 'error');
                 input.value = '';
                 return;
             }
@@ -1597,10 +1546,13 @@
             const userId = localStorage.getItem('flarumUserId');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
             const avatarContainer = document.getElementById('avatar-trigger');
+            const uploadBtn = document.getElementById('upload-avatar-btn');
 
             try {
                 avatarContainer.style.opacity = '0.6';
                 avatarContainer.style.cursor = 'wait';
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '上传中...';
 
                 const formData = new FormData();
                 formData.append('avatar', file);
@@ -1621,27 +1573,31 @@
                     } catch {
                         detail = await response.text();
                     }
-                    const error = new Error('澶村儚涓婁紶澶辫触');
+                    const error = new Error('头像上传失败');
                     error.detail = detail;
                     error.httpStatus = response.status;
                     throw error;
                 }
 
-                pendingProfileMessage = { message: '澶村儚涓婁紶鎴愬姛锛岃祫鏂欓〉宸插埛鏂般€?, type: 'success' };
+                pendingProfileMessage = { message: '头像上传成功，资料页已刷新。', type: 'success' };
                 await initProfilePage();
             } catch (error) {
-                console.error('涓婁紶澶村儚澶辫触:', error);
+                console.error('上传头像失败:', error);
                 const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'upload_avatar')
-                    : '澶村儚涓婁紶澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
+                    : '头像上传失败，请稍后再试。';
                 showPageMessage(friendlyMessage, 'error');
             } finally {
                 avatarContainer.style.opacity = '1';
                 avatarContainer.style.cursor = 'pointer';
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传头像';
                 input.value = '';
             }
         }
     </script>
 </body>
 </html>
+
+
 

@@ -1,12 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>娉ㄥ唽 - 绾㈣溁铚撹鍧?/title>
+    <title>注册 - 红蜻蜓论坛</title>
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
-        /* 娉ㄥ唽椤甸潰鏍峰紡 */
+        /* 注册页面样式 */
         .register-container {
             width: 100%;
             max-width: 400px;
@@ -172,7 +172,7 @@
             font-size: 14px;
         }
         
-        /* 鍔犺浇鐘舵€?*/
+        /* 加载状态 */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -205,90 +205,90 @@
     <div class="forum-frame-outer">
         <div class="forum-content">
             <div class="forum-frame">
-                <!-- 椤堕儴瀵艰埅鏍?-->
+                <!-- 顶部导航栏 -->
                 <div class="top-nav">
                     <div class="top-nav-container">
                         <div class="logo">
                             <div class="logo-image"></div>
-                            <a href="/">绾㈣溁铚撹鍧?/a>
-                            <a href="/" class="logo-sub">www.reddragonfly.cyou</a>
+                            <a href="index.html">红蜻蜓论坛</a>
+                            <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
                         </div>
                         <div class="top-links">
-                            <a href="/">璁哄潧</a>
-                            <a href="#">鍗氬</a>
-                            <a href="#">闂瓟</a>
-                            <a href="https://www.4399.com" target="_blank">娓告垙鍘?/a>
-                            <a href="#">鍝佺墝</a>
-                            <a href="#">鏇村</a>
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
                         </div>
                         <div class="search-box">
-                                <input type="text" placeholder="鎼滃笘銆佹壘浜恒€佹悳鐗堝潡">
-                                <button>鎼滅储</button>
+                                <input type="text" placeholder="搜帖、找人、搜版块">
+                                <button>搜索</button>
                             </div>
                         <div class="user-links">
                             <button id="audio-toggle" class="audio-toggle">
-                                <span class="audio-icon">鈾?/span>
+                                <span class="audio-icon">♪</span>
                             </button>
-                            <a href="#">鏈嶅姟</a>
+                            <a href="#">服务</a>
                             <div id="user-links-container">
-                                <a href="login.html" id="login-btn">鐧诲綍</a>
-                                <a href="register.html" id="register-btn">娉ㄥ唽</a>
+                                <a href="login.html" id="login-btn">登录</a>
+                                <a href="register.html" id="register-btn">注册</a>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 涓昏鍐呭鍖?-->
+                <!-- 主要内容区 -->
                 <div class="main-container">
                     <div class="main-content" style="display: flex; justify-content: center; align-items: center; min-height: 600px;">
                         <div class="register-container">
                             <div class="register-header">
-                                <h2>鐢ㄦ埛娉ㄥ唽</h2>
-                                <p>娉ㄥ唽鍚庤鍓嶅線閭婵€娲昏处鍙凤紝婵€娲诲畬鎴愬悗鎵嶅彲姝ｅ父浣跨敤璁哄潧鍔熻兘</p>
+                                <h2>用户注册</h2>
+                                <p>注册后请前往邮箱激活账号，激活完成后才可正常使用论坛功能</p>
                             </div>
                             
                             <form class="register-form" id="register-form">
                                 <div id="message-container"></div>
                                 
                                 <div class="form-group">
-                                    <label for="username">鐢ㄦ埛鍚?/label>
-                                    <input type="text" id="username" name="username" required placeholder="浠呮敮鎸佸瓧姣嶅拰鏁板瓧锛?-30涓瓧绗?>
+                                    <label for="username">用户名</label>
+                                    <input type="text" id="username" name="username" required placeholder="仅支持字母和数字，3-30个字符">
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="nickname">鏄电О <span style="font-weight: normal; color: #999;">锛堥€夊～锛?/span></label>
-                                    <input type="text" id="nickname" name="nickname" placeholder="甯栧瓙閲屾樉绀虹殑鍚嶅瓧锛岀暀绌哄皢榛樿浣跨敤鐢ㄦ埛鍚?>
+                                    <label for="nickname">昵称 <span style="font-weight: normal; color: #999;">（选填）</span></label>
+                                    <input type="text" id="nickname" name="nickname" placeholder="帖子里显示的名字，留空将默认使用用户名">
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="email">閭</label>
-                                    <input type="email" id="email" name="email" required placeholder="鐢ㄤ簬婵€娲昏处鍙峰拰鎵惧洖瀵嗙爜">
-                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">璇峰～鍐欏父鐢ㄩ偖绠憋紝娉ㄥ唽鍚庨渶閫氳繃閭婵€娲昏处鍙凤紝鍚庣画涔熷彲鐢ㄤ簬鎵惧洖瀵嗙爜銆?/div>
+                                    <label for="email">邮箱</label>
+                                    <input type="email" id="email" name="email" required placeholder="用于激活账号和找回密码">
+                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">请填写常用邮箱，注册后需通过邮箱激活账号，后续也可用于找回密码。</div>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="password">瀵嗙爜</label>
+                                    <label for="password">密码</label>
                                     <div class="input-wrapper">
-                                        <input type="password" id="password" name="password" required placeholder="璇疯嚦灏戝寘鍚竴涓瓧姣嶏紝闀垮害鑷冲皯8浣?>
-                                        <button type="button" class="toggle-btn" id="toggle-password" aria-label="鏄剧ず瀵嗙爜" title="鏄剧ず瀵嗙爜"></button>
+                                        <input type="password" id="password" name="password" required placeholder="请至少包含一个字母，长度至少8位">
+                                        <button type="button" class="toggle-btn" id="toggle-password" aria-label="显示密码" title="显示密码"></button>
                                     </div>
-                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">瀵嗙爜鍙娇鐢ㄨ嫳鏂囧瓧姣嶃€佹暟瀛楀拰甯歌鑻辨枃绗﹀彿锛屼緥濡?`! @ # $ % ^ & * _ - + = ? .`锛屽缓璁娇鐢ㄨ嫳鏂囪緭鍏ユ硶濉啓銆?/div>
+                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">密码可使用英文字母、数字和常见英文符号，例如 `! @ # $ % ^ & * _ - + = ? .`，建议使用英文输入法填写。</div>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="confirm-password">纭瀵嗙爜</label>
+                                    <label for="confirm-password">确认密码</label>
                                     <div class="input-wrapper">
-                                        <input type="password" id="confirm-password" name="confirm-password" required placeholder="璇峰啀娆¤緭鍏ュ瘑鐮?>
-                                        <button type="button" class="toggle-btn" id="toggle-confirm-password" aria-label="鏄剧ず纭瀵嗙爜" title="鏄剧ず纭瀵嗙爜"></button>
+                                        <input type="password" id="confirm-password" name="confirm-password" required placeholder="请再次输入密码">
+                                        <button type="button" class="toggle-btn" id="toggle-confirm-password" aria-label="显示确认密码" title="显示确认密码"></button>
                                     </div>
                                 </div>
                                 
-                                <button type="submit" class="register-btn" id="register-btn-submit">娉ㄥ唽</button>
+                                <button type="submit" class="register-btn" id="register-btn-submit">注册</button>
                             </form>
                             
                             <div class="register-footer">
-                                <p>宸叉湁璐﹀彿锛?<a href="login.html">绔嬪嵆鐧诲綍</a></p>
-                                <p><a href="/">杩斿洖棣栭〉</a></p>
+                                <p>已有账号？ <a href="login.html">立即登录</a></p>
+                                <p><a href="index.html">返回首页</a></p>
                             </div>
                         </div>
                     </div>
@@ -300,12 +300,12 @@
     <script src="script.js?v=20260507-7"></script>
     <script>
         const errorMap = {
-            validation_error: '娉ㄥ唽淇℃伅涓嶇鍚堣姹傦紝璇锋鏌ョ敤鎴峰悕銆侀偖绠辨垨瀵嗙爜',
-            username_taken: '杩欎釜鐢ㄦ埛鍚嶅凡缁忚浣跨敤',
-            email_taken: '杩欎釜閭宸茬粡娉ㄥ唽杩?,
-            csrf_token_mismatch: '娉ㄥ唽楠岃瘉澶辫触锛岃鍒锋柊椤甸潰鍚庨噸璇?,
-            permission_denied: '褰撳墠璁哄潧鏆備笉鍏佽娉ㄥ唽',
-            rate_limit_exceeded: '鎿嶄綔澶绻侊紝璇风◢鍚庡啀璇?
+            validation_error: '注册信息不符合要求，请检查用户名、邮箱或密码',
+            username_taken: '这个用户名已经被使用',
+            email_taken: '这个邮箱已经注册过',
+            csrf_token_mismatch: '注册验证失败，请刷新页面后重试',
+            permission_denied: '当前论坛暂不允许注册',
+            rate_limit_exceeded: '操作太频繁，请稍后再试'
         };
 
         async function customRegister(username, nickname, email, password) {
@@ -317,7 +317,7 @@
 
             const result = await response.json();
             if (!response.ok) {
-                const error = new Error('娉ㄥ唽澶辫触');
+                const error = new Error('注册失败');
                 error.result = result;
                 throw error;
             }
@@ -359,20 +359,20 @@
             function setPasswordVisibility(button, input, isVisible, fieldLabel) {
                 input.type = isVisible ? 'text' : 'password';
                 button.innerHTML = getEyeIconMarkup(isVisible);
-                button.setAttribute('aria-label', isVisible ? `闅愯棌${fieldLabel}` : `鏄剧ず${fieldLabel}`);
-                button.setAttribute('title', isVisible ? `闅愯棌${fieldLabel}` : `鏄剧ず${fieldLabel}`);
+                button.setAttribute('aria-label', isVisible ? `隐藏${fieldLabel}` : `显示${fieldLabel}`);
+                button.setAttribute('title', isVisible ? `隐藏${fieldLabel}` : `显示${fieldLabel}`);
             }
 
-            setPasswordVisibility(togglePasswordBtn, passwordInput, false, '瀵嗙爜');
-            setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '纭瀵嗙爜');
+            setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
+            setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
 
-            // 瀵嗙爜鏄庢枃鍒囨崲
+            // 密码明文切换
             togglePasswordBtn.addEventListener('click', function() {
-                setPasswordVisibility(togglePasswordBtn, passwordInput, passwordInput.type === 'password', '瀵嗙爜');
+                setPasswordVisibility(togglePasswordBtn, passwordInput, passwordInput.type === 'password', '密码');
             });
 
             toggleConfirmPasswordBtn.addEventListener('click', function() {
-                setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, confirmPasswordInput.type === 'password', '纭瀵嗙爜');
+                setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, confirmPasswordInput.type === 'password', '确认密码');
             });
 
             registerForm.addEventListener('submit', async function(e) {
@@ -384,10 +384,10 @@
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
 
-                // 閲嶇疆杈撳叆妗嗙姸鎬?
+                // 重置输入框状态
                 [usernameInput, nicknameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => input.classList.remove('error'));
 
-                // 鍓嶇鏍￠獙
+                // 前端校验
                 const validationError = validateForm(username, nickname, email, password, confirmPassword);
                 if (validationError) {
                     showMessage(validationError.message, 'error');
@@ -397,9 +397,9 @@
                     return;
                 }
 
-                // 绂佺敤鎸夐挳
+                // 禁用按钮
                 submitBtn.disabled = true;
-                submitBtn.textContent = '娉ㄥ唽涓?..';
+                submitBtn.textContent = '注册中...';
                 showLoading();
 
                 try {
@@ -408,20 +408,20 @@
 
                     await customRegister(trimmedUsername, normalizedNickname, email.trim(), password);
                     registerForm.reset();
-                    setPasswordVisibility(togglePasswordBtn, passwordInput, false, '瀵嗙爜');
-                    setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '纭瀵嗙爜');
+                    setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
+                    setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
                     showMessage(
-                        '娉ㄥ唽淇℃伅宸叉彁浜ゆ垚鍔燂紝璇峰墠寰€娉ㄥ唽閭鐐瑰嚮婵€娲婚摼鎺ュ畬鎴愯处鍙锋縺娲汇€俓n' +
-                        '璐﹀彿鏈縺娲诲墠锛屽皢鏃犳硶瀹屾垚娉ㄥ唽銆佹煡鐪嬪笘瀛愩€佸彂甯栨垨鍥炲笘銆俓n' +
-                        '濡傛灉闀挎椂闂存病鏈夋敹鍒伴偖浠讹紝璇锋鏌ュ瀮鍦鹃偖绠憋紝鎴栬仈绯荤綉绠″鐞嗐€?,
+                        '注册信息已提交成功，请前往注册邮箱点击激活链接完成账号激活。\n' +
+                        '账号未激活前，将无法完成注册、查看帖子、发帖或回帖。\n' +
+                        '如果长时间没有收到邮件，请检查垃圾邮箱，或联系网管处理。',
                         'success'
                     );
                     submitBtn.disabled = false;
-                    submitBtn.textContent = '娉ㄥ唽';
+                    submitBtn.textContent = '注册';
                     hideLoading();
                 } catch (error) {
-                    console.error('娉ㄥ唽澶辫触:', error);
-                    let errorMsg = '娉ㄥ唽澶辫触';
+                    console.error('注册失败:', error);
+                    let errorMsg = '注册失败';
                     if (error.result) {
                         if (error.result.errors && error.result.errors.length > 0) {
                             errorMsg = error.result.errors.map(e => {
@@ -439,14 +439,14 @@
                                         }
                                     }, 'register');
                                 }
-                                return '娉ㄥ唽澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
+                                return '注册失败，请稍后再试。';
                             }).join('\n');
                         } else if (error.result.message) {
                             errorMsg = error.result.message;
                         } else {
                             errorMsg = typeof getFriendlyErrorMessage === 'function'
                                 ? getFriendlyErrorMessage(error, 'register')
-                                : '娉ㄥ唽澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
+                                : '注册失败，请稍后再试。';
                         }
                     } else if (error.message) {
                         errorMsg = typeof getFriendlyErrorMessage === 'function'
@@ -455,75 +455,75 @@
                     }
                     showMessage(errorMsg, 'error');
                     submitBtn.disabled = false;
-                    submitBtn.textContent = '娉ㄥ唽';
+                    submitBtn.textContent = '注册';
                     hideLoading();
                 }
             });
 
             function validateForm(username, nickname, email, password, confirmPassword) {
-                // 鐢ㄦ埛鍚嶆牎楠?
+                // 用户名校验
                 if (!username || !username.trim()) {
-                    return { message: '鐢ㄦ埛鍚嶄笉鑳戒负绌?, field: usernameInput };
+                    return { message: '用户名不能为空', field: usernameInput };
                 }
                 const trimmedUsername = username.trim();
                 if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
-                    return { message: '鐢ㄦ埛鍚嶉暱搴﹂渶涓?3-30 涓瓧绗?, field: usernameInput };
+                    return { message: '用户名长度需为 3-30 个字符', field: usernameInput };
                 }
                 if (!/^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
-                    return { message: '鐢ㄦ埛鍚嶅彧鑳藉寘鍚嫳鏂囧瓧姣嶅拰鏁板瓧', field: usernameInput };
+                    return { message: '用户名只能包含英文字母和数字', field: usernameInput };
                 }
                 if (/\s/.test(trimmedUsername)) {
-                    return { message: '鐢ㄦ埛鍚嶄笉鑳藉寘鍚┖鏍?, field: usernameInput };
+                    return { message: '用户名不能包含空格', field: usernameInput };
                 }
 
-                // 鏄电О鏍￠獙
+                // 昵称校验
                 const trimmedNickname = nickname.trim();
                 if (trimmedNickname.length > 30) {
-                    return { message: '鏄电О鏈€澶氬彲濉啓 30 涓瓧绗?, field: nicknameInput };
+                    return { message: '昵称最多可填写 30 个字符', field: nicknameInput };
                 }
                 if (/[\r\n\t]/.test(trimmedNickname)) {
-                    return { message: '鏄电О鏍煎紡涓嶆纭紝璇蜂笉瑕佽緭鍏ユ崲琛屾垨鍒惰〃绗?, field: nicknameInput };
+                    return { message: '昵称格式不正确，请不要输入换行或制表符', field: nicknameInput };
                 }
 
-                // 閭鏍￠獙
+                // 邮箱校验
                 if (!email || !email.trim()) {
-                    return { message: '閭涓嶈兘涓虹┖', field: emailInput };
+                    return { message: '邮箱不能为空', field: emailInput };
                 }
                 const trimmedEmail = email.trim();
                 if (/\s/.test(trimmedEmail)) {
-                    return { message: '閭涓嶈兘鍖呭惈绌烘牸', field: emailInput };
+                    return { message: '邮箱不能包含空格', field: emailInput };
                 }
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(trimmedEmail)) {
-                    return { message: '璇疯緭鍏ユ纭殑閭鍦板潃', field: emailInput };
+                    return { message: '请输入正确的邮箱地址', field: emailInput };
                 }
 
-                // 瀵嗙爜鏍￠獙
+                // 密码校验
                 if (!password) {
-                    return { message: '瀵嗙爜涓嶈兘涓虹┖', field: passwordInput };
+                    return { message: '密码不能为空', field: passwordInput };
                 }
                 if (!password.trim()) {
-                    return { message: '瀵嗙爜涓嶈兘鍏ㄦ槸绌烘牸', field: passwordInput };
+                    return { message: '密码不能全是空格', field: passwordInput };
                 }
                 if (password.length < 8) {
-                    return { message: '瀵嗙爜闀垮害鑷冲皯 8 浣?, field: passwordInput };
+                    return { message: '密码长度至少 8 位', field: passwordInput };
                 }
                 if (!/[a-zA-Z]/.test(password)) {
-                    return { message: '瀵嗙爜璇疯嚦灏戝寘鍚竴涓瓧姣?, field: passwordInput };
+                    return { message: '密码请至少包含一个字母', field: passwordInput };
                 }
 
-                // 纭瀵嗙爜鏍￠獙
+                // 确认密码校验
                 if (!confirmPassword) {
-                    return { message: '璇峰啀娆¤緭鍏ュ瘑鐮?, field: confirmPasswordInput };
+                    return { message: '请再次输入密码', field: confirmPasswordInput };
                 }
                 if (confirmPassword !== password) {
-                    return { message: '涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?, field: confirmPasswordInput };
+                    return { message: '两次输入的密码不一致', field: confirmPasswordInput };
                 }
 
                 return null;
             }
 
-            // 鏄剧ず娑堟伅
+            // 显示消息
             function showMessage(message, type) {
                 messageContainer.innerHTML = `
                     <div class="${type === 'error' ? 'error-message' : 'success-message'}">
@@ -532,7 +532,7 @@
                 `;
             }
 
-            // 鏄剧ず鍔犺浇鐘舵€?
+            // 显示加载状态
             function showLoading() {
                 const loadingOverlay = document.createElement('div');
                 loadingOverlay.className = 'loading-overlay';
@@ -541,7 +541,7 @@
                 document.body.appendChild(loadingOverlay);
             }
 
-            // 闅愯棌鍔犺浇鐘舵€?
+            // 隐藏加载状态
             function hideLoading() {
                 const loadingOverlay = document.getElementById('loading-overlay');
                 if (loadingOverlay) {
@@ -552,7 +552,6 @@
     </script>
 </body>
 </html>
-
 
 
 

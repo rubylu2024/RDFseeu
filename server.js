@@ -10,15 +10,6 @@ const FLARUM_BASE_URL = process.env.FLARUM_BASE_URL || 'http://localhost';
 
 // Middleware
 app.use(express.json());
-
-app.get(['/index.html', '/index.htm'], (req, res) => {
-  const queryIndex = req.originalUrl.indexOf('?');
-  const hashIndex = req.originalUrl.indexOf('#');
-  const splitIndex = [queryIndex, hashIndex].filter(index => index >= 0).sort((a, b) => a - b)[0];
-  const suffix = splitIndex >= 0 ? req.originalUrl.slice(splitIndex) : '';
-  res.redirect(301, '/' + suffix);
-});
-
 app.use(express.static(path.join(__dirname)));
 
 // Health check
