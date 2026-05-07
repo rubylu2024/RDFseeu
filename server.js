@@ -20,7 +20,11 @@ app.get('/health', (req, res) => {
 // Custom register endpoint
 app.post('/custom-register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+    const nicknameInput = typeof req.body?.nickname === 'string' ? req.body.nickname.trim() : '';
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const nickname = nicknameInput || username;
 
     // Validate input
     if (!username || !email || !password) {
@@ -70,6 +74,38 @@ app.post('/custom-register', async (req, res) => {
     if (!flarumResponse.ok) {
       // Forward Flarum errors
       return res.status(flarumResponse.status).json(result);
+    }
+
+    const createdUserId = result?.data?.id;
+
+    // 如果后端支持昵称字段，则同步写入昵称；若不支持，也不影响注册成功。
+    if (createdUserId && nickname) {
+      try {
+        const nicknameResponse = await fetch(`${FLARUM_BASE_URL}/api/users/${createdUserId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/vnd.api+json',
+            'Accept': 'application/vnd.api+json',
+            'Authorization': `Token ${FLARUM_ADMIN_TOKEN}; userId=${FLARUM_ADMIN_USER_ID}`
+          },
+          body: JSON.stringify({
+            data: {
+              type: 'users',
+              id: String(createdUserId),
+              attributes: {
+                nickname
+              }
+            }
+          })
+        });
+
+        if (!nicknameResponse.ok) {
+          const nicknameErrorText = await nicknameResponse.text();
+          console.warn('Nickname update skipped:', nicknameResponse.status, nicknameErrorText);
+        }
+      } catch (nicknameError) {
+        console.warn('Nickname update failed:', nicknameError);
+      }
     }
 
     // Return success

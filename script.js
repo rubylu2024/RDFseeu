@@ -54,6 +54,16 @@ function parseApiErrorDetail(detail) {
     }
 }
 
+function getPreferredDisplayName(userAttributes, fallback = '匿名用户') {
+    const preferredName = [
+        userAttributes?.nickname,
+        userAttributes?.displayName,
+        userAttributes?.username
+    ].find((value) => typeof value === 'string' && value.trim());
+
+    return preferredName ? preferredName.trim() : fallback;
+}
+
 function getFriendlyErrorMessage(error, context = 'generic') {
     const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
     const status = error?.httpStatus || parsed?.status || null;
@@ -203,7 +213,7 @@ async function flarumLogin(username, password) {
                 try {
                     const userJson = await flarumRequest(`/users/${json.userId}`, { auth: true });
                     if (userJson?.data?.attributes) {
-                        const displayName = userJson.data.attributes.displayName || userJson.data.attributes.username;
+                        const displayName = getPreferredDisplayName(userJson.data.attributes, '已登录用户');
                         localStorage.setItem('flarumUsername', displayName);
                     }
                 } catch (e) {
@@ -444,7 +454,7 @@ function flarumDiscussionToPostData(apiJson) {
         id: Number(discussion.id),
         userId: firstUserId ? Number(firstUserId) : null,
         title: discussion.attributes?.title || '',
-        author: firstUser?.attributes?.displayName || firstUser?.attributes?.username || '匿名用户',
+        author: getPreferredDisplayName(firstUser?.attributes),
         authorLevel: 'Lv.1 新手上路',
         authorAvatar: getUserAvatarUrl(firstUser),
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
@@ -466,7 +476,7 @@ function flarumDiscussionToPostData(apiJson) {
                 return {
                     id: Number(p.id),
                     userId: userId ? Number(userId) : null,
-                    author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
+                    author: getPreferredDisplayName(user?.attributes),
                     authorLevel: 'Lv.1 新手上路',
                     authorAvatar: getUserAvatarUrl(user),
                     time: formatFlarumTime(p.attributes?.createdAt),
@@ -542,7 +552,7 @@ async function flarumLoadDiscussionList() {
             return {
                 id: Number(d.id),
                 title: d.attributes?.title || '',
-                author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
+                author: getPreferredDisplayName(user?.attributes),
                 date: (d.attributes?.createdAt || '').slice(0, 10),
                 views: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0)
             };
@@ -582,7 +592,7 @@ async function flarumLoadRecentReplies() {
                 postId: Number(post.id),
                 floor: post.attributes?.number, // 添加楼层号用于锚点跳转
                 title: discussion?.attributes?.title || '',
-                author: user?.attributes?.displayName || user?.attributes?.username || '匿名用户',
+                author: getPreferredDisplayName(user?.attributes),
                 time: post.attributes?.createdAt || '',
                 content: post.attributes?.content || ''
             });
@@ -1835,7 +1845,7 @@ async function getCurrentUser() {
             return {
                 id: json.data.id,
                 username: json.data.attributes?.username || '',
-                displayName: json.data.attributes?.displayName || json.data.attributes?.username || '',
+                displayName: getPreferredDisplayName(json.data.attributes, ''),
                 avatar: getUserAvatarUrl(json.data),
                 email: json.data.attributes?.email || ''
             };

@@ -49,16 +49,21 @@
         }
         
         .register-form .form-group .input-wrapper {
+            position: relative;
             display: flex;
-            gap: 8px;
+            align-items: center;
         }
         
         .register-form .form-group input {
-            flex: 1;
+            width: 100%;
             padding: 8px;
             border: 1px solid #990000;
             font-size: 16px;
             box-sizing: border-box;
+        }
+
+        .register-form .form-group .input-wrapper input {
+            padding-right: 44px;
         }
         
         .register-form .form-group input.error {
@@ -72,17 +77,38 @@
         }
         
         .register-form .form-group .toggle-btn {
-            padding: 8px 12px;
-            background-color: #f0f0f0;
-            border: 1px solid #990000;
-            color: #333;
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background-color: transparent;
+            border: none;
+            color: #666;
             cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
+            border-radius: 50%;
         }
         
         .register-form .form-group .toggle-btn:hover {
-            background-color: #e0e0e0;
+            background-color: rgba(204, 0, 0, 0.08);
+            color: #cc0000;
+        }
+
+        .register-form .form-group .toggle-btn:focus {
+            outline: none;
+            background-color: rgba(204, 0, 0, 0.12);
+            color: #cc0000;
+        }
+
+        .register-form .form-group .toggle-btn svg {
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
         }
         
         .register-btn {
@@ -226,7 +252,12 @@
                                 
                                 <div class="form-group">
                                     <label for="username">用户名</label>
-                                    <input type="text" id="username" name="username" required placeholder="请至少包含一个字母，3-30个字符">
+                                    <input type="text" id="username" name="username" required placeholder="仅支持字母和数字，3-30个字符">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="nickname">昵称 <span style="font-weight: normal; color: #999;">（选填）</span></label>
+                                    <input type="text" id="nickname" name="nickname" placeholder="帖子里显示的名字，留空将默认使用用户名">
                                 </div>
                                 
                                 <div class="form-group">
@@ -239,15 +270,16 @@
                                     <label for="password">密码</label>
                                     <div class="input-wrapper">
                                         <input type="password" id="password" name="password" required placeholder="请至少包含一个字母，长度至少8位">
-                                        <button type="button" class="toggle-btn" id="toggle-password">显示</button>
+                                        <button type="button" class="toggle-btn" id="toggle-password" aria-label="显示密码" title="显示密码"></button>
                                     </div>
+                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">密码可使用英文字母、数字和常见英文符号，例如 `! @ # $ % ^ & * _ - + = ? .`，建议使用英文输入法填写。</div>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="confirm-password">确认密码</label>
                                     <div class="input-wrapper">
-                                        <input type="password" id="confirm-password" name="confirm-password" required>
-                                        <button type="button" class="toggle-btn" id="toggle-confirm-password">显示</button>
+                                        <input type="password" id="confirm-password" name="confirm-password" required placeholder="请再次输入密码">
+                                        <button type="button" class="toggle-btn" id="toggle-confirm-password" aria-label="显示确认密码" title="显示确认密码"></button>
                                     </div>
                                 </div>
                                 
@@ -276,11 +308,11 @@
             rate_limit_exceeded: '操作太频繁，请稍后再试'
         };
 
-        async function customRegister(username, email, password) {
+        async function customRegister(username, nickname, email, password) {
             const response = await fetch('/custom-register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+                body: JSON.stringify({ username, nickname, email, password })
             });
 
             const result = await response.json();
@@ -296,6 +328,7 @@
             const registerForm = document.getElementById('register-form');
             const messageContainer = document.getElementById('message-container');
             const usernameInput = document.getElementById('username');
+            const nicknameInput = document.getElementById('nickname');
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
             const confirmPasswordInput = document.getElementById('confirm-password');
@@ -303,40 +336,59 @@
             const togglePasswordBtn = document.getElementById('toggle-password');
             const toggleConfirmPasswordBtn = document.getElementById('toggle-confirm-password');
 
+            function getEyeIconMarkup(isVisible) {
+                if (isVisible) {
+                    return `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 3l18 18"></path>
+                            <path d="M10.6 10.7a3 3 0 0 0 4.2 4.2"></path>
+                            <path d="M9.4 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9.5 5 10 7-.2.8-1 2.1-2.2 3.4"></path>
+                            <path d="M6.2 6.3C4.1 7.8 2.6 9.9 2 12c.7 2.7 4.7 7 10 7 1.6 0 3-.3 4.3-.9"></path>
+                        </svg>
+                    `;
+                }
+
+                return `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                `;
+            }
+
+            function setPasswordVisibility(button, input, isVisible, fieldLabel) {
+                input.type = isVisible ? 'text' : 'password';
+                button.innerHTML = getEyeIconMarkup(isVisible);
+                button.setAttribute('aria-label', isVisible ? `隐藏${fieldLabel}` : `显示${fieldLabel}`);
+                button.setAttribute('title', isVisible ? `隐藏${fieldLabel}` : `显示${fieldLabel}`);
+            }
+
+            setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
+            setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
+
             // 密码明文切换
             togglePasswordBtn.addEventListener('click', function() {
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    togglePasswordBtn.textContent = '隐藏';
-                } else {
-                    passwordInput.type = 'password';
-                    togglePasswordBtn.textContent = '显示';
-                }
+                setPasswordVisibility(togglePasswordBtn, passwordInput, passwordInput.type === 'password', '密码');
             });
 
             toggleConfirmPasswordBtn.addEventListener('click', function() {
-                if (confirmPasswordInput.type === 'password') {
-                    confirmPasswordInput.type = 'text';
-                    toggleConfirmPasswordBtn.textContent = '隐藏';
-                } else {
-                    confirmPasswordInput.type = 'password';
-                    toggleConfirmPasswordBtn.textContent = '显示';
-                }
+                setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, confirmPasswordInput.type === 'password', '确认密码');
             });
 
             registerForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 const username = usernameInput.value;
+                const nickname = nicknameInput.value;
                 const email = emailInput.value;
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
 
                 // 重置输入框状态
-                [usernameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => input.classList.remove('error'));
+                [usernameInput, nicknameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => input.classList.remove('error'));
 
                 // 前端校验
-                const validationError = validateForm(username, email, password, confirmPassword);
+                const validationError = validateForm(username, nickname, email, password, confirmPassword);
                 if (validationError) {
                     showMessage(validationError.message, 'error');
                     if (validationError.field) {
@@ -351,8 +403,13 @@
                 showLoading();
 
                 try {
-                    await customRegister(username, email, password);
+                    const trimmedUsername = username.trim();
+                    const normalizedNickname = nickname.trim() || trimmedUsername;
+
+                    await customRegister(trimmedUsername, normalizedNickname, email.trim(), password);
                     registerForm.reset();
+                    setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
+                    setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
                     showMessage(
                         '注册信息已提交成功，请前往注册邮箱点击激活链接完成账号激活。\n' +
                         '账号未激活前，将无法完成注册、查看帖子、发帖或回帖。\n' +
@@ -403,7 +460,7 @@
                 }
             });
 
-            function validateForm(username, email, password, confirmPassword) {
+            function validateForm(username, nickname, email, password, confirmPassword) {
                 // 用户名校验
                 if (!username || !username.trim()) {
                     return { message: '用户名不能为空', field: usernameInput };
@@ -412,14 +469,20 @@
                 if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
                     return { message: '用户名长度需为 3-30 个字符', field: usernameInput };
                 }
-                if (/^\d+$/.test(trimmedUsername)) {
-                    return { message: '用户名不能是纯数字，请至少包含一个字母', field: usernameInput };
-                }
-                if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
-                    return { message: '用户名只能包含英文字母、数字、下划线或短横线', field: usernameInput };
+                if (!/^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
+                    return { message: '用户名只能包含英文字母和数字', field: usernameInput };
                 }
                 if (/\s/.test(trimmedUsername)) {
                     return { message: '用户名不能包含空格', field: usernameInput };
+                }
+
+                // 昵称校验
+                const trimmedNickname = nickname.trim();
+                if (trimmedNickname.length > 30) {
+                    return { message: '昵称最多可填写 30 个字符', field: nicknameInput };
+                }
+                if (/[\r\n\t]/.test(trimmedNickname)) {
+                    return { message: '昵称格式不正确，请不要输入换行或制表符', field: nicknameInput };
                 }
 
                 // 邮箱校验

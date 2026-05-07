@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -6,238 +6,538 @@
     <title>个人资料 - 红蜻蜓论坛</title>
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
-        .page-shell {
+        .profile-page {
             width: 100%;
+            min-height: 720px;
+            padding: 18px;
+            background: linear-gradient(to bottom, rgba(255, 251, 240, 0.95), rgba(251, 245, 228, 0.98));
         }
 
-        .profile-container {
-            max-width: 980px;
-            margin: 20px auto;
-            padding: 20px;
+        .profile-breadcrumb {
+            margin-bottom: 14px;
+            padding: 8px 12px;
+            border: 1px solid #b79d74;
+            background: #f8efd8;
+            color: #705533;
+            font-size: 13px;
         }
 
-        .profile-header {
-            background: linear-gradient(to bottom, #dd5a60 0%, #e4acaf 100%);
-            padding: 30px;
-            border: 1px solid #000;
-            margin-bottom: 20px;
+        .profile-breadcrumb a {
+            color: #8b2f2f;
+            text-decoration: none;
+        }
+
+        .profile-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .profile-banner {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 18px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid #76543a;
+            background: linear-gradient(to bottom, #efe1bf 0%, #dec39a 100%);
+            box-shadow: inset 0 0 0 1px #f8ecd1;
+        }
+
+        .avatar-card {
+            padding: 16px;
+            border: 1px solid #8f6a43;
+            background: rgba(255, 252, 244, 0.92);
             text-align: center;
         }
 
-        .group-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 2px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #fff;
-            margin-left: 8px;
-        }
-
-        .group-badge.admin {
-            background-color: #cc0000;
-        }
-
-        .group-badge.mod {
-            background-color: #0066cc;
+        .avatar-shell {
+            width: 168px;
+            height: 168px;
+            margin: 0 auto 14px;
+            padding: 8px;
+            border: 1px solid #8f6a43;
+            background: linear-gradient(to bottom, #f7efdf, #ebdcc0);
+            box-shadow: inset 0 0 0 1px #fff7ea;
         }
 
         .avatar-container {
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 20px;
-            border-radius: 50%;
-            background-color: #fff;
-            border: 4px solid #990000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            height: 100%;
+            border: 1px solid #bca27f;
+            background: #fffdf7;
             position: relative;
+            overflow: hidden;
             cursor: pointer;
-        }
-
-        .avatar-container:hover .avatar-upload-overlay {
-            opacity: 1;
-        }
-
-        .avatar-upload-overlay {
-            position: absolute;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            color: #fff;
-        }
-
-        #avatar-upload-input {
-            display: none;
         }
 
         .avatar-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .avatar-placeholder {
             width: 100%;
             height: 100%;
-            background: url('images/用户头像.png') no-repeat center;
-            background-size: contain;
+            background: #f2e8d4 url('images/用户头像.png') no-repeat center center;
+            background-size: cover;
         }
 
-        .profile-header h2 {
-            font-size: 28px;
-            color: #000;
-            margin-bottom: 8px;
+        .avatar-upload-overlay {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 8px 6px;
+            background: rgba(86, 42, 28, 0.78);
+            color: #fff7e8;
+            font-size: 12px;
+            letter-spacing: 1px;
         }
 
-        .profile-header p {
+        #avatar-upload-input {
+            display: none;
+        }
+
+        .profile-side-note {
+            font-size: 12px;
+            line-height: 1.7;
+            color: #705533;
+        }
+
+        .profile-main {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .profile-name-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-name-row h2 {
+            font-size: 30px;
+            line-height: 1.2;
+            color: #5e251f;
+        }
+
+        .group-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            font-size: 12px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .group-badge.admin {
+            background: #b6382e;
+        }
+
+        .group-badge.mod {
+            background: #3f67a7;
+        }
+
+        .profile-subtitle {
+            color: #6a4b35;
             font-size: 15px;
-            color: #333;
-            margin-bottom: 12px;
+            line-height: 1.8;
+        }
+
+        .profile-meta-chips,
+        .profile-status-tags,
+        .profile-action-row,
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .meta-chip,
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 4px 12px;
+            border: 1px solid #aa8a62;
+            background: rgba(255, 249, 237, 0.88);
+            font-size: 13px;
+            color: #5b4733;
+        }
+
+        .status-tag.ok {
+            border-color: #7e9b62;
+            color: #44612d;
+            background: #f1f8e6;
+        }
+
+        .status-tag.warn {
+            border-color: #bf8a2e;
+            color: #8a5a13;
+            background: #fff6e3;
+        }
+
+        .profile-signature {
+            padding: 12px 14px;
+            border-left: 4px solid #aa4f35;
+            background: rgba(255, 250, 241, 0.85);
+            color: #634733;
+            line-height: 1.8;
+            min-height: 52px;
+        }
+
+        .retro-btn,
+        .retro-link-btn,
+        .upload-avatar-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 0 14px;
+            border: 1px solid #7c3426;
+            background: linear-gradient(to bottom, #d44a37 0%, #b52f22 100%);
+            color: #fff7ea;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+        }
+
+        .retro-btn:hover,
+        .retro-link-btn:hover,
+        .upload-avatar-btn:hover {
+            background: linear-gradient(to bottom, #bf3a2a 0%, #9f2317 100%);
+        }
+
+        .retro-btn.secondary,
+        .retro-link-btn.secondary,
+        .upload-avatar-btn.secondary {
+            border-color: #8a6a45;
+            background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
+            color: #5d432f;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .retro-btn.secondary:hover,
+        .retro-link-btn.secondary:hover,
+        .upload-avatar-btn.secondary:hover {
+            background: linear-gradient(to bottom, #efe2c6 0%, #e3cda4 100%);
+        }
+
+        .profile-message {
+            display: none;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border: 1px solid #c3a072;
+            background: #fff6df;
+            color: #6b492f;
+        }
+
+        .profile-message.success {
+            border-color: #7e9b62;
+            background: #eef8e2;
+            color: #45622f;
+        }
+
+        .profile-message.error {
+            border-color: #bf6f6f;
+            background: #fff0f0;
+            color: #8a2f2f;
         }
 
         .profile-stats {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
-        .stat-item {
-            flex: 1;
-            background-color: #fff;
-            border: 1px solid #000;
-            padding: 20px;
-            text-align: center;
-            border-radius: 4px;
-        }
-
-        .stat-number {
-            font-size: 28px;
-            font-weight: bold;
-            color: #cc0000;
+        .stat-card {
+            padding: 16px 14px;
+            border: 1px solid #826148;
+            background: #fffaf0;
+            box-shadow: inset 0 0 0 1px #fff;
         }
 
         .stat-label {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
+            color: #7a6048;
+            font-size: 13px;
+            margin-bottom: 8px;
         }
 
-        .profile-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .panel {
-            background-color: #fff;
-            border: 1px solid #000;
-            padding: 20px;
-        }
-
-        .panel h3 {
-            font-size: 18px;
+        .stat-number {
+            color: #8f2419;
+            font-size: 28px;
             font-weight: bold;
-            color: #cc0000;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #ccc;
-            position: relative;
-            padding-left: 18px;
+            line-height: 1;
         }
 
-        .panel h3::before {
-            content: '*';
-            position: absolute;
-            left: 0;
-            color: #cc0000;
-            font-size: 14px;
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .profile-panel {
+            border: 1px solid #826148;
+            background: #fffdf7;
+            box-shadow: inset 0 0 0 1px #f4ecd8;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #c7af88;
+            background: linear-gradient(to bottom, #efe2c6 0%, #e4cfaa 100%);
+        }
+
+        .panel-head h3 {
+            font-size: 16px;
+            color: #6b2d23;
+        }
+
+        .panel-subtitle {
+            font-size: 12px;
+            color: #7a6048;
+        }
+
+        .panel-body {
+            padding: 14px;
+        }
+
+        .info-table {
+            display: grid;
+            gap: 10px;
         }
 
         .info-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 120px 1fr;
             gap: 12px;
-            margin-bottom: 12px;
             padding: 10px 12px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
+            background: #fcf6ea;
+            border: 1px solid #eadcbd;
+            align-items: center;
         }
 
         .info-label {
-            width: 120px;
+            color: #7f6147;
             font-weight: bold;
-            color: #555;
-            flex-shrink: 0;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .info-value {
-            color: #333;
-            flex: 1;
-            font-size: 14px;
+            color: #423327;
+            line-height: 1.7;
             word-break: break-word;
         }
 
-        .post-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .status-list {
+            display: grid;
+            gap: 10px;
         }
 
-        .post-item {
-            padding: 12px;
-            border-bottom: 1px dashed #eee;
+        .status-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid #eadcbd;
+            background: #fcf6ea;
+            font-size: 13px;
+            color: #544232;
         }
 
-        .post-item:last-child {
-            border-bottom: none;
+        .status-item strong {
+            color: #6a4b35;
         }
 
-        .post-title {
-            color: #0066cc;
-            text-decoration: none;
-            font-size: 15px;
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        .profile-form {
+            display: grid;
+            gap: 14px;
         }
 
-        .post-title:hover {
-            text-decoration: underline;
-            color: #cc0000;
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
         }
 
-        .post-meta {
+        .form-group {
+            display: grid;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            color: #704f35;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .form-group small {
+            color: #8a6c54;
             font-size: 12px;
-            color: #888;
-            flex-shrink: 0;
+            line-height: 1.6;
         }
 
-        .no-data {
+        .profile-form input,
+        .profile-form textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #a27d57;
+            background: #fffdf8;
+            font-size: 14px;
+            color: #3d3024;
+            font-family: Arial, sans-serif;
+        }
+
+        .profile-form input[readonly] {
+            background: #f6efe1;
+            color: #78624c;
+        }
+
+        .profile-form textarea {
+            min-height: 110px;
+            resize: vertical;
+            line-height: 1.7;
+        }
+
+        .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .form-hint {
+            color: #866953;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .tab-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .tab-btn {
+            min-height: 34px;
+            padding: 0 14px;
+            border: 1px solid #a27d57;
+            background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
+            color: #5d432f;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            border-color: #7c3426;
+            background: linear-gradient(to bottom, #d44a37 0%, #b52f22 100%);
+            color: #fff7ea;
+        }
+
+        .content-list {
+            list-style: none;
+        }
+
+        .content-item {
+            padding: 12px 0;
+            border-bottom: 1px dashed #cfbda1;
+        }
+
+        .content-item:first-child {
+            padding-top: 0;
+        }
+
+        .content-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .content-title {
+            display: inline-block;
+            color: #8d2c22;
+            text-decoration: none;
+            font-weight: bold;
+            line-height: 1.7;
+            margin-bottom: 6px;
+        }
+
+        .content-title:hover {
+            text-decoration: underline;
+        }
+
+        .content-preview {
+            color: #5e4a38;
+            line-height: 1.8;
+            margin-bottom: 6px;
+        }
+
+        .content-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 12px;
+            color: #8b735a;
+        }
+
+        .pagination-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px dashed #cfbda1;
+        }
+
+        .pagination-info {
+            color: #7d634b;
+            font-size: 12px;
+        }
+
+        .pagination-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .empty-state {
+            padding: 22px 12px;
+            border: 1px dashed #ceb690;
+            background: #fcf7ec;
             text-align: center;
-            color: #999;
-            padding: 30px;
-            font-style: italic;
+            color: #8c7259;
+            line-height: 1.8;
         }
 
         .loading-overlay {
             position: fixed;
             inset: 0;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 250, 242, 0.92);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -245,11 +545,11 @@
         }
 
         .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #cc0000;
+            border: 4px solid #f0e5cf;
+            border-top: 4px solid #b53325;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             animation: spin 1s linear infinite;
         }
 
@@ -258,55 +558,61 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            background-color: #ffe6e6;
-            color: #cc0000;
-            padding: 20px;
-            margin: 20px;
-            border: 1px solid #ffcccc;
+        .profile-error {
+            display: none;
+            padding: 28px 18px;
+            border: 1px solid #bf8a8a;
+            background: #fff2f2;
+            color: #8b2c2c;
             text-align: center;
-            border-radius: 4px;
+            line-height: 1.9;
         }
 
-        .btn-logout {
-            background-color: #cc0000;
-            color: #fff;
-            border: 1px solid #990000;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 4px;
+        .profile-error a {
+            color: #8b2c2c;
         }
 
-        .signature {
-            background-color: #fff3e6;
-            border-left: 3px solid #ff9966;
-            padding: 12px;
-            margin: 15px auto 0;
-            font-style: italic;
-            color: #666;
-            font-size: 14px;
-            max-width: 520px;
-        }
-
-        @media (max-width: 720px) {
-            .profile-section {
+        @media (max-width: 1080px) {
+            .profile-banner,
+            .profile-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .profile-page {
+                padding: 12px;
             }
 
             .profile-stats {
-                flex-direction: column;
+                grid-template-columns: repeat(2, 1fr);
             }
 
-            .post-item,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
             .info-row {
-                flex-direction: column;
-                align-items: flex-start;
+                grid-template-columns: 1fr;
             }
 
-            .info-label {
-                width: auto;
+            .status-item {
+                flex-direction: column;
+            }
+
+            .profile-name-row h2 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .profile-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .avatar-shell {
+                width: 144px;
+                height: 144px;
             }
         }
     </style>
@@ -352,84 +658,237 @@
                 </div>
 
                 <div class="main-container">
-                    <div class="right-content-area page-shell">
+                    <div class="right-content-area" style="width: 100%;">
                         <div class="content-wrapper">
-                            <div class="main-content" style="width:100%; min-height: 520px;">
-                                <div id="loading-overlay" class="loading-overlay">
-                                    <div class="loading-spinner"></div>
-                                </div>
+                            <div class="main-content" style="width: 100%; min-height: 640px;">
+                                <div class="profile-page">
+                                    <div class="profile-breadcrumb">
+                                        <a href="index.html">论坛首页</a> &gt; <span>个人资料</span>
+                                    </div>
 
-                                <div id="profile-content" style="display:none;">
-                                    <div class="profile-container">
-                                        <div class="profile-header">
-                                            <div class="avatar-container" onclick="document.getElementById('avatar-upload-input').click();">
-                                                <div id="user-avatar" class="avatar-placeholder"></div>
-                                                <div class="avatar-upload-overlay">
-                                                    <span style="font-size: 24px;">📷</span>
-                                                    <span>更换头像</span>
+                                    <div id="page-message" class="profile-message"></div>
+
+                                    <div id="loading-overlay" class="loading-overlay">
+                                        <div class="loading-spinner"></div>
+                                    </div>
+
+                                    <div id="profile-content" style="display: none;">
+                                        <div class="profile-banner">
+                                            <div class="avatar-card">
+                                                <div class="avatar-shell">
+                                                    <div class="avatar-container" id="avatar-trigger" role="button" tabindex="0" aria-label="上传头像">
+                                                        <div id="user-avatar" class="avatar-placeholder"></div>
+                                                        <div class="avatar-upload-overlay">点击更换头像</div>
+                                                    </div>
+                                                </div>
+                                                <input type="file" id="avatar-upload-input" accept="image/*">
+                                                <button type="button" class="upload-avatar-btn secondary" id="upload-avatar-btn">上传头像</button>
+                                                <div class="profile-side-note" style="margin-top: 12px;">
+                                                    支持常见图片格式，大小不超过 2MB。头像修改后会立即同步到论坛显示。
                                                 </div>
                                             </div>
-                                            <input type="file" id="avatar-upload-input" accept="image/*">
-                                            <h2><span id="user-name">用户</span><span id="user-group-badge"></span></h2>
-                                            <p id="user-title">用户头衔</p>
-                                            <div id="user-signature" class="signature" style="display:none;"></div>
-                                            <button class="btn-logout" id="logout-btn">退出登录</button>
+
+                                            <div class="profile-main">
+                                                <div class="profile-name-row">
+                                                    <h2 id="user-name">用户</h2>
+                                                    <span id="user-group-badge"></span>
+                                                </div>
+                                                <div class="profile-subtitle" id="user-title">用户头衔</div>
+
+                                                <div class="profile-meta-chips">
+                                                    <span class="meta-chip">账号：<span id="meta-username">-</span></span>
+                                                    <span class="meta-chip">用户 ID：<span id="meta-user-id">-</span></span>
+                                                    <span class="meta-chip">注册于：<span id="meta-joined">-</span></span>
+                                                </div>
+
+                                                <div class="profile-status-tags" id="profile-status-tags"></div>
+
+                                                <div id="user-signature" class="profile-signature">这个用户很懒，还没有留下个性签名。</div>
+
+                                                <div class="profile-action-row">
+                                                    <a href="new-post.html" class="retro-link-btn">去发新帖</a>
+                                                    <a href="index.html" class="retro-link-btn secondary">返回首页</a>
+                                                    <button type="button" class="retro-btn secondary" id="logout-btn">退出登录</button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="profile-stats">
-                                            <div class="stat-item">
-                                                <div class="stat-number" id="stat-posts">0</div>
+                                            <div class="stat-card">
                                                 <div class="stat-label">发帖数</div>
+                                                <div class="stat-number" id="stat-posts">0</div>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-number" id="stat-comments">0</div>
+                                            <div class="stat-card">
                                                 <div class="stat-label">回复数</div>
+                                                <div class="stat-number" id="stat-comments">0</div>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-number" id="stat-likes">0</div>
+                                            <div class="stat-card">
                                                 <div class="stat-label">获赞数</div>
+                                                <div class="stat-number" id="stat-likes">0</div>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-number" id="stat-reputation">0</div>
+                                            <div class="stat-card">
                                                 <div class="stat-label">声望</div>
+                                                <div class="stat-number" id="stat-reputation">0</div>
                                             </div>
                                         </div>
 
-                                        <div class="profile-section">
-                                            <div class="panel">
-                                                <h3>基本信息</h3>
-                                                <div class="info-row"><span class="info-label">用户名</span><span class="info-value" id="info-username">-</span></div>
-                                                <div class="info-row"><span class="info-label">显示名称</span><span class="info-value" id="info-displayname">-</span></div>
-                                                <div class="info-row"><span class="info-label">邮箱</span><span class="info-value" id="info-email">-</span></div>
-                                                <div class="info-row"><span class="info-label">用户 ID</span><span class="info-value" id="info-id">-</span></div>
+                                        <div class="profile-grid">
+                                            <div class="profile-column">
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>基本资料</h3>
+                                                        <span class="panel-subtitle">论坛展示与账号信息</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <div class="info-table">
+                                                            <div class="info-row"><div class="info-label">用户名</div><div class="info-value" id="info-username">-</div></div>
+                                                            <div class="info-row"><div class="info-label">昵称</div><div class="info-value" id="info-displayname">-</div></div>
+                                                            <div class="info-row"><div class="info-label">邮箱</div><div class="info-value" id="info-email">-</div></div>
+                                                            <div class="info-row"><div class="info-label">个性签名</div><div class="info-value" id="info-signature">-</div></div>
+                                                            <div class="info-row"><div class="info-label">用户组</div><div class="info-value" id="info-group">-</div></div>
+                                                            <div class="info-row"><div class="info-label">信任等级</div><div class="info-value" id="info-trust">-</div></div>
+                                                        </div>
+                                                    </div>
+                                                </section>
+
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>资料设置</h3>
+                                                        <span class="panel-subtitle">修改后端保存的昵称与签名</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <form id="profile-form" class="profile-form">
+                                                            <div class="form-grid">
+                                                                <div class="form-group">
+                                                                    <label for="editor-username">用户名</label>
+                                                                    <input type="text" id="editor-username" readonly>
+                                                                    <small>用户名用于登录，当前页面不提供修改。</small>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="editor-email">邮箱</label>
+                                                                    <input type="text" id="editor-email" readonly>
+                                                                    <small>用于账号激活与找回密码。</small>
+                                                                </div>
+                                                                <div class="form-group full">
+                                                                    <label for="editor-nickname">昵称</label>
+                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="帖子里显示的名字，留空将默认使用用户名">
+                                                                    <small>保存后，帖子列表、帖子页和回复区会优先显示这里的昵称。</small>
+                                                                </div>
+                                                                <div class="form-group full">
+                                                                    <label for="editor-signature">个性签名</label>
+                                                                    <textarea id="editor-signature" maxlength="200" placeholder="写一句简单的自我介绍、心情签名或常用说明"></textarea>
+                                                                    <small>如果你的论坛后端未开启签名字段，保存时会给出提示。</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-actions">
+                                                                <button type="submit" class="retro-btn" id="save-profile-btn">保存资料</button>
+                                                                <button type="button" class="retro-btn secondary" id="reset-profile-btn">恢复当前资料</button>
+                                                            </div>
+                                                            <div class="form-hint">资料保存后会立即刷新页面中的昵称与签名显示。</div>
+                                                        </form>
+                                                    </div>
+                                                </section>
                                             </div>
 
-                                            <div class="panel">
-                                                <h3>活跃信息</h3>
-                                                <div class="info-row"><span class="info-label">注册时间</span><span class="info-value" id="info-joined">-</span></div>
-                                                <div class="info-row"><span class="info-label">最后活跃</span><span class="info-value" id="info-last-active">-</span></div>
-                                                <div class="info-row"><span class="info-label">用户组</span><span class="info-value" id="info-group">-</span></div>
-                                                <div class="info-row"><span class="info-label">信任等级</span><span class="info-value" id="info-trust">-</span></div>
+                                            <div class="profile-column">
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>账号状态</h3>
+                                                        <span class="panel-subtitle">当前登录与激活情况</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <div class="status-list">
+                                                            <div class="status-item"><strong>登录状态</strong><span id="status-login">-</span></div>
+                                                            <div class="status-item"><strong>账号激活</strong><span id="status-activation">-</span></div>
+                                                            <div class="status-item"><strong>注册时间</strong><span id="info-joined">-</span></div>
+                                                            <div class="status-item"><strong>最后活跃</strong><span id="info-last-active">-</span></div>
+                                                            <div class="status-item"><strong>论坛头衔</strong><span id="status-title">-</span></div>
+                                                            <div class="status-item"><strong>当前可见名称</strong><span id="status-visible-name">-</span></div>
+                                                        </div>
+                                                    </div>
+                                                </section>
+
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>快捷入口</h3>
+                                                        <span class="panel-subtitle">常用个人中心操作</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <div class="quick-links">
+                                                            <a href="new-post.html" class="retro-link-btn">发表新帖</a>
+                                                            <a href="index.html" class="retro-link-btn secondary">浏览论坛</a>
+                                                            <a href="message.html" class="retro-link-btn secondary">查看消息</a>
+                                                            <a href="rules.html" class="retro-link-btn secondary">论坛规则</a>
+                                                        </div>
+                                                        <div class="form-hint" style="margin-top: 12px;">
+                                                            资料页会实时读取你的论坛数据；如果刚修改过昵称或头像，刷新后仍未变化，可以稍等片刻再查看。
+                                                        </div>
+                                                    </div>
+                                                </section>
+
+                                                <section class="profile-panel">
+                                                    <div class="panel-head">
+                                                        <h3>账号安全</h3>
+                                                        <span class="panel-subtitle">常见账号保护与密码修改</span>
+                                                    </div>
+                                                    <div class="panel-body">
+                                                        <div class="status-list" style="margin-bottom: 14px;">
+                                                            <div class="status-item"><strong>登录账号</strong><span id="security-username">-</span></div>
+                                                            <div class="status-item"><strong>绑定邮箱</strong><span id="security-email">-</span></div>
+                                                            <div class="status-item"><strong>密码状态</strong><span>已设置登录密码</span></div>
+                                                        </div>
+                                                        <form id="password-form" class="profile-form">
+                                                            <div class="form-grid">
+                                                                <div class="form-group full">
+                                                                    <label for="current-password">当前密码</label>
+                                                                    <input type="password" id="current-password" autocomplete="current-password" placeholder="请输入当前登录密码">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="new-password">新密码</label>
+                                                                    <input type="password" id="new-password" autocomplete="new-password" placeholder="至少 8 位，建议包含字母和数字">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="confirm-new-password">确认新密码</label>
+                                                                    <input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="请再次输入新的密码">
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-actions">
+                                                                <button type="submit" class="retro-btn" id="save-password-btn">修改密码</button>
+                                                                <button type="button" class="retro-btn secondary" id="reset-password-btn">清空输入</button>
+                                                            </div>
+                                                            <div class="form-hint">如果论坛后端暂未开放密码修改接口，提交后会直接提示你当前账号暂无此权限。</div>
+                                                        </form>
+                                                    </div>
+                                                </section>
                                             </div>
                                         </div>
 
-                                        <div class="panel" style="margin-bottom:20px;">
-                                            <h3>最近发帖</h3>
-                                            <ul class="post-list" id="recent-posts-list">
-                                                <li class="no-data">暂无帖子</li>
-                                            </ul>
-                                        </div>
-
-                                        <div class="panel">
-                                            <h3>最近回复</h3>
-                                            <ul class="post-list" id="recent-comments-list">
-                                                <li class="no-data">暂无回复</li>
-                                            </ul>
-                                        </div>
+                                        <section class="profile-panel" style="margin-bottom: 16px;">
+                                            <div class="panel-head">
+                                                <h3>我的内容</h3>
+                                                <span class="panel-subtitle">切换查看我的主题与我的回复</span>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="tab-bar">
+                                                    <button type="button" class="tab-btn active" id="tab-discussions" data-tab="discussions">我的主题</button>
+                                                    <button type="button" class="tab-btn" id="tab-comments" data-tab="comments">我的回复</button>
+                                                </div>
+                                                <ul id="activity-list" class="content-list">
+                                                    <li class="empty-state">暂无回复</li>
+                                                </ul>
+                                                <div class="pagination-bar">
+                                                    <div class="pagination-info" id="activity-page-info">第 1 页</div>
+                                                    <div class="pagination-actions">
+                                                        <button type="button" class="retro-btn secondary" id="activity-prev-btn">上一页</button>
+                                                        <button type="button" class="retro-btn secondary" id="activity-next-btn">下一页</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
                                     </div>
-                                </div>
 
-                                <div id="error-content" style="display:none;" class="error-message"></div>
+                                    <div id="error-content" class="profile-error"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -449,6 +908,16 @@
     <script>
         const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
         const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
+        let currentProfileContext = null;
+        let pendingProfileMessage = null;
+        const activityState = {
+            activeTab: 'discussions',
+            page: 1,
+            pageSize: 5,
+            discussions: [],
+            comments: [],
+            commentIncluded: []
+        };
 
         document.addEventListener('DOMContentLoaded', initProfilePage);
         window.addEventListener('flarum-auth-changed', initProfilePage);
@@ -457,13 +926,18 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const profileContent = document.getElementById('profile-content');
             const errorContent = document.getElementById('error-content');
+            const pageMessage = document.getElementById('page-message');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
             const userId = localStorage.getItem('flarumUserId');
 
+            currentProfileContext = null;
             loadingOverlay.style.display = 'flex';
             profileContent.style.display = 'none';
             errorContent.style.display = 'none';
             errorContent.innerHTML = '';
+            pageMessage.style.display = 'none';
+            pageMessage.textContent = '';
+            pageMessage.className = 'profile-message';
 
             if (!token || !userId) {
                 showProfileError('请先登录后再查看个人资料。', true);
@@ -483,13 +957,24 @@
                     throw new Error('未获取到用户资料');
                 }
 
-                renderUserProfile(userData);
+                const context = buildProfileContext(userData);
+                currentProfileContext = context;
+                activityState.discussions = Array.isArray(discussions) ? discussions : [];
+                activityState.comments = Array.isArray(comments) ? comments : [];
+                activityState.commentIncluded = comments.included || [];
+                activityState.page = 1;
+
+                renderUserProfile(context);
+                renderProfileEditor(context);
                 renderUserStats(stats);
-                renderRecentPosts(discussions);
-                renderRecentComments(comments);
+                renderActivitySection();
                 bindProfileActions();
 
                 profileContent.style.display = 'block';
+                if (pendingProfileMessage) {
+                    showPageMessage(pendingProfileMessage.message, pendingProfileMessage.type);
+                    pendingProfileMessage = null;
+                }
             } catch (error) {
                 console.error('加载个人资料失败:', error);
                 const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
@@ -502,15 +987,210 @@
             }
         }
 
-        function showProfileError(message, showLoginLink) {
-            const errorContent = document.getElementById('error-content');
-            errorContent.innerHTML = `<p>${message}</p>${showLoginLink ? '<a href="login.html">点击登录</a>' : ''}`;
-            errorContent.style.display = 'block';
+        function buildProfileContext(userData) {
+            const user = userData.data;
+            const included = userData.included || [];
+            const attributes = user?.attributes || {};
+            const username = attributes.username || '未设置';
+            const displayName = typeof getPreferredDisplayName === 'function'
+                ? getPreferredDisplayName(attributes, username)
+                : (attributes.nickname || attributes.displayName || username);
+            const rawNickname = typeof attributes.nickname === 'string' ? attributes.nickname : '';
+            const signature = typeof attributes.signature === 'string' ? attributes.signature : '';
+            const trustLevel = Number(attributes.trustLevel || 0);
+            const email = attributes.email || '-';
+            const isActivated = attributes.isEmailConfirmed !== false;
+            const title = attributes.title || PROFILE_USER_TITLES[trustLevel] || '新手上路';
+            const avatarUrl = attributes.avatarUrl || '';
+            const groupRefs = user?.relationships?.groups?.data || [];
+            const groupNames = [];
+            let badgeHTML = '';
+
+            groupRefs.forEach((groupRef) => {
+                const group = included.find((item) => item.type === 'groups' && item.id === groupRef.id);
+                const groupName = group?.attributes?.name || group?.attributes?.singularName;
+                if (groupName) {
+                    groupNames.push(groupName);
+                }
+                if (String(groupRef.id) === '1') {
+                    badgeHTML = '<span class="group-badge admin">管理员</span>';
+                } else if (String(groupRef.id) === '2' && !badgeHTML) {
+                    badgeHTML = '<span class="group-badge mod">版主</span>';
+                }
+            });
+
+            return {
+                userId: String(user?.id || ''),
+                username,
+                displayName,
+                rawNickname,
+                email,
+                signature,
+                trustLevel,
+                trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '新手上路',
+                title,
+                avatarUrl,
+                joinedAt: attributes.joinedAt || '',
+                lastActiveAt: attributes.lastSeenAt || attributes.lastActivityAt || '',
+                groupNames: groupNames.length ? groupNames : ['普通会员'],
+                badgeHTML,
+                isActivated
+            };
+        }
+
+        function renderUserProfile(context) {
+            localStorage.setItem('flarumUsername', context.displayName);
+            document.getElementById('user-name').textContent = context.displayName;
+            document.getElementById('user-group-badge').innerHTML = context.badgeHTML;
+            document.getElementById('user-title').textContent = context.title;
+            document.getElementById('meta-username').textContent = context.username;
+            document.getElementById('meta-user-id').textContent = context.userId || '-';
+            document.getElementById('meta-joined').textContent = formatProfileDate(context.joinedAt);
+            document.getElementById('info-username').textContent = context.username;
+            document.getElementById('info-displayname').textContent = context.displayName;
+            document.getElementById('info-email').textContent = context.email;
+            document.getElementById('info-signature').textContent = context.signature && context.signature.trim()
+                ? context.signature.trim()
+                : '这个用户还没有填写个性签名。';
+            document.getElementById('info-group').textContent = context.groupNames.join('，');
+            document.getElementById('info-trust').textContent = context.trustTitle;
+            document.getElementById('info-joined').textContent = formatProfileDate(context.joinedAt);
+            document.getElementById('info-last-active').textContent = formatProfileDate(context.lastActiveAt);
+            document.getElementById('status-login').textContent = '已登录';
+            document.getElementById('status-activation').textContent = context.isActivated ? '已激活' : '待激活';
+            document.getElementById('status-title').textContent = context.title;
+            document.getElementById('status-visible-name').textContent = context.displayName;
+
+            const tags = [
+                '<span class="status-tag ok">当前已登录</span>',
+                `<span class="status-tag ${context.isActivated ? 'ok' : 'warn'}">${context.isActivated ? '账号已激活' : '账号待激活'}</span>`,
+                `<span class="status-tag">${escapeHtml(context.groupNames.join('，'))}</span>`,
+                `<span class="status-tag">${escapeHtml(context.trustTitle)}</span>`
+            ];
+            document.getElementById('profile-status-tags').innerHTML = tags.join('');
+
+            const signatureEl = document.getElementById('user-signature');
+            signatureEl.textContent = context.signature && context.signature.trim()
+                ? context.signature.trim()
+                : '这个用户很懒，还没有留下个性签名。';
+
+            const avatarEl = document.getElementById('user-avatar');
+            if (context.avatarUrl) {
+                avatarEl.className = '';
+                avatarEl.innerHTML = `<img src="${context.avatarUrl}" alt="头像">`;
+            } else {
+                avatarEl.className = 'avatar-placeholder';
+                avatarEl.innerHTML = '';
+            }
+        }
+
+        function renderProfileEditor(context) {
+            document.getElementById('editor-username').value = context.username;
+            document.getElementById('editor-email').value = context.email;
+            document.getElementById('editor-nickname').value = context.rawNickname;
+            document.getElementById('editor-signature').value = context.signature;
+            document.getElementById('security-username').textContent = context.username;
+            document.getElementById('security-email').textContent = maskEmail(context.email);
+        }
+
+        function renderUserStats(stats) {
+            document.getElementById('stat-posts').textContent = stats.posts || 0;
+            document.getElementById('stat-comments').textContent = stats.comments || 0;
+            document.getElementById('stat-likes').textContent = stats.likes || 0;
+            document.getElementById('stat-reputation').textContent = stats.reputation || 0;
+        }
+
+        function renderActivitySection() {
+            const list = document.getElementById('activity-list');
+            const pageInfo = document.getElementById('activity-page-info');
+            const prevBtn = document.getElementById('activity-prev-btn');
+            const nextBtn = document.getElementById('activity-next-btn');
+            const tabDiscussions = document.getElementById('tab-discussions');
+            const tabComments = document.getElementById('tab-comments');
+            const isDiscussionTab = activityState.activeTab === 'discussions';
+            const source = isDiscussionTab ? activityState.discussions : activityState.comments;
+            const totalItems = source.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / activityState.pageSize));
+
+            if (activityState.page > totalPages) {
+                activityState.page = totalPages;
+            }
+
+            const startIndex = (activityState.page - 1) * activityState.pageSize;
+            const items = source.slice(startIndex, startIndex + activityState.pageSize);
+
+            tabDiscussions.classList.toggle('active', isDiscussionTab);
+            tabComments.classList.toggle('active', !isDiscussionTab);
+
+            if (items.length === 0) {
+                list.innerHTML = isDiscussionTab
+                    ? '<li class="empty-state">你还没有发布过主题，去首页试试发第一帖吧。</li>'
+                    : '<li class="empty-state">你还没有发表过回复，看到感兴趣的帖子就去参与讨论吧。</li>';
+            } else if (isDiscussionTab) {
+                list.innerHTML = items.map((post) => {
+                    const title = post?.attributes?.title || '无标题';
+                    const createdAt = formatProfileDate(post?.attributes?.createdAt);
+                    const commentCount = typeof post?.attributes?.commentCount === 'number' ? post.attributes.commentCount : 0;
+                    const viewCount = typeof post?.attributes?.viewCount === 'number' ? post.attributes.viewCount : 0;
+                    return `
+                        <li class="content-item">
+                            <a href="post.html?id=${encodeURIComponent(post.id)}" class="content-title">${escapeHtml(title)}</a>
+                            <div class="content-meta">
+                                <span>发布时间：${createdAt}</span>
+                                <span>回复：${commentCount}</span>
+                                <span>浏览：${viewCount}</span>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            } else {
+                list.innerHTML = items.map((comment) => {
+                    const discussionId = comment?.relationships?.discussion?.data?.id;
+                    const floor = comment?.attributes?.number || 1;
+                    const rawContent = comment?.attributes?.contentHtml || comment?.attributes?.content || '';
+                    const preview = buildPreviewText(rawContent) || '无内容';
+                    const createdAt = formatProfileDate(comment?.attributes?.createdAt);
+                    const discussion = Array.isArray(activityState.commentIncluded)
+                        ? activityState.commentIncluded.find((item) => item.type === 'discussions' && item.id === discussionId)
+                        : null;
+                    const discussionTitle = discussion?.attributes?.title || '所属帖子';
+                    const link = typeof buildPostFloorLink === 'function'
+                        ? buildPostFloorLink(discussionId, floor)
+                        : `post.html?id=${encodeURIComponent(discussionId)}#post-${floor}`;
+
+                    return `
+                        <li class="content-item">
+                            <a href="${link}" class="content-title">回复于《${escapeHtml(discussionTitle)}》</a>
+                            <div class="content-preview">${escapeHtml(preview)}</div>
+                            <div class="content-meta">
+                                <span>楼层：${floor} 楼</span>
+                                <span>回复时间：${createdAt}</span>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            }
+
+            pageInfo.textContent = totalItems
+                ? `第 ${activityState.page} / ${totalPages} 页，共 ${totalItems} 条`
+                : '暂无内容';
+            prevBtn.disabled = activityState.page <= 1;
+            nextBtn.disabled = activityState.page >= totalPages || totalItems === 0;
         }
 
         function bindProfileActions() {
             const logoutBtn = document.getElementById('logout-btn');
+            const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
+            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+            const profileForm = document.getElementById('profile-form');
+            const resetProfileBtn = document.getElementById('reset-profile-btn');
+            const passwordForm = document.getElementById('password-form');
+            const resetPasswordBtn = document.getElementById('reset-password-btn');
+            const tabDiscussions = document.getElementById('tab-discussions');
+            const tabComments = document.getElementById('tab-comments');
+            const activityPrevBtn = document.getElementById('activity-prev-btn');
+            const activityNextBtn = document.getElementById('activity-next-btn');
 
             logoutBtn.onclick = function() {
                 if (typeof clearFlarumToken === 'function') {
@@ -523,8 +1203,55 @@
                 window.location.href = 'index.html';
             };
 
+            avatarTrigger.onclick = function() {
+                avatarInput.click();
+            };
+
+            avatarTrigger.onkeydown = function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    avatarInput.click();
+                }
+            };
+
+            uploadAvatarBtn.onclick = function() {
+                avatarInput.click();
+            };
+
             avatarInput.onchange = function() {
                 handleAvatarUpload(this);
+            };
+
+            profileForm.onsubmit = handleProfileSave;
+            passwordForm.onsubmit = handlePasswordSave;
+
+            resetProfileBtn.onclick = function() {
+                if (currentProfileContext) {
+                    renderProfileEditor(currentProfileContext);
+                    showPageMessage('已恢复为当前保存的资料内容。', 'success');
+                }
+            };
+
+            resetPasswordBtn.onclick = resetPasswordForm;
+
+            tabDiscussions.onclick = function() {
+                switchActivityTab('discussions');
+            };
+
+            tabComments.onclick = function() {
+                switchActivityTab('comments');
+            };
+
+            activityPrevBtn.onclick = function() {
+                if (activityState.page > 1) {
+                    activityState.page -= 1;
+                    renderActivitySection();
+                }
+            };
+
+            activityNextBtn.onclick = function() {
+                activityState.page += 1;
+                renderActivitySection();
             };
         }
 
@@ -556,7 +1283,7 @@
 
         async function fetchUserDiscussions(userId) {
             try {
-                const data = await flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=5&include=user`, { auth: true });
+                const data = await flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=30&include=user`, { auth: true });
                 return data?.data || [];
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
@@ -566,133 +1293,229 @@
 
         async function fetchUserComments(userId) {
             try {
-                const data = await flarumRequest(`/posts?filter[author]=${userId}&page[limit]=10&include=discussion`, { auth: true });
-                const comments = data?.data?.filter((post) => Number(post?.attributes?.number) !== 1) || [];
-                return comments.slice(0, 5);
+                const data = await flarumRequest(`/posts?filter[author]=${userId}&page[limit]=30&include=discussion`, { auth: true });
+                const posts = Array.isArray(data?.data) ? data.data : [];
+                const comments = posts.filter((post) => Number(post?.attributes?.number) !== 1);
+                comments.included = data?.included || [];
+                return comments;
             } catch (error) {
                 console.error('获取用户回复失败:', error);
                 return [];
             }
         }
 
-        function renderUserProfile(userData) {
-            const user = userData.data;
-            const included = userData.included || [];
-            const username = user?.attributes?.username || '未设置';
-            const displayName = user?.attributes?.displayName || username;
-            const email = user?.attributes?.email || '-';
-            const trustLevel = Number(user?.attributes?.trustLevel || 0);
-            const signature = user?.attributes?.signature || '';
-            const avatarUrl = user?.attributes?.avatarUrl || '';
-            const groupRefs = user?.relationships?.groups?.data || [];
-            const groupNames = [];
-            let badgeHTML = '';
+        async function handleProfileSave(event) {
+            event.preventDefault();
 
-            groupRefs.forEach((groupRef) => {
-                const group = included.find((item) => item.type === 'groups' && item.id === groupRef.id);
-                const groupName = group?.attributes?.name || group?.attributes?.singularName;
-                if (groupName) {
-                    groupNames.push(groupName);
+            if (!currentProfileContext) return;
+
+            const saveBtn = document.getElementById('save-profile-btn');
+            const nicknameInput = document.getElementById('editor-nickname');
+            const signatureInput = document.getElementById('editor-signature');
+            const userId = localStorage.getItem('flarumUserId');
+            const normalizedNickname = nicknameInput.value.trim();
+            const normalizedSignature = signatureInput.value.trim();
+            const fallbackNickname = currentProfileContext.username;
+            const effectiveNickname = normalizedNickname || fallbackNickname;
+
+            if (effectiveNickname.length > 30) {
+                showPageMessage('昵称最多可填写 30 个字符。', 'error');
+                nicknameInput.focus();
+                return;
+            }
+
+            if (normalizedSignature.length > 200) {
+                showPageMessage('个性签名最多可填写 200 个字符。', 'error');
+                signatureInput.focus();
+                return;
+            }
+
+            const nicknameChanged = effectiveNickname !== (currentProfileContext.rawNickname || currentProfileContext.username);
+            const signatureChanged = normalizedSignature !== (currentProfileContext.signature || '');
+
+            if (!nicknameChanged && !signatureChanged) {
+                showPageMessage('资料没有变化，无需重复保存。', 'success');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            let nicknameSaved = false;
+            let signatureSaved = false;
+
+            try {
+                if (nicknameChanged) {
+                    await updateUserAttributes(userId, { nickname: effectiveNickname });
+                    nicknameSaved = true;
                 }
-                if (String(groupRef.id) === '1') {
-                    badgeHTML = '<span class="group-badge admin">管理员</span>';
-                } else if (String(groupRef.id) === '2' && !badgeHTML) {
-                    badgeHTML = '<span class="group-badge mod">版主</span>';
+
+                if (signatureChanged) {
+                    await updateUserAttributes(userId, { signature: normalizedSignature });
+                    signatureSaved = true;
+                }
+
+                localStorage.setItem('flarumUsername', effectiveNickname);
+                window.dispatchEvent(new Event('flarum-auth-changed'));
+
+                const successText = nicknameChanged && signatureChanged
+                    ? '昵称和个性签名已保存。'
+                    : (nicknameChanged ? '昵称已保存。' : '个性签名已保存。');
+                pendingProfileMessage = { message: successText, type: 'success' };
+                await initProfilePage();
+            } catch (error) {
+                console.error('保存个人资料失败:', error);
+                let message = typeof getFriendlyErrorMessage === 'function'
+                    ? getFriendlyErrorMessage(error, 'profile')
+                    : '个人资料保存失败，请稍后再试。';
+
+                if ((nicknameSaved && !signatureSaved) || (!nicknameSaved && signatureSaved)) {
+                    message = '部分资料已保存，但有一项更新失败。请刷新页面确认结果后重试。';
+                }
+
+                showPageMessage(message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存资料';
+            }
+        }
+
+        async function updateUserAttributes(userId, attributes) {
+            return await flarumRequest(`/users/${userId}`, {
+                method: 'PATCH',
+                auth: true,
+                json: {
+                    data: {
+                        type: 'users',
+                        id: String(userId),
+                        attributes
+                    }
                 }
             });
-
-            document.getElementById('user-name').textContent = displayName;
-            document.getElementById('user-group-badge').innerHTML = badgeHTML;
-            document.getElementById('user-title').textContent = user?.attributes?.title || PROFILE_USER_TITLES[trustLevel] || '新手上路';
-            document.getElementById('info-username').textContent = username;
-            document.getElementById('info-displayname').textContent = displayName;
-            document.getElementById('info-email').textContent = email;
-            document.getElementById('info-id').textContent = user?.id || '-';
-            document.getElementById('info-joined').textContent = formatProfileDate(user?.attributes?.joinedAt);
-            document.getElementById('info-last-active').textContent = formatProfileDate(user?.attributes?.lastSeenAt || user?.attributes?.lastActivityAt);
-            document.getElementById('info-group').textContent = groupNames.join('，') || '普通会员';
-            document.getElementById('info-trust').textContent = PROFILE_TRUST_TITLES[trustLevel] || '新手上路';
-
-            const signatureEl = document.getElementById('user-signature');
-            if (signature && signature.trim()) {
-                signatureEl.textContent = signature;
-                signatureEl.style.display = 'block';
-            } else {
-                signatureEl.style.display = 'none';
-            }
-
-            if (avatarUrl) {
-                document.getElementById('user-avatar').innerHTML = `<img src="${avatarUrl}" alt="头像">`;
-            } else {
-                document.getElementById('user-avatar').innerHTML = '';
-                document.getElementById('user-avatar').className = 'avatar-placeholder';
-            }
         }
 
-        function renderUserStats(stats) {
-            document.getElementById('stat-posts').textContent = stats.posts || 0;
-            document.getElementById('stat-comments').textContent = stats.comments || 0;
-            document.getElementById('stat-likes').textContent = stats.likes || 0;
-            document.getElementById('stat-reputation').textContent = stats.reputation || 0;
-        }
+        async function handlePasswordSave(event) {
+            event.preventDefault();
 
-        function renderRecentPosts(posts) {
-            const list = document.getElementById('recent-posts-list');
-            if (!posts || posts.length === 0) {
-                list.innerHTML = '<li class="no-data">暂无帖子</li>';
+            const currentPasswordInput = document.getElementById('current-password');
+            const newPasswordInput = document.getElementById('new-password');
+            const confirmInput = document.getElementById('confirm-new-password');
+            const savePasswordBtn = document.getElementById('save-password-btn');
+            const userId = localStorage.getItem('flarumUserId');
+            const currentPassword = currentPasswordInput.value;
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmInput.value;
+
+            if (!currentPassword) {
+                showPageMessage('请输入当前密码后再修改。', 'error');
+                currentPasswordInput.focus();
                 return;
             }
 
-            list.innerHTML = posts.map((post) => {
-                const title = post?.attributes?.title || '无标题';
-                const createdAt = formatProfileDate(post?.attributes?.createdAt);
-                return `
-                    <li class="post-item">
-                        <a href="post.html?id=${encodeURIComponent(post.id)}" class="post-title">${escapeHtml(title)}</a>
-                        <span class="post-meta">${createdAt}</span>
-                    </li>
-                `;
-            }).join('');
-        }
-
-        function renderRecentComments(comments) {
-            const list = document.getElementById('recent-comments-list');
-            if (!comments || comments.length === 0) {
-                list.innerHTML = '<li class="no-data">暂无回复</li>';
+            if (!newPassword || newPassword.length < 8) {
+                showPageMessage('新密码长度至少需要 8 位。', 'error');
+                newPasswordInput.focus();
                 return;
             }
 
-            list.innerHTML = comments.map((comment) => {
-                const discussionId = comment?.relationships?.discussion?.data?.id;
-                const floor = comment?.attributes?.number || 1;
-                const rawContent = comment?.attributes?.contentHtml || comment?.attributes?.content || '';
-                const preview = buildPreviewText(rawContent);
-                const createdAt = formatProfileDate(comment?.attributes?.createdAt);
-                const link = typeof buildPostFloorLink === 'function'
-                    ? buildPostFloorLink(discussionId, floor)
-                    : `post.html?id=${encodeURIComponent(discussionId)}#post-${floor}`;
+            if (!/[a-zA-Z]/.test(newPassword)) {
+                showPageMessage('新密码建议至少包含一个字母。', 'error');
+                newPasswordInput.focus();
+                return;
+            }
 
-                return `
-                    <li class="post-item">
-                        <a href="${link}" class="post-title" title="${escapeHtml(preview)}">${escapeHtml(preview || '无内容')}</a>
-                        <span class="post-meta">${createdAt}</span>
-                    </li>
-                `;
-            }).join('');
+            if (newPassword !== confirmPassword) {
+                showPageMessage('两次输入的新密码不一致。', 'error');
+                confirmInput.focus();
+                return;
+            }
+
+            if (newPassword === currentPassword) {
+                showPageMessage('新密码不能与当前密码完全相同。', 'error');
+                newPasswordInput.focus();
+                return;
+            }
+
+            savePasswordBtn.disabled = true;
+            savePasswordBtn.textContent = '提交中...';
+
+            try {
+                await updateUserAttributes(userId, {
+                    password: newPassword,
+                    currentPassword
+                });
+                resetPasswordForm();
+                showPageMessage('密码已提交修改，请使用新密码重新登录时注意区分大小写。', 'success');
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                let message = typeof getFriendlyErrorMessage === 'function'
+                    ? getFriendlyErrorMessage(error, 'profile')
+                    : '密码修改失败，请稍后再试。';
+
+                const detail = String(error?.apiError?.detail || error?.detail || '');
+                if (/password|currentPassword|validation/i.test(detail)) {
+                    message = '密码修改失败，请确认当前密码正确，并检查新密码是否符合论坛要求。';
+                } else if (error?.httpStatus === 403) {
+                    message = '当前账号暂时没有修改密码的权限，请确认账号已激活，如仍有问题请联系网管。';
+                }
+
+                showPageMessage(message, 'error');
+            } finally {
+                savePasswordBtn.disabled = false;
+                savePasswordBtn.textContent = '修改密码';
+            }
+        }
+
+        function showPageMessage(message, type) {
+            const pageMessage = document.getElementById('page-message');
+            pageMessage.textContent = message;
+            pageMessage.className = `profile-message ${type || ''}`.trim();
+            pageMessage.style.display = 'block';
+        }
+
+        function showProfileError(message, showLoginLink) {
+            const errorContent = document.getElementById('error-content');
+            errorContent.innerHTML = `<p>${escapeHtml(message)}</p>${showLoginLink ? '<p><a href="login.html">点击登录</a></p>' : ''}`;
+            errorContent.style.display = 'block';
         }
 
         function formatProfileDate(value) {
-            if (!value) return '-';
+            if (!value) return '暂无记录';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return '-';
+            if (Number.isNaN(date.getTime())) return '暂无记录';
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
 
         function buildPreviewText(rawHtml) {
-            const text = String(rawHtml || '').replace(/<[^>]*>/g, '').trim();
+            const text = String(rawHtml || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
             if (!text) return '';
-            return text.length > 30 ? `${text.slice(0, 30)}...` : text;
+            return text.length > 70 ? `${text.slice(0, 70)}...` : text;
+        }
+
+        function switchActivityTab(tabName) {
+            if (activityState.activeTab === tabName) return;
+            activityState.activeTab = tabName;
+            activityState.page = 1;
+            renderActivitySection();
+        }
+
+        function resetPasswordForm() {
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-new-password').value = '';
+        }
+
+        function maskEmail(email) {
+            const raw = String(email || '').trim();
+            if (!raw || raw === '-') return '-';
+            const parts = raw.split('@');
+            if (parts.length !== 2) return raw;
+            const name = parts[0];
+            if (name.length <= 2) {
+                return `${name[0] || '*'}***@${parts[1]}`;
+            }
+            return `${name.slice(0, 2)}***@${parts[1]}`;
         }
 
         function escapeHtml(value) {
@@ -709,24 +1532,27 @@
             if (!file) return;
 
             if (!file.type.startsWith('image/')) {
-                alert('请选择图片文件');
+                showPageMessage('请选择图片文件后再上传头像。', 'error');
                 input.value = '';
                 return;
             }
 
             if (file.size > 2 * 1024 * 1024) {
-                alert('图片大小不能超过 2MB');
+                showPageMessage('头像图片大小不能超过 2MB。', 'error');
                 input.value = '';
                 return;
             }
 
             const userId = localStorage.getItem('flarumUserId');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
-            const avatarContainer = document.querySelector('.avatar-container');
+            const avatarContainer = document.getElementById('avatar-trigger');
+            const uploadBtn = document.getElementById('upload-avatar-btn');
 
             try {
-                avatarContainer.style.opacity = '0.5';
+                avatarContainer.style.opacity = '0.6';
                 avatarContainer.style.cursor = 'wait';
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '上传中...';
 
                 const formData = new FormData();
                 formData.append('avatar', file);
@@ -736,46 +1562,42 @@
                     headers: {
                         Authorization: `Token ${token}; userId=${userId}`
                     },
-                    body: formData,
-                    credentials: 'include'
+                    body: formData
                 });
 
                 if (!response.ok) {
                     let detail = '';
                     try {
                         const errorJson = await response.json();
-                        detail = errorJson?.errors?.[0]?.detail || response.statusText;
+                        detail = JSON.stringify(errorJson);
                     } catch {
-                        detail = response.statusText;
+                        detail = await response.text();
                     }
-                    throw new Error(detail || '上传失败');
+                    const error = new Error('头像上传失败');
+                    error.detail = detail;
+                    error.httpStatus = response.status;
+                    throw error;
                 }
 
-                const data = await response.json();
-                const avatarUrl = data?.data?.attributes?.avatarUrl;
-                if (avatarUrl) {
-                    document.getElementById('user-avatar').innerHTML = `<img src="${avatarUrl}" alt="头像">`;
-                }
-                alert('头像上传成功');
+                pendingProfileMessage = { message: '头像上传成功，资料页已刷新。', type: 'success' };
+                await initProfilePage();
             } catch (error) {
                 console.error('上传头像失败:', error);
                 const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'upload_avatar')
                     : '头像上传失败，请稍后再试。';
-                alert(friendlyMessage);
+                showPageMessage(friendlyMessage, 'error');
             } finally {
                 avatarContainer.style.opacity = '1';
                 avatarContainer.style.cursor = 'pointer';
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传头像';
                 input.value = '';
             }
         }
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
