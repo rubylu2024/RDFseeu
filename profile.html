@@ -150,8 +150,7 @@
 
         .profile-meta-chips,
         .profile-status-tags,
-        .profile-action-row,
-        .quick-links {
+        .profile-action-row {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -191,8 +190,7 @@
         }
 
         .retro-btn,
-        .retro-link-btn,
-        .upload-avatar-btn {
+        .retro-link-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -209,14 +207,12 @@
         }
 
         .retro-btn:hover,
-        .retro-link-btn:hover,
-        .upload-avatar-btn:hover {
+        .retro-link-btn:hover {
             background: linear-gradient(to bottom, #bf3a2a 0%, #9f2317 100%);
         }
 
         .retro-btn.secondary,
-        .retro-link-btn.secondary,
-        .upload-avatar-btn.secondary {
+        .retro-link-btn.secondary {
             border-color: #8a6a45;
             background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
             color: #5d432f;
@@ -224,8 +220,7 @@
         }
 
         .retro-btn.secondary:hover,
-        .retro-link-btn.secondary:hover,
-        .upload-avatar-btn.secondary:hover {
+        .retro-link-btn.secondary:hover {
             background: linear-gradient(to bottom, #efe2c6 0%, #e3cda4 100%);
         }
 
@@ -311,11 +306,6 @@
             color: #6b2d23;
         }
 
-        .panel-subtitle {
-            font-size: 12px;
-            color: #7a6048;
-        }
-
         .panel-body {
             padding: 14px;
         }
@@ -399,6 +389,16 @@
             line-height: 1.6;
         }
 
+        .form-static {
+            min-height: 40px;
+            padding: 9px 10px;
+            border: 1px solid #d8c4a3;
+            background: #f6efe1;
+            color: #5f4a38;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
         .profile-form input,
         .profile-form textarea {
             width: 100%;
@@ -426,12 +426,6 @@
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
-        }
-
-        .form-hint {
-            color: #866953;
-            font-size: 12px;
-            line-height: 1.7;
         }
 
         .tab-bar {
@@ -523,6 +517,59 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(48, 28, 18, 0.62);
+            z-index: 10020;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 560px;
+            border: 1px solid #7c5b3d;
+            background: #fffaf0;
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #c7af88;
+            background: linear-gradient(to bottom, #efe2c6 0%, #e4cfaa 100%);
+        }
+
+        .modal-head h3 {
+            font-size: 16px;
+            color: #6b2d23;
+        }
+
+        .modal-close {
+            width: 34px;
+            height: 34px;
+            border: 1px solid #8a6a45;
+            background: linear-gradient(to bottom, #f7edd8 0%, #ead8b5 100%);
+            color: #5d432f;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 16px 14px;
         }
 
         .empty-state {
@@ -682,10 +729,6 @@
                                                     </div>
                                                 </div>
                                                 <input type="file" id="avatar-upload-input" accept="image/*">
-                                                <button type="button" class="upload-avatar-btn secondary" id="upload-avatar-btn">上传头像</button>
-                                                <div class="profile-side-note" style="margin-top: 12px;">
-                                                    支持常见图片格式，大小不超过 2MB。头像修改后会立即同步到论坛显示。
-                                                </div>
                                             </div>
 
                                             <div class="profile-main">
@@ -737,14 +780,12 @@
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
                                                         <h3>基本资料</h3>
-                                                        <span class="panel-subtitle">论坛展示与账号信息</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="info-table">
                                                             <div class="info-row"><div class="info-label">用户名</div><div class="info-value" id="info-username">-</div></div>
                                                             <div class="info-row"><div class="info-label">昵称</div><div class="info-value" id="info-displayname">-</div></div>
                                                             <div class="info-row"><div class="info-label">邮箱</div><div class="info-value" id="info-email">-</div></div>
-                                                            <div class="info-row"><div class="info-label">个性签名</div><div class="info-value" id="info-signature">-</div></div>
                                                             <div class="info-row"><div class="info-label">用户组</div><div class="info-value" id="info-group">-</div></div>
                                                             <div class="info-row"><div class="info-label">信任等级</div><div class="info-value" id="info-trust">-</div></div>
                                                         </div>
@@ -754,37 +795,31 @@
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
                                                         <h3>资料设置</h3>
-                                                        <span class="panel-subtitle">修改后端保存的昵称与签名</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <form id="profile-form" class="profile-form">
                                                             <div class="form-grid">
                                                                 <div class="form-group">
-                                                                    <label for="editor-username">用户名</label>
-                                                                    <input type="text" id="editor-username" readonly>
-                                                                    <small>用户名用于登录，当前页面不提供修改。</small>
+                                                                    <label>用户名</label>
+                                                                    <div class="form-static" id="editor-username">-</div>
                                                                 </div>
                                                                 <div class="form-group">
-                                                                    <label for="editor-email">邮箱</label>
-                                                                    <input type="text" id="editor-email" readonly>
-                                                                    <small>用于账号激活与找回密码。</small>
+                                                                    <label>邮箱</label>
+                                                                    <div class="form-static" id="editor-email">-</div>
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-nickname">昵称</label>
                                                                     <input type="text" id="editor-nickname" maxlength="30" placeholder="帖子里显示的名字，留空将默认使用用户名">
-                                                                    <small>保存后，帖子列表、帖子页和回复区会优先显示这里的昵称。</small>
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-signature">个性签名</label>
                                                                     <textarea id="editor-signature" maxlength="200" placeholder="写一句简单的自我介绍、心情签名或常用说明"></textarea>
-                                                                    <small>如果你的论坛后端未开启签名字段，保存时会给出提示。</small>
                                                                 </div>
                                                             </div>
                                                             <div class="form-actions">
                                                                 <button type="submit" class="retro-btn" id="save-profile-btn">保存资料</button>
                                                                 <button type="button" class="retro-btn secondary" id="reset-profile-btn">恢复当前资料</button>
                                                             </div>
-                                                            <div class="form-hint">资料保存后会立即刷新页面中的昵称与签名显示。</div>
                                                         </form>
                                                     </div>
                                                 </section>
@@ -794,34 +829,13 @@
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
                                                         <h3>账号状态</h3>
-                                                        <span class="panel-subtitle">当前登录与激活情况</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="status-list">
                                                             <div class="status-item"><strong>登录状态</strong><span id="status-login">-</span></div>
                                                             <div class="status-item"><strong>账号激活</strong><span id="status-activation">-</span></div>
-                                                            <div class="status-item"><strong>注册时间</strong><span id="info-joined">-</span></div>
                                                             <div class="status-item"><strong>最后活跃</strong><span id="info-last-active">-</span></div>
                                                             <div class="status-item"><strong>论坛头衔</strong><span id="status-title">-</span></div>
-                                                            <div class="status-item"><strong>当前可见名称</strong><span id="status-visible-name">-</span></div>
-                                                        </div>
-                                                    </div>
-                                                </section>
-
-                                                <section class="profile-panel">
-                                                    <div class="panel-head">
-                                                        <h3>快捷入口</h3>
-                                                        <span class="panel-subtitle">常用个人中心操作</span>
-                                                    </div>
-                                                    <div class="panel-body">
-                                                        <div class="quick-links">
-                                                            <a href="new-post.html" class="retro-link-btn">发表新帖</a>
-                                                            <a href="index.html" class="retro-link-btn secondary">浏览论坛</a>
-                                                            <a href="message.html" class="retro-link-btn secondary">查看消息</a>
-                                                            <a href="rules.html" class="retro-link-btn secondary">论坛规则</a>
-                                                        </div>
-                                                        <div class="form-hint" style="margin-top: 12px;">
-                                                            资料页会实时读取你的论坛数据；如果刚修改过昵称或头像，刷新后仍未变化，可以稍等片刻再查看。
                                                         </div>
                                                     </div>
                                                 </section>
@@ -829,7 +843,6 @@
                                                 <section class="profile-panel">
                                                     <div class="panel-head">
                                                         <h3>账号安全</h3>
-                                                        <span class="panel-subtitle">常见账号保护与密码修改</span>
                                                     </div>
                                                     <div class="panel-body">
                                                         <div class="status-list" style="margin-bottom: 14px;">
@@ -837,27 +850,7 @@
                                                             <div class="status-item"><strong>绑定邮箱</strong><span id="security-email">-</span></div>
                                                             <div class="status-item"><strong>密码状态</strong><span>已设置登录密码</span></div>
                                                         </div>
-                                                        <form id="password-form" class="profile-form">
-                                                            <div class="form-grid">
-                                                                <div class="form-group full">
-                                                                    <label for="current-password">当前密码</label>
-                                                                    <input type="password" id="current-password" autocomplete="current-password" placeholder="请输入当前登录密码">
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label for="new-password">新密码</label>
-                                                                    <input type="password" id="new-password" autocomplete="new-password" placeholder="至少 8 位，建议包含字母和数字">
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label for="confirm-new-password">确认新密码</label>
-                                                                    <input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="请再次输入新的密码">
-                                                                </div>
-                                                            </div>
-                                                            <div class="form-actions">
-                                                                <button type="submit" class="retro-btn" id="save-password-btn">修改密码</button>
-                                                                <button type="button" class="retro-btn secondary" id="reset-password-btn">清空输入</button>
-                                                            </div>
-                                                            <div class="form-hint">如果论坛后端暂未开放密码修改接口，提交后会直接提示你当前账号暂无此权限。</div>
-                                                        </form>
+                                                        <button type="button" class="retro-btn" id="open-password-modal-btn">修改密码</button>
                                                     </div>
                                                 </section>
                                             </div>
@@ -866,7 +859,6 @@
                                         <section class="profile-panel" style="margin-bottom: 16px;">
                                             <div class="panel-head">
                                                 <h3>我的内容</h3>
-                                                <span class="panel-subtitle">切换查看我的主题与我的回复</span>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="tab-bar">
@@ -891,6 +883,37 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="password-modal" aria-hidden="true">
+                <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+                    <div class="modal-head">
+                        <h3 id="password-modal-title">修改密码</h3>
+                        <button type="button" class="modal-close" id="close-password-modal-btn" aria-label="关闭">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="password-form" class="profile-form">
+                            <div class="form-grid">
+                                <div class="form-group full">
+                                    <label for="current-password">当前密码</label>
+                                    <input type="password" id="current-password" autocomplete="current-password" placeholder="请输入当前登录密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">新密码</label>
+                                    <input type="password" id="new-password" autocomplete="new-password" placeholder="至少 8 位，建议包含字母和数字">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-new-password">确认新密码</label>
+                                    <input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="请再次输入新的密码">
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="retro-btn" id="save-password-btn">修改密码</button>
+                                <button type="button" class="retro-btn secondary" id="reset-password-btn">清空输入</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1049,17 +1072,12 @@
             document.getElementById('info-username').textContent = context.username;
             document.getElementById('info-displayname').textContent = context.displayName;
             document.getElementById('info-email').textContent = context.email;
-            document.getElementById('info-signature').textContent = context.signature && context.signature.trim()
-                ? context.signature.trim()
-                : '这个用户还没有填写个性签名。';
             document.getElementById('info-group').textContent = context.groupNames.join('，');
             document.getElementById('info-trust').textContent = context.trustTitle;
-            document.getElementById('info-joined').textContent = formatProfileDate(context.joinedAt);
             document.getElementById('info-last-active').textContent = formatProfileDate(context.lastActiveAt);
             document.getElementById('status-login').textContent = '已登录';
             document.getElementById('status-activation').textContent = context.isActivated ? '已激活' : '待激活';
             document.getElementById('status-title').textContent = context.title;
-            document.getElementById('status-visible-name').textContent = context.displayName;
 
             const tags = [
                 '<span class="status-tag ok">当前已登录</span>',
@@ -1085,8 +1103,8 @@
         }
 
         function renderProfileEditor(context) {
-            document.getElementById('editor-username').value = context.username;
-            document.getElementById('editor-email').value = context.email;
+            document.getElementById('editor-username').textContent = context.username;
+            document.getElementById('editor-email').textContent = context.email;
             document.getElementById('editor-nickname').value = context.rawNickname;
             document.getElementById('editor-signature').value = context.signature;
             document.getElementById('security-username').textContent = context.username;
@@ -1182,11 +1200,13 @@
             const logoutBtn = document.getElementById('logout-btn');
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
-            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
             const profileForm = document.getElementById('profile-form');
             const resetProfileBtn = document.getElementById('reset-profile-btn');
             const passwordForm = document.getElementById('password-form');
             const resetPasswordBtn = document.getElementById('reset-password-btn');
+            const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
+            const closePasswordModalBtn = document.getElementById('close-password-modal-btn');
+            const passwordModal = document.getElementById('password-modal');
             const tabDiscussions = document.getElementById('tab-discussions');
             const tabComments = document.getElementById('tab-comments');
             const activityPrevBtn = document.getElementById('activity-prev-btn');
@@ -1200,7 +1220,7 @@
                     localStorage.removeItem('flarumUserId');
                     localStorage.removeItem('flarumUsername');
                 }
-                window.location.href = 'index.html';
+                window.location.href = '/';
             };
 
             avatarTrigger.onclick = function() {
@@ -1212,10 +1232,6 @@
                     event.preventDefault();
                     avatarInput.click();
                 }
-            };
-
-            uploadAvatarBtn.onclick = function() {
-                avatarInput.click();
             };
 
             avatarInput.onchange = function() {
@@ -1233,6 +1249,14 @@
             };
 
             resetPasswordBtn.onclick = resetPasswordForm;
+            openPasswordModalBtn.onclick = openPasswordModal;
+            closePasswordModalBtn.onclick = closePasswordModal;
+
+            passwordModal.onclick = function(event) {
+                if (event.target === passwordModal) {
+                    closePasswordModal();
+                }
+            };
 
             tabDiscussions.onclick = function() {
                 switchActivityTab('discussions');
@@ -1330,7 +1354,8 @@
                 return;
             }
 
-            const nicknameChanged = effectiveNickname !== (currentProfileContext.rawNickname || currentProfileContext.username);
+            const previousEffectiveNickname = currentProfileContext.rawNickname || currentProfileContext.username;
+            const nicknameChanged = effectiveNickname !== previousEffectiveNickname;
             const signatureChanged = normalizedSignature !== (currentProfileContext.signature || '');
 
             if (!nicknameChanged && !signatureChanged) {
@@ -1341,36 +1366,50 @@
             saveBtn.disabled = true;
             saveBtn.textContent = '保存中...';
 
-            let nicknameSaved = false;
-            let signatureSaved = false;
-
             try {
+                const attributesToUpdate = {};
                 if (nicknameChanged) {
-                    await updateUserAttributes(userId, { nickname: effectiveNickname });
-                    nicknameSaved = true;
+                    attributesToUpdate.nickname = effectiveNickname;
                 }
-
                 if (signatureChanged) {
-                    await updateUserAttributes(userId, { signature: normalizedSignature });
-                    signatureSaved = true;
+                    attributesToUpdate.signature = normalizedSignature;
                 }
 
-                localStorage.setItem('flarumUsername', effectiveNickname);
+                await updateUserAttributes(userId, attributesToUpdate);
+
+                const refreshedUserData = await fetchUserData(userId);
+                const refreshedContext = buildProfileContext(refreshedUserData);
+                const refreshedEffectiveNickname = refreshedContext.rawNickname || refreshedContext.username;
+                const nicknameApplied = !nicknameChanged || refreshedEffectiveNickname === effectiveNickname;
+                const signatureApplied = !signatureChanged || (refreshedContext.signature || '') === normalizedSignature;
+
+                if (!nicknameApplied && !signatureApplied) {
+                    throw new Error('资料未实际保存成功');
+                }
+
+                localStorage.setItem('flarumUsername', refreshedContext.displayName);
                 window.dispatchEvent(new Event('flarum-auth-changed'));
 
-                const successText = nicknameChanged && signatureChanged
-                    ? '昵称和个性签名已保存。'
-                    : (nicknameChanged ? '昵称已保存。' : '个性签名已保存。');
-                pendingProfileMessage = { message: successText, type: 'success' };
+                let successText = '';
+                if (nicknameApplied && signatureApplied) {
+                    successText = nicknameChanged && signatureChanged
+                        ? '昵称和个性签名已保存。'
+                        : (nicknameChanged ? '昵称已保存。' : '个性签名已保存。');
+                } else if (nicknameApplied) {
+                    successText = '昵称已保存，但个性签名暂未生效，可能是论坛后端暂未开启该字段。';
+                } else {
+                    successText = '个性签名已保存，但昵称暂未生效，请稍后重试。';
+                }
+
+                pendingProfileMessage = { message: successText, type: nicknameApplied && signatureApplied ? 'success' : 'error' };
                 await initProfilePage();
             } catch (error) {
                 console.error('保存个人资料失败:', error);
                 let message = typeof getFriendlyErrorMessage === 'function'
                     ? getFriendlyErrorMessage(error, 'profile')
                     : '个人资料保存失败，请稍后再试。';
-
-                if ((nicknameSaved && !signatureSaved) || (!nicknameSaved && signatureSaved)) {
-                    message = '部分资料已保存，但有一项更新失败。请刷新页面确认结果后重试。';
+                if (/资料未实际保存成功/.test(String(error?.message || ''))) {
+                    message = '资料提交成功了，但后端没有实际保存这次修改，请稍后重试或联系网管检查对应字段是否已开启。';
                 }
 
                 showPageMessage(message, 'error');
@@ -1445,6 +1484,7 @@
                     currentPassword
                 });
                 resetPasswordForm();
+                closePasswordModal();
                 showPageMessage('密码已提交修改，请使用新密码重新登录时注意区分大小写。', 'success');
             } catch (error) {
                 console.error('修改密码失败:', error);
@@ -1506,6 +1546,23 @@
             document.getElementById('confirm-new-password').value = '';
         }
 
+        function openPasswordModal() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            setTimeout(() => {
+                const currentPasswordInput = document.getElementById('current-password');
+                if (currentPasswordInput) currentPasswordInput.focus();
+            }, 0);
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            resetPasswordForm();
+        }
+
         function maskEmail(email) {
             const raw = String(email || '').trim();
             if (!raw || raw === '-') return '-';
@@ -1546,13 +1603,10 @@
             const userId = localStorage.getItem('flarumUserId');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
             const avatarContainer = document.getElementById('avatar-trigger');
-            const uploadBtn = document.getElementById('upload-avatar-btn');
 
             try {
                 avatarContainer.style.opacity = '0.6';
                 avatarContainer.style.cursor = 'wait';
-                uploadBtn.disabled = true;
-                uploadBtn.textContent = '上传中...';
 
                 const formData = new FormData();
                 formData.append('avatar', file);
@@ -1590,8 +1644,6 @@
             } finally {
                 avatarContainer.style.opacity = '1';
                 avatarContainer.style.cursor = 'pointer';
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = '上传头像';
                 input.value = '';
             }
         }
