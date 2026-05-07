@@ -706,6 +706,403 @@
                 height: 144px;
             }
         }
+
+        .profile-page {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            min-height: 0;
+        }
+
+        .profile-breadcrumb {
+            margin-bottom: 16px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .profile-breadcrumb a {
+            color: #0066cc;
+        }
+
+        .profile-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .profile-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 0 16px;
+            margin-bottom: 16px;
+            border: 0;
+            border-bottom: 1px solid #eee;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .avatar-card {
+            padding: 0;
+            text-align: left;
+            flex: 0 0 auto;
+        }
+
+        .avatar-container {
+            width: 72px;
+            height: 72px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            box-shadow: none;
+        }
+
+        .avatar-placeholder {
+            background: #f5f5f5 url('images/用户头像.png') no-repeat center center;
+            background-size: cover;
+        }
+
+        .avatar-upload-overlay {
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 12px;
+            letter-spacing: 0;
+        }
+
+        .profile-side-note {
+            color: #888;
+        }
+
+        .profile-name-row h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .profile-subtitle {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .group-badge {
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            color: #333;
+            font-weight: normal;
+        }
+
+        .group-badge.admin {
+            background: #fff0f0;
+            border-color: #f2bcbc;
+            color: #8a2f2f;
+        }
+
+        .group-badge.mod {
+            background: #eef5ff;
+            border-color: #b9d4ff;
+            color: #2c5aa0;
+        }
+
+        .profile-meta-chips {
+            gap: 10px 16px;
+        }
+
+        .meta-chip {
+            min-height: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .status-tag {
+            min-height: 0;
+            padding: 3px 10px;
+            border: 1px solid #eee;
+            background: #fff;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-tag.ok {
+            border-color: #cfe8c2;
+            background: #eef8e2;
+            color: #45622f;
+        }
+
+        .status-tag.warn {
+            border-color: #ffe2b6;
+            background: #fff6e3;
+            color: #8a5a13;
+        }
+
+        .profile-signature {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-left: 0;
+            background: #fcfcfc;
+            color: #333;
+            min-height: 0;
+        }
+
+        .profile-stats {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            padding: 12px;
+            border: 1px solid #eee;
+            background: #fff;
+            box-shadow: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .stat-number {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .profile-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .profile-panel {
+            border: 1px solid #eee;
+            background: #fff;
+            box-shadow: none;
+        }
+
+        .panel-head {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            border-left: 5px solid #0066cc;
+            background: #eef5ff;
+        }
+
+        .panel-head h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0;
+        }
+
+        .panel-body {
+            padding: 10px 12px;
+        }
+
+        .info-table {
+            gap: 0;
+        }
+
+        .info-row {
+            padding: 8px 0;
+            background: transparent;
+            border: 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .info-row:last-child {
+            border-bottom: 0;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .status-list {
+            gap: 0;
+        }
+
+        .status-item {
+            padding: 8px 0;
+            border: 0;
+            border-bottom: 1px dashed #eee;
+            background: transparent;
+            color: #666;
+        }
+
+        .status-item:last-child {
+            border-bottom: 0;
+        }
+
+        .status-item strong {
+            color: #333;
+        }
+
+        .profile-form input,
+        .profile-form textarea {
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+        }
+
+        .profile-form input[readonly] {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .form-group label {
+            color: #333;
+        }
+
+        .form-group small {
+            color: #888;
+        }
+
+        .form-static {
+            border: 1px solid #eee;
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .retro-btn,
+        .retro-link-btn {
+            min-height: 34px;
+            border: 1px solid #0066cc;
+            background: #0066cc;
+            color: #fff;
+            box-shadow: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .retro-btn:hover,
+        .retro-link-btn:hover {
+            background: #0052a3;
+        }
+
+        .retro-btn.secondary,
+        .retro-link-btn.secondary {
+            border-color: #ddd;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .retro-btn.secondary:hover,
+        .retro-link-btn.secondary:hover {
+            background: #eee;
+        }
+
+        .tab-btn {
+            min-height: 34px;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .tab-btn.active {
+            border-color: #0066cc;
+            background: #0066cc;
+            color: #fff;
+        }
+
+        .content-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .content-title {
+            color: #0066cc;
+        }
+
+        .content-title:hover {
+            text-decoration: underline;
+        }
+
+        .content-preview {
+            color: #333;
+        }
+
+        .content-meta {
+            color: #888;
+        }
+
+        .pagination-bar {
+            border-top: 1px solid #eee;
+        }
+
+        .pagination-info {
+            color: #888;
+        }
+
+        .modal-card {
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+
+        .modal-head {
+            border-bottom: 1px solid #eee;
+            background: #eef5ff;
+        }
+
+        .modal-head h3 {
+            color: #333;
+        }
+
+        .modal-close {
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .toast {
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+        }
+
+        .toast.success {
+            border-color: #cfe8c2;
+            background: #eef8e2;
+            color: #45622f;
+        }
+
+        .toast.error {
+            border-color: #f2bcbc;
+            background: #fff0f0;
+            color: #8a2f2f;
+        }
+
+        .toast-close {
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        @media (max-width: 1080px) {
+            .profile-banner {
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .profile-banner {
+                align-items: flex-start;
+            }
+
+            .avatar-container {
+                width: 72px;
+                height: 72px;
+            }
+        }
     </style>
 </head>
 <body>
