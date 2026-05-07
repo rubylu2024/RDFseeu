@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索 - 红蜻蜓论坛</title>
+    <link rel="stylesheet" href="styles.css?v=20260507-8">
+    <style>
+        .page-shell {
+            width: 100%;
+        }
+
+        .search-card {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 14px;
+        }
+
+        .search-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 12px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .search-meta {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .search-section {
+            margin-top: 14px;
+        }
+
+        .search-section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #cc0000;
+            padding-left: 15px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .search-section-title::before {
+            content: ">";
+            position: absolute;
+            left: 2px;
+            color: #cc0000;
+        }
+
+        .search-section-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .search-section-toolbar .info {
+            font-size: 12px;
+            color: #888;
+            margin-right: auto;
+        }
+
+        .search-section-toolbar button {
+            padding: 5px 10px;
+            border: 1px solid #6F6F6F;
+            background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .search-section-toolbar button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .search-error {
+            padding: 12px;
+            border: 1px dashed #cc0000;
+            background: #fff7f7;
+            color: #cc0000;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="forum-frame-outer">
+        <div class="forum-content">
+            <div class="forum-frame">
+                <div class="top-nav">
+                    <div class="top-nav-container">
+                        <div class="logo">
+                            <div class="logo-image"></div>
+                            <a href="index.html">红蜻蜓论坛</a>
+                            <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
+                        </div>
+                        <div class="top-links">
+                            <a href="index.html">论坛</a>
+                            <a href="#">博客</a>
+                            <a href="#">问答</a>
+                            <a href="https://www.4399.com" target="_blank">游戏厅</a>
+                            <a href="#">品牌</a>
+                            <a href="#">更多</a>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" placeholder="搜帖、找人、搜版块">
+                            <button>搜索</button>
+                        </div>
+                        <div class="user-links">
+                            <button id="audio-toggle" class="audio-toggle">
+                                <span class="audio-icon">♪</span>
+                            </button>
+                            <a href="#">服务</a>
+                            <div id="user-links-container">
+                                <a href="login.html" id="login-btn">登录</a>
+                                <a href="register.html" id="register-btn">注册</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-container">
+                    <div class="right-content-area page-shell">
+                        <div class="content-wrapper">
+                            <div class="main-content" style="width:100%; padding: 20px;">
+                                <div class="search-card">
+                                    <div class="search-head">
+                                        <div class="search-title">&gt; 搜索结果</div>
+                                    </div>
+                                    <div class="search-meta" id="search-meta">请输入关键词后搜索</div>
+                                    <div class="search-error" id="search-error"></div>
+
+                                    <div class="search-section" id="search-discussions">
+                                        <div class="search-section-title">相关帖子（标题）</div>
+                                        <div class="search-section-toolbar">
+                                            <div class="info" id="search-discussions-info">每页最多 15 条</div>
+                                            <button type="button" id="search-discussions-prev">上一页</button>
+                                            <button type="button" id="search-discussions-next">下一页</button>
+                                        </div>
+                                        <div id="search-discussions-wrap">
+                                            <div style="padding: 12px; color: #666;">-</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="search-section" id="search-posts">
+                                        <div class="search-section-title">相关楼层（内容）</div>
+                                        <div class="search-section-toolbar">
+                                            <div class="info" id="search-posts-info">每页最多 15 条</div>
+                                            <button type="button" id="search-posts-prev">上一页</button>
+                                            <button type="button" id="search-posts-next">下一页</button>
+                                        </div>
+                                        <div id="search-posts-wrap">
+                                            <div style="padding: 12px; color: #666;">-</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="search-section" id="search-users">
+                                        <div class="search-section-title">相关用户（用户名/昵称）</div>
+                                        <div class="search-section-toolbar">
+                                            <div class="info" id="search-users-info">每页最多 15 条</div>
+                                            <button type="button" id="search-users-prev">上一页</button>
+                                            <button type="button" id="search-users-next">下一页</button>
+                                        </div>
+                                        <div id="search-users-wrap">
+                                            <div style="padding: 12px; color: #666;">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-container">
+                    <span>我的红蜻蜓</span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260507-8"></script>
+</body>
+</html>

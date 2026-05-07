@@ -571,6 +571,50 @@ body::before {
     text-decoration: underline;
 }
 
+.post-actions-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.post-actions-row .all-posts-entry {
+    margin-bottom: 0;
+}
+
+.post-actions-row .post-button-box {
+    margin-left: auto;
+    margin-bottom: 0;
+}
+
+.all-posts-entry {
+    margin-bottom: 10px;
+}
+
+.all-posts-entry-title {
+    display: inline-block;
+    font-size: 18px;
+    font-weight: bold;
+    color: #cc0000;
+    margin: 0;
+    padding-bottom: 4px;
+    padding-left: 15px;
+    position: relative;
+    text-decoration: none;
+}
+
+.all-posts-entry-title::before {
+    content: ">";
+    position: absolute;
+    left: 2px;
+    color: #cc0000;
+}
+
+.all-posts-entry-title:hover {
+    text-decoration: underline;
+}
+
 .hot-topics {
     margin-top: 20px;
     margin-bottom: 20px;
