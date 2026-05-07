@@ -1019,7 +1019,9 @@
                 ? getPreferredDisplayName(attributes, username)
                 : (attributes.nickname || attributes.displayName || username);
             const rawNickname = typeof attributes.nickname === 'string' ? attributes.nickname : '';
-            const signature = typeof attributes.signature === 'string' ? attributes.signature : '';
+            const signature = typeof attributes.bio === 'string'
+                ? attributes.bio
+                : (typeof attributes.signature === 'string' ? attributes.signature : '');
             const trustLevel = Number(attributes.trustLevel || 0);
             const email = attributes.email || '-';
             const isActivated = attributes.isEmailConfirmed !== false;
@@ -1372,7 +1374,7 @@
                     attributesToUpdate.nickname = effectiveNickname;
                 }
                 if (signatureChanged) {
-                    attributesToUpdate.signature = normalizedSignature;
+                    attributesToUpdate.bio = normalizedSignature;
                 }
 
                 await updateUserAttributes(userId, attributesToUpdate);
