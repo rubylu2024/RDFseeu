@@ -43,27 +43,18 @@
         }
 
         .avatar-card {
-            padding: 16px;
-            border: 1px solid #8f6a43;
-            background: rgba(255, 252, 244, 0.92);
+            padding: 8px 0 0;
+            background: transparent;
             text-align: center;
         }
 
-        .avatar-shell {
+        .avatar-container {
             width: 168px;
             height: 168px;
-            margin: 0 auto 14px;
-            padding: 8px;
+            margin: 0 auto 10px;
             border: 1px solid #8f6a43;
-            background: linear-gradient(to bottom, #f7efdf, #ebdcc0);
-            box-shadow: inset 0 0 0 1px #fff7ea;
-        }
-
-        .avatar-container {
-            width: 100%;
-            height: 100%;
-            border: 1px solid #bca27f;
-            background: #fffdf7;
+            background: linear-gradient(to bottom, #fffdf7, #f3e7cf);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
             position: relative;
             overflow: hidden;
             cursor: pointer;
@@ -247,7 +238,7 @@
 
         .profile-stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
             margin-bottom: 16px;
         }
@@ -657,7 +648,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .avatar-shell {
+            .avatar-container {
                 width: 144px;
                 height: 144px;
             }
@@ -710,7 +701,7 @@
                             <div class="main-content" style="width: 100%; min-height: 640px;">
                                 <div class="profile-page">
                                     <div class="profile-breadcrumb">
-                                        <a href="index.html">论坛首页</a> &gt; <span>个人资料</span>
+                                        <a href="/">论坛首页</a> &gt; <span>个人资料</span>
                                     </div>
 
                                     <div id="page-message" class="profile-message"></div>
@@ -722,12 +713,11 @@
                                     <div id="profile-content" style="display: none;">
                                         <div class="profile-banner">
                                             <div class="avatar-card">
-                                                <div class="avatar-shell">
                                                     <div class="avatar-container" id="avatar-trigger" role="button" tabindex="0" aria-label="上传头像">
                                                         <div id="user-avatar" class="avatar-placeholder"></div>
                                                         <div class="avatar-upload-overlay">点击更换头像</div>
                                                     </div>
-                                                </div>
+                                                    <div class="profile-side-note">头像文件大小不能超过 2MB</div>
                                                 <input type="file" id="avatar-upload-input" accept="image/*">
                                             </div>
 
@@ -748,11 +738,6 @@
 
                                                 <div id="user-signature" class="profile-signature">这个用户很懒，还没有留下个性签名。</div>
 
-                                                <div class="profile-action-row">
-                                                    <a href="new-post.html" class="retro-link-btn">去发新帖</a>
-                                                    <a href="index.html" class="retro-link-btn secondary">返回首页</a>
-                                                    <button type="button" class="retro-btn secondary" id="logout-btn">退出登录</button>
-                                                </div>
                                             </div>
                                         </div>
 
@@ -766,12 +751,8 @@
                                                 <div class="stat-number" id="stat-comments">0</div>
                                             </div>
                                             <div class="stat-card">
-                                                <div class="stat-label">获赞数</div>
-                                                <div class="stat-number" id="stat-likes">0</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-label">声望</div>
-                                                <div class="stat-number" id="stat-reputation">0</div>
+                                                <div class="stat-label">积分</div>
+                                                <div class="stat-number" id="stat-points">0</div>
                                             </div>
                                         </div>
 
@@ -809,7 +790,7 @@
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-nickname">昵称</label>
-                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="帖子里显示的名字，留空将默认使用用户名">
+                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="请输入新的昵称（留空则使用用户名）">
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-signature">个性签名</label>
@@ -818,7 +799,6 @@
                                                             </div>
                                                             <div class="form-actions">
                                                                 <button type="submit" class="retro-btn" id="save-profile-btn">保存资料</button>
-                                                                <button type="button" class="retro-btn secondary" id="reset-profile-btn">恢复当前资料</button>
                                                             </div>
                                                         </form>
                                                     </div>
@@ -1022,6 +1002,7 @@
             const signature = typeof attributes.bio === 'string'
                 ? attributes.bio
                 : (typeof attributes.signature === 'string' ? attributes.signature : '');
+            const points = getProfilePoints(attributes);
             const trustLevel = Number(attributes.trustLevel || 0);
             const email = attributes.email || '-';
             const isActivated = attributes.isEmailConfirmed !== false;
@@ -1051,6 +1032,7 @@
                 rawNickname,
                 email,
                 signature,
+                points,
                 trustLevel,
                 trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '新手上路',
                 title,
@@ -1116,8 +1098,25 @@
         function renderUserStats(stats) {
             document.getElementById('stat-posts').textContent = stats.posts || 0;
             document.getElementById('stat-comments').textContent = stats.comments || 0;
-            document.getElementById('stat-likes').textContent = stats.likes || 0;
-            document.getElementById('stat-reputation').textContent = stats.reputation || 0;
+            document.getElementById('stat-points').textContent = (currentProfileContext && currentProfileContext.points != null) ? currentProfileContext.points : 0;
+        }
+
+        function getProfilePoints(attributes) {
+            const candidates = [
+                attributes?.points,
+                attributes?.money,
+                attributes?.moneyAmount,
+                attributes?.money_balance,
+                attributes?.balance
+            ];
+            for (const value of candidates) {
+                if (typeof value === 'number' && Number.isFinite(value)) return value;
+                if (typeof value === 'string' && value.trim()) {
+                    const parsed = Number(value);
+                    if (Number.isFinite(parsed)) return parsed;
+                }
+            }
+            return 0;
         }
 
         function renderActivitySection() {
@@ -1203,7 +1202,6 @@
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
             const profileForm = document.getElementById('profile-form');
-            const resetProfileBtn = document.getElementById('reset-profile-btn');
             const passwordForm = document.getElementById('password-form');
             const resetPasswordBtn = document.getElementById('reset-password-btn');
             const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
@@ -1214,16 +1212,18 @@
             const activityPrevBtn = document.getElementById('activity-prev-btn');
             const activityNextBtn = document.getElementById('activity-next-btn');
 
-            logoutBtn.onclick = function() {
-                if (typeof clearFlarumToken === 'function') {
-                    clearFlarumToken();
-                } else {
-                    localStorage.removeItem('flarumToken');
-                    localStorage.removeItem('flarumUserId');
-                    localStorage.removeItem('flarumUsername');
-                }
-                window.location.href = '/';
-            };
+            if (logoutBtn) {
+                logoutBtn.onclick = function() {
+                    if (typeof clearFlarumToken === 'function') {
+                        clearFlarumToken();
+                    } else {
+                        localStorage.removeItem('flarumToken');
+                        localStorage.removeItem('flarumUserId');
+                        localStorage.removeItem('flarumUsername');
+                    }
+                    window.location.href = '/';
+                };
+            }
 
             avatarTrigger.onclick = function() {
                 avatarInput.click();
@@ -1242,13 +1242,6 @@
 
             profileForm.onsubmit = handleProfileSave;
             passwordForm.onsubmit = handlePasswordSave;
-
-            resetProfileBtn.onclick = function() {
-                if (currentProfileContext) {
-                    renderProfileEditor(currentProfileContext);
-                    showPageMessage('已恢复为当前保存的资料内容。', 'success');
-                }
-            };
 
             resetPasswordBtn.onclick = resetPasswordForm;
             openPasswordModalBtn.onclick = openPasswordModal;
@@ -1286,20 +1279,17 @@
         }
 
         async function fetchUserStats(userId) {
-            const stats = { posts: 0, comments: 0, likes: 0, reputation: 0 };
+            const stats = { posts: 0, comments: 0 };
 
             try {
-                const [discussionsData, postsData, userData] = await Promise.all([
+                const [discussionsData, postsData] = await Promise.all([
                     flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=50`, { auth: true }),
-                    flarumRequest(`/posts?filter[author]=${userId}&page[limit]=50`, { auth: true }),
-                    flarumRequest(`/users/${userId}`, { auth: true })
+                    flarumRequest(`/posts?filter[author]=${userId}&page[limit]=50`, { auth: true })
                 ]);
 
                 stats.posts = discussionsData?.data?.length || 0;
                 const totalPosts = postsData?.data?.length || 0;
                 stats.comments = Math.max(0, totalPosts - stats.posts);
-                stats.reputation = userData?.data?.attributes?.reputation || 0;
-                stats.likes = userData?.data?.attributes?.likesCount || 0;
             } catch (error) {
                 console.error('获取用户统计失败:', error);
             }
@@ -1652,6 +1642,4 @@
     </script>
 </body>
 </html>
-
-
 

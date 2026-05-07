@@ -1,4 +1,4 @@
-// 页面加载完成后执行
+﻿﻿// 页面加载完成后执行
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
@@ -62,6 +62,25 @@ function getPreferredDisplayName(userAttributes, fallback = '匿名用户') {
     ].find((value) => typeof value === 'string' && value.trim());
 
     return preferredName ? preferredName.trim() : fallback;
+}
+
+function getUserPoints(userAttributes) {
+    const candidates = [
+        userAttributes?.points,
+        userAttributes?.money,
+        userAttributes?.moneyAmount,
+        userAttributes?.money_balance,
+        userAttributes?.balance
+    ];
+
+    for (const value of candidates) {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string' && value.trim()) {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+    }
+    return null;
 }
 
 function getFriendlyErrorMessage(error, context = 'generic') {
@@ -456,6 +475,7 @@ function flarumDiscussionToPostData(apiJson) {
         title: discussion.attributes?.title || '',
         author: getPreferredDisplayName(firstUser?.attributes),
         authorLevel: 'Lv.1 新手上路',
+        authorPoints: getUserPoints(firstUser?.attributes),
         authorAvatar: getUserAvatarUrl(firstUser),
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
         viewCount: typeof viewCount === 'number' ? viewCount : (typeof commentCount === 'number' ? commentCount : 0),
@@ -478,6 +498,7 @@ function flarumDiscussionToPostData(apiJson) {
                     userId: userId ? Number(userId) : null,
                     author: getPreferredDisplayName(user?.attributes),
                     authorLevel: 'Lv.1 新手上路',
+                    authorPoints: getUserPoints(user?.attributes),
                     authorAvatar: getUserAvatarUrl(user),
                     time: formatFlarumTime(p.attributes?.createdAt),
                     floor: typeof number === 'number' ? number : 0,
@@ -1188,6 +1209,13 @@ window.addEventListener('DOMContentLoaded', function() {
     // 处理所有 href="#" 的链接
     document.addEventListener('click', (e) => {
         const target = e.target.closest('a');
+
+        if (target && String(target.textContent || '').trim() === '服务') {
+            e.preventDefault();
+            alert('你还想要啥服务？');
+            return;
+        }
+
         if (target && target.getAttribute('href') === '#') {
             // 排除掉已经有特定功能的链接（如回复、取消回复、退出登录等）
             if (target.classList.contains('reply-link') || 
@@ -1596,7 +1624,7 @@ function renderForumThread(postData) {
                             </div>
                             <div>
                                 <div class="poster-name ${post.isOp ? 'op' : ''}">${post.author}${post.isOp ? '<span class="op-badge">楼主</span>' : ''}</div>
-                                <div style="font-size: 11px; color: #999;">${post.authorLevel}</div>
+                                <div style="font-size: 11px; color: #999;">${post.authorLevel}${post.authorPoints != null ? ` · 积分 ${post.authorPoints}` : ''}</div>
                             </div>
                         </div>
                         <div class="post-time">${post.time}</div>
@@ -2247,6 +2275,7 @@ function insertNewCommentToPage(comment, postData) {
         userId: null,
         author: postData.author,
         authorLevel: postData.authorLevel,
+        authorPoints: postData.authorPoints,
         authorAvatar: postData.authorAvatar,
         time: postData.publishTime,
         floor: 1,
@@ -2298,7 +2327,7 @@ function insertNewCommentToPage(comment, postData) {
                     <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
                     <div class="author-info">
                         <div class="author-name">${comment.author}${isOpReply ? '<span class="op-badge">楼主</span>' : ''}</div>
-                        <div class="author-level">${comment.authorLevel}</div>
+                        <div class="author-level">${comment.authorLevel}${comment.authorPoints != null ? ` · 积分 ${comment.authorPoints}` : ''}</div>
                     </div>
                 </div>
                 <div class="post-meta">
@@ -2351,7 +2380,6 @@ function updateUserLinks() {
     
     if (userLoggedIn) {
         userLinksContainer.innerHTML = `
-            <a href="profile.html">个人资料</a>
             <a href="#" id="nav-logout-btn">退出登录</a>
         `;
         
@@ -2371,9 +2399,52 @@ function updateUserLinks() {
     }
 }
 
+function bindMyDragonflyEntry() {
+    const containers = document.querySelectorAll('.status-container');
+    if (!containers || containers.length === 0) return;
+
+    containers.forEach((container) => {
+        const children = Array.from(container.children || []);
+        const entry = children.find((el) => {
+            const text = String(el?.textContent || '').trim();
+            return text === '我的红蜻蜓';
+        });
+
+        if (!entry) return;
+        if (entry.dataset && entry.dataset.boundMyDragonfly === '1') return;
+
+        entry.style.cursor = 'pointer';
+        entry.setAttribute('role', 'button');
+        entry.setAttribute('tabindex', '0');
+
+        const navigate = () => {
+            const isLoggedIn = !!getFlarumToken();
+            if (isLoggedIn) {
+                window.location.href = 'profile.html';
+            } else {
+                window.location.href = `login.html?redirect=${encodeURIComponent('profile.html')}`;
+            }
+        };
+
+        entry.addEventListener('click', navigate);
+        entry.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigate();
+            }
+        });
+
+        if (entry.dataset) entry.dataset.boundMyDragonfly = '1';
+    });
+}
+
 function refreshAuthDependentUI() {
     try {
         updateUserLinks();
+    } catch (_) {}
+
+    try {
+        bindMyDragonflyEntry();
     } catch (_) {}
 
     if (typeof updateReplyFormForLoginStatus === 'function') {
