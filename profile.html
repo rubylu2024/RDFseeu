@@ -1728,8 +1728,13 @@
                 ]);
 
                 stats.posts = discussionsData?.data?.length || 0;
-                const totalPosts = postsData?.data?.length || 0;
-                stats.comments = Math.max(0, totalPosts - stats.posts);
+                const posts = Array.isArray(postsData?.data) ? postsData.data : [];
+                const ownedPosts = posts.filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''));
+                const replyCount = ownedPosts.filter((post) => {
+                    const floor = Number(post?.attributes?.number);
+                    return Number.isFinite(floor) && floor > 1;
+                }).length;
+                stats.comments = replyCount;
             } catch (error) {
                 console.error('获取用户统计失败:', error);
             }
@@ -1749,9 +1754,14 @@
 
         async function fetchUserComments(userId) {
             try {
-                const data = await flarumRequest(`/posts?filter[user]=${encodeURIComponent(String(userId))}&page[limit]=30&include=discussion`, { auth: true });
+                const data = await flarumRequest(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(String(userId))}&page[limit]=30&include=discussion`, { auth: true });
                 const posts = Array.isArray(data?.data) ? data.data : [];
-                const comments = posts.filter((post) => Number(post?.attributes?.number) !== 1);
+                const comments = posts.filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''))
+                    .filter((post) => {
+                        const floor = Number(post?.attributes?.number);
+                        return Number.isFinite(floor) && floor > 1;
+                    })
+                    .sort((a, b) => String(b?.attributes?.createdAt || '').localeCompare(String(a?.attributes?.createdAt || '')));
                 comments.included = data?.included || [];
                 return comments;
             } catch (error) {

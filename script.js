@@ -879,21 +879,32 @@ async function flarumLoadUserRecentPosts({ userId, username, limit }) {
     const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(20, Math.floor(limit)) : 10;
     const id = userId == null ? '' : String(userId);
     const name = typeof username === 'string' ? username.trim() : '';
+    const fetchLimit = Math.min(50, Math.max(safeLimit, 1) * 5);
 
     const queries = [];
     if (id) {
-        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[user]=${encodeURIComponent(id)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[user]=${encodeURIComponent(id)}&include=discussion`);
     }
     if (name) {
-        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[author]=${encodeURIComponent(name)}&include=discussion`);
-        queries.push(`/posts?sort=-createdAt&page[limit]=${safeLimit}&filter[user]=${encodeURIComponent(name)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[author]=${encodeURIComponent(name)}&include=discussion`);
+        queries.push(`/posts?sort=-createdAt&page[limit]=${fetchLimit}&filter[user]=${encodeURIComponent(name)}&include=discussion`);
     }
 
     let lastError = null;
     for (const q of queries) {
         try {
             const json = await flarumRequest(q, { auth: !!getFlarumToken() });
-            return { json, usedQuery: q };
+            const data = Array.isArray(json?.data) ? json.data : [];
+            const filteredById = id
+                ? data.filter((post) => String(post?.relationships?.user?.data?.id || '') === id)
+                : data;
+            const trimmed = filteredById.slice(0, safeLimit);
+
+            const normalizedJson = json && typeof json === 'object'
+                ? { ...json, data: trimmed }
+                : { data: trimmed };
+
+            return { json: normalizedJson, usedQuery: q };
         } catch (e) {
             lastError = e;
         }
@@ -2798,7 +2809,12 @@ async function renderPublicUserPage() {
 
         try {
             const { json: postsJson } = await flarumLoadUserRecentPosts({ userId, username, limit: 10 });
-            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => !isDeletedPostResource(p));
+            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => {
+                if (isDeletedPostResource(p)) return false;
+                if (String(p?.relationships?.user?.data?.id || '') !== String(userId || '')) return false;
+                const floor = Number(p?.attributes?.number);
+                return Number.isFinite(floor) && floor > 1;
+            });
             const included = postsJson?.included || [];
             replies = posts.map((p) => {
                 const discussionId = p.relationships?.discussion?.data?.id;
