@@ -1,4 +1,4 @@
-﻿﻿﻿// 页面加载完成后执行
+﻿// 页面加载完成后执行
 // 页面加载完成后执行已经包含在下方的 window.addEventListener('DOMContentLoaded', ...)
 
 const FLARUM_BASE_URL = '';
@@ -354,6 +354,19 @@ function formatViewCount(viewCount) {
     return '-';
 }
 
+function getDiscussionViewCount(attributes) {
+    const a = attributes || {};
+    const candidates = [a.view_count, a.viewCount];
+    for (const v of candidates) {
+        if (typeof v === 'number' && isFinite(v) && v >= 0) return v;
+        if (typeof v === 'string' && v.trim().length > 0) {
+            const n = Number(v);
+            if (isFinite(n) && n >= 0) return n;
+        }
+    }
+    return null;
+}
+
 function escapeHtml(raw) {
     const s = typeof raw === 'string' ? raw : '';
     return s
@@ -496,7 +509,7 @@ function flarumDiscussionToPostData(apiJson) {
     const firstUserId = firstPost?.relationships?.user?.data?.id || discussion.relationships?.user?.data?.id;
     const firstUser = firstUserId ? pickIncluded(included, 'users', firstUserId) : null;
 
-    const viewCount = discussion.attributes?.viewCount;
+    const viewCount = getDiscussionViewCount(discussion.attributes);
 
     const postData = {
         id: Number(discussion.id),
@@ -507,7 +520,7 @@ function flarumDiscussionToPostData(apiJson) {
         authorPoints: getUserPoints(firstUser?.attributes),
         authorAvatar: getUserAvatarUrl(firstUser),
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
-        viewCount: typeof viewCount === 'number' ? viewCount : null,
+        viewCount,
         allowComments: true,
         content: firstPost?.attributes?.contentHtml || firstPost?.attributes?.content || '',
         comments: posts
@@ -597,13 +610,13 @@ async function flarumLoadDiscussionList() {
         return discussions.map((d) => {
             const userId = d.relationships?.user?.data?.id;
             const user = userId ? pickIncluded(included, 'users', userId) : null;
-            const viewCount = d.attributes?.viewCount;
+            const viewCount = getDiscussionViewCount(d.attributes);
             return {
                 id: Number(d.id),
                 title: d.attributes?.title || '',
                 author: getPreferredDisplayName(user?.attributes),
                 date: (d.attributes?.createdAt || '').slice(0, 10),
-                views: typeof viewCount === 'number' ? viewCount : null
+                views: viewCount
             };
         });
     } catch (error) {
@@ -651,6 +664,190 @@ async function flarumLoadRecentReplies() {
     } catch (error) {
         console.warn('获取最新回复失败:', error);
         return [];
+    }
+}
+
+async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limit }) {
+    const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(15, Math.floor(limit)) : 15;
+    const safeOffset = typeof offset === 'number' && isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
+    const field = sortField === 'views' ? 'views' : 'createdAt';
+    const order = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const buildSortCandidates = () => {
+        if (field === 'createdAt') {
+            return [order === 'desc' ? '-createdAt' : 'createdAt'];
+        }
+        return order === 'desc'
+            ? ['popular', '-view_count', '-viewCount']
+            : ['unpopular', 'view_count', 'viewCount'];
+    };
+
+    const baseQuery = `page[limit]=${safeLimit}&page[offset]=${safeOffset}&include=user`;
+
+    let lastError = null;
+    for (const sort of buildSortCandidates()) {
+        try {
+            const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&${baseQuery}`, { auth: false });
+            return { json, usedSort: sort, usedFallbackSort: false };
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    const fallbackSort = order === 'desc' ? '-createdAt' : 'createdAt';
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(fallbackSort)}&${baseQuery}`, { auth: false });
+    return { json, usedSort: fallbackSort, usedFallbackSort: field === 'views', fallbackError: lastError };
+}
+
+function parseOffsetFromPageLink(link) {
+    const raw = typeof link === 'string' ? link : '';
+    if (!raw) return null;
+    try {
+        const base = window.location.origin || 'http://localhost';
+        const u = new URL(raw, base);
+        const v = u.searchParams.get('page[offset]');
+        const n = v == null ? NaN : Number(v);
+        return Number.isFinite(n) && n >= 0 ? n : null;
+    } catch {
+        return null;
+    }
+}
+
+async function renderAllPostsPage() {
+    const wrap = document.getElementById('all-posts-table-wrap');
+    const meta = document.getElementById('all-posts-meta');
+    const errorBox = document.getElementById('all-posts-error');
+    const sortFieldEl = document.getElementById('all-posts-sort-field');
+    const sortOrderEl = document.getElementById('all-posts-sort-order');
+    const prevBtn = document.getElementById('all-posts-prev');
+    const nextBtn = document.getElementById('all-posts-next');
+
+    if (!wrap || !sortFieldEl || !sortOrderEl || !prevBtn || !nextBtn) return;
+
+    if (!isFlarumConfigured()) {
+        wrap.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">论坛后端未配置</div>';
+        return;
+    }
+
+    const state = window.allPostsState || {
+        sortField: 'createdAt',
+        sortOrder: 'desc',
+        offset: 0,
+        limit: 15,
+        nextOffset: null,
+        prevOffset: null
+    };
+    window.allPostsState = state;
+
+    if (typeof state.sortField === 'string') sortFieldEl.value = state.sortField;
+    if (typeof state.sortOrder === 'string') sortOrderEl.value = state.sortOrder;
+
+    const disableControls = (disabled) => {
+        prevBtn.disabled = disabled;
+        nextBtn.disabled = disabled;
+        sortFieldEl.disabled = disabled;
+        sortOrderEl.disabled = disabled;
+    };
+
+    disableControls(true);
+    if (errorBox) {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+    }
+    wrap.innerHTML = '<div style="padding: 20px; text-align: center;">加载中...</div>';
+    if (meta) meta.textContent = '每页最多 15 条';
+
+    try {
+        const { json, usedFallbackSort } = await flarumLoadAllDiscussionsPage({
+            sortField: state.sortField,
+            sortOrder: state.sortOrder,
+            offset: state.offset,
+            limit: state.limit
+        });
+
+        const discussions = Array.isArray(json?.data) ? json.data : [];
+        const included = json?.included || [];
+
+        state.prevOffset = parseOffsetFromPageLink(json?.links?.prev);
+        state.nextOffset = parseOffsetFromPageLink(json?.links?.next);
+
+        const rows = discussions.map((d) => {
+            const userId = d.relationships?.user?.data?.id;
+            const user = userId ? pickIncluded(included, 'users', userId) : null;
+            const title = d.attributes?.title || '';
+            const createdAt = d.attributes?.createdAt || '';
+            const commentCount = typeof d.attributes?.commentCount === 'number' ? d.attributes.commentCount : 0;
+            const viewCount = getDiscussionViewCount(d.attributes);
+            const author = getPreferredDisplayName(user?.attributes);
+            const authorHtml = buildUserLinkHtml(userId, author);
+
+            return `
+                <tr>
+                    <td style="width: 42%;"><a href="post.html?id=${encodeURIComponent(d.id)}">${escapeHtml(title || '无标题')}</a></td>
+                    <td style="width: 14%;">${authorHtml || ''}</td>
+                    <td style="width: 16%;">${escapeHtml(createdAt.slice(0, 16).replace('T', ' '))}</td>
+                    <td style="width: 14%;">${commentCount}</td>
+                    <td style="width: 14%;">${formatViewCount(viewCount)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        wrap.innerHTML = `
+            <table class="posts-table">
+                <thead>
+                    <tr>
+                        <th>标题</th>
+                        <th>作者</th>
+                        <th>发布时间</th>
+                        <th>回复</th>
+                        <th>浏览</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows || `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666;">暂无帖子</td></tr>`}
+                </tbody>
+            </table>
+        `;
+
+        const pageNumber = Math.floor(state.offset / state.limit) + 1;
+        if (meta) {
+            meta.textContent = usedFallbackSort && state.sortField === 'views'
+                ? `第 ${pageNumber} 页，每页最多 15 条（浏览量排序暂不可用，已按发布时间显示）`
+                : `第 ${pageNumber} 页，每页最多 15 条`;
+        }
+
+        prevBtn.disabled = state.prevOffset == null;
+        nextBtn.disabled = state.nextOffset == null;
+
+        sortFieldEl.onchange = () => {
+            state.sortField = sortFieldEl.value === 'views' ? 'views' : 'createdAt';
+            state.offset = 0;
+            renderAllPostsPage();
+        };
+        sortOrderEl.onchange = () => {
+            state.sortOrder = sortOrderEl.value === 'asc' ? 'asc' : 'desc';
+            state.offset = 0;
+            renderAllPostsPage();
+        };
+        prevBtn.onclick = () => {
+            if (state.prevOffset == null) return;
+            state.offset = state.prevOffset;
+            renderAllPostsPage();
+        };
+        nextBtn.onclick = () => {
+            if (state.nextOffset == null) return;
+            state.offset = state.nextOffset;
+            renderAllPostsPage();
+        };
+    } catch (error) {
+        const friendlyMessage = getFriendlyErrorMessage(error, '加载全部帖子');
+        if (errorBox) {
+            errorBox.textContent = friendlyMessage || '加载失败，请稍后再试。';
+            errorBox.style.display = 'block';
+        }
+        wrap.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">加载失败</div>';
+    } finally {
+        disableControls(false);
     }
 }
 
@@ -1310,6 +1507,11 @@ window.addEventListener('DOMContentLoaded', function() {
         renderPublicUserPage();
     }
 
+    if (window.location.pathname.includes('all-posts.html')) {
+        updateUserLinks();
+        renderAllPostsPage();
+    }
+
     if (document.querySelector('.forum-posts')) {
         flarumLoadRecentReplies().then(renderPostListIntoIndex).catch((error) => {
             console.error('加载最新回复失败:', error);
@@ -1765,7 +1967,7 @@ async function renderPublicUserPage() {
                     title: d.attributes?.title || '',
                     createdAt: d.attributes?.createdAt || '',
                     commentCount: d.attributes?.commentCount,
-                    viewCount: d.attributes?.viewCount
+                    viewCount: getDiscussionViewCount(d.attributes)
                 }));
             } catch {
                 topics = [];
@@ -1802,7 +2004,7 @@ async function renderPublicUserPage() {
                     <div class="public-user-item-meta">
                         <span>${(t.createdAt || '').slice(0, 16).replace('T', ' ')}</span>
                         <span>回复 ${typeof t.commentCount === 'number' ? t.commentCount : 0}</span>
-                        <span>浏览 ${formatViewCount(typeof t.viewCount === 'number' ? t.viewCount : null)}</span>
+                        <span>浏览 ${formatViewCount(t.viewCount)}</span>
                     </div>
                 </li>
             `).join('')

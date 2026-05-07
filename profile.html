@@ -790,7 +790,7 @@
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-nickname">昵称</label>
-                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="请输入新的昵称（留空则使用用户名）">
+                                                                    <input type="text" id="editor-nickname" maxlength="30" placeholder="请输入昵称">
                                                                 </div>
                                                                 <div class="form-group full">
                                                                     <label for="editor-signature">个性签名</label>
@@ -898,8 +898,7 @@
                 </div>
             </div>
 
-        </div>
-
+        
             <div class="status-bar">
                 <div class="status-container">
                     <span>我的红蜻蜓</span>
@@ -909,7 +908,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260507-7"></script>
+    <script src="script.js?v=20260507-8"></script>
     <script>
         const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
         const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
@@ -1091,7 +1090,7 @@
         function renderProfileEditor(context) {
             document.getElementById('editor-username').textContent = context.username;
             document.getElementById('editor-email').textContent = context.email;
-            document.getElementById('editor-nickname').value = context.rawNickname;
+            document.getElementById('editor-nickname').value = context.rawNickname || context.username;
             document.getElementById('editor-signature').value = context.signature;
             document.getElementById('security-username').textContent = context.username;
             document.getElementById('security-email').textContent = maskEmail(context.email);
@@ -1152,14 +1151,17 @@
                     const title = post?.attributes?.title || '无标题';
                     const createdAt = formatProfileDate(post?.attributes?.createdAt);
                     const commentCount = typeof post?.attributes?.commentCount === 'number' ? post.attributes.commentCount : 0;
-                    const viewCount = typeof post?.attributes?.viewCount === 'number' ? post.attributes.viewCount : 0;
+                    const viewCount = typeof post?.attributes?.view_count === 'number'
+                        ? post.attributes.view_count
+                        : (typeof post?.attributes?.viewCount === 'number' ? post.attributes.viewCount : null);
+                    const viewCountText = viewCount == null ? '-' : String(viewCount);
                     return `
                         <li class="content-item">
                             <a href="post.html?id=${encodeURIComponent(post.id)}" class="content-title">${escapeHtml(title)}</a>
                             <div class="content-meta">
                                 <span>发布时间：${createdAt}</span>
                                 <span>回复：${commentCount}</span>
-                                <span>浏览：${viewCount}</span>
+                                <span>浏览：${viewCountText}</span>
                             </div>
                         </li>
                     `;

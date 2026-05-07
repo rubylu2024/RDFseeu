@@ -3,81 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>站内消息 - 红蜻蜓论坛</title>
+    <title>全部帖子 - 红蜻蜓论坛</title>
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
         .page-shell {
             width: 100%;
         }
 
-        .message-container {
+        .all-posts-card {
             background: #fff;
             border: 1px solid #ccc;
-            padding: 20px;
-            min-height: 400px;
+            padding: 14px;
         }
 
-        .message-header {
-            border-bottom: 2px solid #cc0000;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+        .all-posts-head {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 10px 12px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
         }
 
-        .message-header h2 {
-            margin: 0;
-            font-size: 20px;
-            color: #333;
-        }
-
-        .message-item {
-            border: 1px solid #eee;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: #fcfcfc;
-            position: relative;
-        }
-
-        .message-item.unread {
-            border-left: 4px solid #cc0000;
-        }
-
-        .message-meta {
-            display: flex;
-            justify-content: space-between;
-            color: #888;
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-
-        .message-sender {
+        .all-posts-title {
+            font-size: 16px;
             font-weight: bold;
+            color: #333;
+            margin-right: auto;
+        }
+
+        .all-posts-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .all-posts-controls label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .all-posts-controls select {
+            padding: 4px 6px;
+            border: 1px solid #bbb;
+            background: #fff;
+            font-size: 13px;
+        }
+
+        .all-posts-controls button {
+            padding: 5px 10px;
+            border: 1px solid #6F6F6F;
+            background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .all-posts-controls button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .all-posts-meta {
+            font-size: 12px;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        .all-posts-error {
+            padding: 12px;
+            border: 1px dashed #cc0000;
+            background: #fff7f7;
             color: #cc0000;
-        }
-
-        .message-body {
-            line-height: 1.6;
-            color: #333;
-            font-size: 15px;
-        }
-
-        .back-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 6px 16px;
-            background: #f0f0f0;
-            border: 1px solid #ccc;
-            text-decoration: none;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .back-btn:hover {
-            background: #e0e0e0;
+            margin-top: 10px;
+            display: none;
         }
     </style>
 </head>
@@ -125,23 +126,28 @@
                     <div class="right-content-area page-shell">
                         <div class="content-wrapper">
                             <div class="main-content" style="width:100%; padding: 20px;">
-                                <div class="message-container">
-                                    <div class="message-header">
-                                        <h2>站内消息</h2>
-                                        <span style="font-size: 13px; color: #666;">共 1 条消息</span>
-                                    </div>
-
-                                    <div class="message-item unread">
-                                        <div class="message-meta">
-                                            <span class="message-sender">发件人：论坛管理组</span>
-                                            <span class="message-time">2026-04-25 10:30</span>
+                                <div class="all-posts-card">
+                                    <div class="all-posts-head">
+                                        <div class="all-posts-title">&gt; 全部帖子</div>
+                                        <div class="all-posts-controls">
+                                            <label for="all-posts-sort-field">排序</label>
+                                            <select id="all-posts-sort-field">
+                                                <option value="createdAt">发布时间</option>
+                                                <option value="views">浏览量</option>
+                                            </select>
+                                            <select id="all-posts-sort-order">
+                                                <option value="desc">倒序</option>
+                                                <option value="asc">正序</option>
+                                            </select>
+                                            <button type="button" id="all-posts-prev">上一页</button>
+                                            <button type="button" id="all-posts-next">下一页</button>
                                         </div>
-                                        <div class="message-body">
-                                            本论坛网页快照内容将于近期开放，感谢您的耐心等待。
-                                        </div>
                                     </div>
-
-                                    <a href="index.html" class="back-btn">&lt; 返回首页</a>
+                                    <div class="all-posts-meta" id="all-posts-meta">每页最多 15 条</div>
+                                    <div class="all-posts-error" id="all-posts-error"></div>
+                                    <div id="all-posts-table-wrap">
+                                        <div style="padding: 20px; text-align: center;">加载中...</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -161,10 +167,3 @@
     <script src="script.js?v=20260507-8"></script>
 </body>
 </html>
-
-
-
-
-
-
-
