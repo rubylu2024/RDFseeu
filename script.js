@@ -59,6 +59,7 @@ function getFriendlyErrorMessage(error, context = 'generic') {
     const status = error?.httpStatus || parsed?.status || null;
     const code = parsed?.code || error?.code || '';
     const rawMessage = String(error?.message || '');
+    const activationHint = '请确认账号已经激活，如仍有问题请联系网管。';
 
     if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
         return '网络连接异常，暂时无法连接论坛，请检查网络后重试。';
@@ -84,25 +85,25 @@ function getFriendlyErrorMessage(error, context = 'generic') {
     if (status === 403 || code === 'permission_denied') {
         switch (context) {
             case 'create_discussion':
-                return '当前账号没有发帖权限，请联系管理员开通。';
+                return `当前账号没有发帖权限。${activationHint}`;
             case 'create_post':
-                return '当前账号没有回帖权限，请联系管理员开通。';
+                return `当前账号没有回帖权限。${activationHint}`;
             case 'delete_post':
-                return '当前账号没有删除这条回复的权限，只能删除自己的内容。';
+                return `当前账号没有删除这条回复的权限，只能删除自己的内容。${activationHint}`;
             case 'delete_discussion':
-                return '当前账号没有删除这个帖子的权限，只能删除自己的内容。';
+                return `当前账号没有删除这个帖子的权限，只能删除自己的内容。${activationHint}`;
             case 'upload_image':
-                return '当前账号没有上传图片的权限，请联系管理员开通。';
+                return `当前账号没有上传图片的权限。${activationHint}`;
             case 'upload_avatar':
-                return '当前账号没有修改头像的权限，请联系管理员开通。';
+                return `当前账号没有修改头像的权限。${activationHint}`;
             case 'profile':
-                return '当前账号没有查看该页面内容的权限。';
+                return `当前账号没有查看该页面内容的权限。${activationHint}`;
             case 'load_discussion':
-                return '帖子暂时无法显示，可能需要登录后查看或当前账号没有查看权限。';
+                return `当前账号暂时没有查看该内容的权限。${activationHint}`;
             case 'register':
                 return '当前论坛暂不允许普通用户注册。';
             default:
-                return '当前账号没有执行此操作的权限，请联系管理员处理。';
+                return `当前账号没有执行此操作的权限。${activationHint}`;
         }
     }
 

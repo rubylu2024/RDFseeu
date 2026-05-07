@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -218,7 +218,7 @@
                         <div class="register-container">
                             <div class="register-header">
                                 <h2>用户注册</h2>
-                                <p>注册账号后即可参与论坛讨论</p>
+                                <p>注册后请前往邮箱激活账号，激活完成后才可正常使用论坛功能</p>
                             </div>
                             
                             <form class="register-form" id="register-form">
@@ -231,7 +231,8 @@
                                 
                                 <div class="form-group">
                                     <label for="email">邮箱</label>
-                                    <input type="email" id="email" name="email" required placeholder="后续用于修改密码">
+                                    <input type="email" id="email" name="email" required placeholder="用于激活账号和找回密码">
+                                    <div style="margin-top: 6px; font-size: 12px; color: #666;">请填写常用邮箱，注册后需通过邮箱激活账号，后续也可用于找回密码。</div>
                                 </div>
                                 
                                 <div class="form-group">
@@ -264,7 +265,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260507-6"></script>
+    <script src="script.js?v=20260507-7"></script>
     <script>
         const errorMap = {
             validation_error: '注册信息不符合要求，请检查用户名、邮箱或密码',
@@ -351,22 +352,16 @@
 
                 try {
                     await customRegister(username, email, password);
-                    
-                    // 注册成功，开始自动登录
-                    submitBtn.textContent = '正在登录...';
-                    const loginSuccess = await flarumLogin(username, password);
-                    
-                    if (loginSuccess) {
-                        showMessage('注册成功，正在进入论坛...', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 1000);
-                    } else {
-                        showMessage('注册成功，但自动登录失败，请手动登录', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'login.html';
-                        }, 1500);
-                    }
+                    registerForm.reset();
+                    showMessage(
+                        '注册信息已提交成功，请前往注册邮箱点击激活链接完成账号激活。\n' +
+                        '账号未激活前，将无法完成注册、查看帖子、发帖或回帖。\n' +
+                        '如果长时间没有收到邮件，请检查垃圾邮箱，或联系网管处理。',
+                        'success'
+                    );
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '注册';
+                    hideLoading();
                 } catch (error) {
                     console.error('注册失败:', error);
                     let errorMsg = '注册失败';
@@ -494,6 +489,7 @@
     </script>
 </body>
 </html>
+
 
 
 
