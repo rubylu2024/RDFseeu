@@ -951,19 +951,19 @@
             }
 
             try {
-                const [userData, stats, discussions, comments] = await Promise.all([
-                    fetchUserData(userId),
-                    fetchUserStats(userId),
-                    fetchUserDiscussions(userId),
-                    fetchUserComments(userId)
-                ]);
-
+                const userData = await fetchUserData(userId);
                 if (!userData || !userData.data) {
                     throw new Error('未获取到用户资料');
                 }
 
                 const context = buildProfileContext(userData);
                 currentProfileContext = context;
+                
+                const [stats, discussions, comments] = await Promise.all([
+                    fetchUserStats(userId, context.username),
+                    fetchUserDiscussions(context.username),
+                    fetchUserComments(userId)
+                ]);
                 activityState.discussions = Array.isArray(discussions) ? discussions : [];
                 activityState.comments = Array.isArray(comments) ? comments : [];
                 activityState.commentIncluded = comments.included || [];
@@ -1280,13 +1280,13 @@
             return await flarumRequest(`/users/${userId}?include=groups`, { auth: true });
         }
 
-        async function fetchUserStats(userId) {
+        async function fetchUserStats(userId, username) {
             const stats = { posts: 0, comments: 0 };
 
             try {
                 const [discussionsData, postsData] = await Promise.all([
-                    flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=50`, { auth: true }),
-                    flarumRequest(`/posts?filter[author]=${userId}&page[limit]=50`, { auth: true })
+                    flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&page[limit]=50`, { auth: true }),
+                    flarumRequest(`/posts?filter[user]=${encodeURIComponent(String(userId))}&page[limit]=50`, { auth: true })
                 ]);
 
                 stats.posts = discussionsData?.data?.length || 0;
@@ -1299,9 +1299,9 @@
             return stats;
         }
 
-        async function fetchUserDiscussions(userId) {
+        async function fetchUserDiscussions(username) {
             try {
-                const data = await flarumRequest(`/discussions?filter[author]=${userId}&page[limit]=30&include=user`, { auth: true });
+                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&page[limit]=30&include=user`, { auth: true });
                 return data?.data || [];
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
@@ -1311,7 +1311,7 @@
 
         async function fetchUserComments(userId) {
             try {
-                const data = await flarumRequest(`/posts?filter[author]=${userId}&page[limit]=30&include=discussion`, { auth: true });
+                const data = await flarumRequest(`/posts?filter[user]=${encodeURIComponent(String(userId))}&page[limit]=30&include=discussion`, { auth: true });
                 const posts = Array.isArray(data?.data) ? data.data : [];
                 const comments = posts.filter((post) => Number(post?.attributes?.number) !== 1);
                 comments.included = data?.included || [];
