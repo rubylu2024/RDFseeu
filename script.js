@@ -490,21 +490,35 @@ function formatFlarumTime(isoString) {
 }
 
 function formatViewCount(viewCount) {
-    if (typeof viewCount === 'number' && isFinite(viewCount) && viewCount >= 0) return String(viewCount);
-    return '-';
+    if (typeof viewCount === 'number' && Number.isFinite(viewCount) && viewCount >= 0) return String(viewCount);
+    if (typeof viewCount === 'string' && viewCount.trim()) {
+        const n = Number(viewCount);
+        if (Number.isFinite(n) && n >= 0) return String(n);
+    }
+    return '0';
 }
 
 function getDiscussionViewCount(attributes) {
     const a = attributes || {};
-    const candidates = [a.view_count, a.viewCount];
+    const candidates = [
+        a.views,
+        a.view_count,
+        a.viewCount
+    ];
     for (const v of candidates) {
-        if (typeof v === 'number' && isFinite(v) && v >= 0) return v;
-        if (typeof v === 'string' && v.trim().length > 0) {
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+            return v;
+        }
+
+        if (typeof v === 'string' && v.trim()) {
             const n = Number(v);
-            if (isFinite(n) && n >= 0) return n;
+
+            if (Number.isFinite(n) && n >= 0) {
+                return n;
+            }
         }
     }
-    return null;
+    return 0;
 }
 
 function escapeHtml(raw) {
@@ -515,6 +529,72 @@ function escapeHtml(raw) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function textToHtmlParagraphs(rawText) {
+    const s0 = typeof rawText === 'string' ? rawText : '';
+    const s = s0
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\r\n/g, '\n');
+    const paragraphs = s.split(/\n{2,}/g).map((p) => p.replace(/\s+$/g, '')).filter((p) => p.length > 0);
+    if (paragraphs.length === 0) return '';
+    return paragraphs.map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+function normalizeLineBreaksInHtml(contentHtml) {
+    const original = typeof contentHtml === 'string' ? contentHtml : '';
+    if (!original) return '';
+    try {
+        const doc = new DOMParser().parseFromString(original, 'text/html');
+        const isInsidePre = (node) => {
+            let p = node && node.parentNode;
+            while (p && p.nodeType === 1) {
+                if (String(p.tagName || '').toUpperCase() === 'PRE') return true;
+                p = p.parentNode;
+            }
+            return false;
+        };
+
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        let n = walker.nextNode();
+        while (n) {
+            textNodes.push(n);
+            n = walker.nextNode();
+        }
+
+        for (const tn of textNodes) {
+            if (!tn || !tn.nodeValue) continue;
+            if (isInsidePre(tn)) continue;
+            const v = tn.nodeValue
+                .replace(/\\r\\n/g, '\n')
+                .replace(/\\n/g, '\n')
+                .replace(/\r\n/g, '\n');
+            if (v.includes('\n') && v.trim() === '') {
+                tn.nodeValue = v;
+                continue;
+            }
+            if (!v.includes('\n')) {
+                tn.nodeValue = v;
+                continue;
+            }
+            const parts = v.split('\n');
+            const frag = doc.createDocumentFragment();
+            for (let i = 0; i < parts.length; i++) {
+                if (i > 0) frag.appendChild(doc.createElement('br'));
+                frag.appendChild(doc.createTextNode(parts[i]));
+            }
+            tn.parentNode && tn.parentNode.replaceChild(frag, tn);
+        }
+
+        return doc.body.innerHTML;
+    } catch {
+        return original
+            .replace(/\\r\\n/g, '<br>')
+            .replace(/\\n/g, '<br>')
+            .replace(/\r\n|\n/g, '<br>');
+    }
 }
 
 function buildUserProfileHref(userId) {
@@ -600,25 +680,28 @@ function extractReplyMetaFromContentHtml(contentHtml) {
 
                 return {
                     replyToFloor,
-                    cleanedHtml: doc.body.innerHTML
+                    cleanedHtml: normalizeLineBreaksInHtml(doc.body.innerHTML
                         .replace(/\\n\\n/g, '')
                         .replace(/\n\n/g, '')
+                    )
                 };
             }
         }
 
         return {
             replyToFloor: null,
-            cleanedHtml: original
+            cleanedHtml: normalizeLineBreaksInHtml(original
                 .replace(/\\n\\n/g, '')
                 .replace(/\n\n/g, '')
+            )
         };
     } catch {
         return {
             replyToFloor: null,
-            cleanedHtml: original
+            cleanedHtml: normalizeLineBreaksInHtml(original
                 .replace(/\\n\\n/g, '')
                 .replace(/\n\n/g, '')
+            )
         };
     }
 }
@@ -651,6 +734,15 @@ function flarumDiscussionToPostData(apiJson) {
 
     const viewCount = getDiscussionViewCount(discussion.attributes);
 
+    const coercePostContentToHtml = (postResource) => {
+        const attrs = postResource?.attributes || {};
+        const html = typeof attrs.contentHtml === 'string' ? attrs.contentHtml : '';
+        if (html && html.trim()) return normalizeLineBreaksInHtml(html);
+        const raw = typeof attrs.content === 'string' ? attrs.content : '';
+        const converted = textToHtmlParagraphs(raw);
+        return converted ? normalizeLineBreaksInHtml(converted) : normalizeLineBreaksInHtml(escapeHtml(raw));
+    };
+
     const postData = {
         id: Number(discussion.id),
         userId: firstUserId ? Number(firstUserId) : null,
@@ -662,7 +754,7 @@ function flarumDiscussionToPostData(apiJson) {
         publishTime: formatFlarumTime(discussion.attributes?.createdAt),
         viewCount,
         allowComments: true,
-        content: firstPost?.attributes?.contentHtml || firstPost?.attributes?.content || '',
+        content: coercePostContentToHtml(firstPost),
         comments: posts
             .filter((p) => p !== firstPost)
             .map((p) => {
@@ -670,7 +762,7 @@ function flarumDiscussionToPostData(apiJson) {
                 const user = userId ? pickIncluded(included, 'users', userId) : null;
                 const number = p.attributes?.number;
 
-                const html = p.attributes?.contentHtml || p.attributes?.content || '';
+                const html = coercePostContentToHtml(p);
                 const extracted = extractReplyMetaFromContentHtml(html);
                 const stored = getStoredFlarumReplyToFloor(discussion.id, p.id);
                 const replyTo = extracted.replyToFloor || stored || null;
@@ -819,8 +911,8 @@ async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limi
             return [order === 'desc' ? '-createdAt' : 'createdAt'];
         }
         return order === 'desc'
-            ? ['popular', '-view_count', '-viewCount']
-            : ['unpopular', 'view_count', 'viewCount'];
+            ? ['popular', '-views', 'views', '-view_count', '-viewCount']
+            : ['unpopular', 'views', '-views', 'view_count', 'viewCount'];
     };
 
     const baseQuery = `page[limit]=${safeLimit}&page[offset]=${safeOffset}&include=user`;

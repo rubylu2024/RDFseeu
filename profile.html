@@ -1585,10 +1585,10 @@
                     const title = post?.attributes?.title || '无标题';
                     const createdAt = formatProfileDate(post?.attributes?.createdAt);
                     const commentCount = typeof post?.attributes?.commentCount === 'number' ? post.attributes.commentCount : 0;
-                    const viewCount = typeof post?.attributes?.view_count === 'number'
-                        ? post.attributes.view_count
-                        : (typeof post?.attributes?.viewCount === 'number' ? post.attributes.viewCount : null);
-                    const viewCountText = viewCount == null ? '-' : String(viewCount);
+                    const viewCount = typeof getDiscussionViewCount === 'function'
+                        ? getDiscussionViewCount(post?.attributes)
+                        : 0;
+                    const viewCountText = String(viewCount);
                     return `
                         <li class="content-item">
                             <a href="post.html?id=${encodeURIComponent(post.id)}" class="content-title">${escapeHtml(title)}</a>
