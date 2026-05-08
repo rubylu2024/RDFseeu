@@ -1814,6 +1814,10 @@ async function renderDynamicHomeLinks() {
                 !d.title.includes(pin2Title) && !d.title.includes('拒绝黄赌毒') &&
                 !d.title.includes(hotTitle) && !d.title.includes('脑控') && !d.title.includes('脑控了')
             );
+
+            const rankedDiscussions = remainingDiscussions
+                .slice()
+                .sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0) || (Number(b.id) || 0) - (Number(a.id) || 0));
             
             // 构建热帖榜（共12条）
             const hotTopics = [];
@@ -1826,28 +1830,29 @@ async function renderDynamicHomeLinks() {
                 hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="post.html?id=${pin2Post.id}">${pin2Post.title}</a></li>`);
             }
             
-            // 第3-6条：按热度排序的普通帖子
-            const normalPosts = remainingDiscussions.slice(0, 4);
-            normalPosts.forEach(p => {
-                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
-            });
+            let rankedIndex = 0;
+            const appendRanked = (count) => {
+                const safeCount = typeof count === 'number' && Number.isFinite(count) && count > 0 ? count : 0;
+                for (let i = 0; i < safeCount && rankedIndex < rankedDiscussions.length; i++) {
+                    const p = rankedDiscussions[rankedIndex++];
+                    hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+                }
+            };
+            
+            // 第3-6条：按浏览量排行的普通帖子
+            appendRanked(4);
             
             // 第7条：固定HOT帖
             if (hotPost) {
                 hotTopics.push(`<li><span class="hot-badge">HOT</span><a href="post.html?id=${hotPost.id}">${hotPost.title}</a></li>`);
             }
             
-            // 第8-12条：按热度排序的普通帖子
-            const remainingPosts = remainingDiscussions.slice(4, 9);
-            remainingPosts.forEach(p => {
-                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
-            });
+            // 第8-12条：按浏览量排行的普通帖子
+            appendRanked(5);
             
-            // 如果总数不足12条，用剩余帖子补齐
-            if (hotTopics.length < 12 && remainingDiscussions.length > 9) {
-                remainingDiscussions.slice(9, 12 - hotTopics.length + 9).forEach(p => {
-                    hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
-                });
+            while (hotTopics.length < 12 && rankedIndex < rankedDiscussions.length) {
+                const p = rankedDiscussions[rankedIndex++];
+                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
             }
             
             hotTopicsList.innerHTML = hotTopics.join('');
