@@ -2909,7 +2909,6 @@ async function renderPublicUserPage() {
         if (badgeType === 'mod') badgeText = '版主';
 
         let topics = [];
-        let replies = [];
 
         if (username) {
             try {
@@ -2927,29 +2926,6 @@ async function renderPublicUserPage() {
             }
         }
 
-        try {
-            const { json: postsJson } = await flarumLoadUserRecentPosts({ userId, username, limit: 10, onlyReplies: true });
-            const posts = (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((p) => !isDeletedPostResource(p));
-            const included = postsJson?.included || [];
-            replies = posts.map((p) => {
-                const discussionId = p.relationships?.discussion?.data?.id;
-                const discussion = discussionId ? pickIncluded(included, 'discussions', discussionId) : null;
-                const title = discussion?.attributes?.title || '';
-                const floor = p.attributes?.number || 1;
-                const contentHtml = p.attributes?.contentHtml || p.attributes?.content || '';
-                const preview = contentHtml.replace(/<[^>]*>/g, '').trim().slice(0, 50);
-                return {
-                    discussionId,
-                    title,
-                    floor,
-                    createdAt: p.attributes?.createdAt || '',
-                    preview
-                };
-            });
-        } catch {
-            replies = [];
-        }
-
         const topicsHtml = topics.length > 0
             ? topics.map((t) => `
                 <li>
@@ -2962,18 +2938,6 @@ async function renderPublicUserPage() {
                 </li>
             `).join('')
             : '<li style="color: #888;">暂无主题</li>';
-
-        const repliesHtml = replies.length > 0
-            ? replies.map((r) => `
-                <li>
-                    <a href="${r.discussionId ? buildPostFloorLink(r.discussionId, r.floor) : '#'}">${escapeHtml(r.title || '查看帖子')}</a>
-                    <div class="public-user-item-meta">
-                        <span>${(r.createdAt || '').slice(0, 16).replace('T', ' ')}</span>
-                        <span>${escapeHtml(r.preview || '无内容')}</span>
-                    </div>
-                </li>
-            `).join('')
-            : '<li style="color: #888;">暂无回复</li>';
 
         container.innerHTML = `
             <div class="public-user-header">
@@ -2991,15 +2955,9 @@ async function renderPublicUserPage() {
                 </div>
             </div>
             <div class="public-user-bio">${bio}</div>
-            <div class="public-user-grid">
-                <div class="public-user-panel">
-                    <h3>最近主题</h3>
-                    <ul class="public-user-list">${topicsHtml}</ul>
-                </div>
-                <div class="public-user-panel">
-                    <h3>最近回复</h3>
-                    <ul class="public-user-list">${repliesHtml}</ul>
-                </div>
+            <div class="public-user-panel">
+                <h3>最近主题</h3>
+                <ul class="public-user-list">${topicsHtml}</ul>
             </div>
         `;
 
