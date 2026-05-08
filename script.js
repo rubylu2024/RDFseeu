@@ -128,6 +128,76 @@ function showUiToast(options) {
     return { close };
 }
 
+function getBeijingNowParts() {
+    const dtf = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        hour12: false,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    const parts = dtf.formatToParts(new Date());
+    const get = (type) => {
+        const p = parts.find((x) => x.type === type);
+        return p ? p.value : '';
+    };
+    const year = Number(get('year'));
+    const month = Number(get('month'));
+    const day = Number(get('day'));
+    const hour = Number(get('hour'));
+    const minute = get('minute');
+    const second = get('second');
+    return { year, month, day, hour, minute, second };
+}
+
+function getTimeGreetingByHour(hour) {
+    const h = Number(hour);
+    if (!Number.isFinite(h)) return '晚上好';
+    if (h >= 6 && h <= 10) return '早上好';
+    if (h >= 11 && h <= 13) return '中午好';
+    if (h >= 14 && h <= 18) return '下午好';
+    return '晚上好';
+}
+
+function setupStatusBarClock() {
+    const containers = Array.from(document.querySelectorAll('.status-container'));
+    if (containers.length === 0) return;
+
+    containers.forEach((container) => {
+        if (!container) return;
+        const existing = container.querySelector('.status-center');
+        if (existing) return;
+
+        const el = document.createElement('span');
+        el.className = 'status-center';
+        el.setAttribute('aria-live', 'polite');
+
+        const first = container.firstElementChild;
+        if (first && first.nextSibling) {
+            container.insertBefore(el, first.nextSibling);
+        } else {
+            container.appendChild(el);
+        }
+    });
+
+    const update = () => {
+        const { year, month, day, hour, minute, second } = getBeijingNowParts();
+        const greeting = getTimeGreetingByHour(hour);
+        const y = Number.isFinite(year) ? year - 11 : '';
+        const text = `${greeting}！现在是北京时间${y}年${month}月${day}日 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        document.querySelectorAll('.status-center').forEach((node) => {
+            node.textContent = text;
+        });
+    };
+
+    update();
+    if (window.__statusClockTimer) clearInterval(window.__statusClockTimer);
+    window.__statusClockTimer = setInterval(update, 1000);
+}
+
 function setupAuthReturnCapture() {
     document.addEventListener('click', (event) => {
         const anchor = event.target && event.target.closest ? event.target.closest('a') : null;
@@ -2495,6 +2565,10 @@ window.addEventListener('DOMContentLoaded', function() {
     try {
         refreshUnreadShortMessagesBadge();
     } catch (_) {}
+
+    try {
+        setupStatusBarClock();
+    } catch (_) {}
     
     // 将近期热帖滚动区域滚动到顶部
     const scrollableContent = document.querySelector('.scrollable-content');
@@ -4277,6 +4351,10 @@ function refreshAuthDependentUI() {
 
     try {
         refreshUnreadShortMessagesBadge();
+    } catch (_) {}
+
+    try {
+        setupStatusBarClock();
     } catch (_) {}
 
     if (typeof updateReplyFormForLoginStatus === 'function') {

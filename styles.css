@@ -998,6 +998,17 @@ body::before {
     color: #ffcc00 !important;
 }
 
+.status-center {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 0 10px;
+    color: #ffffff;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* 未读消息红点 */
 .unread-badge {
     position: absolute;
