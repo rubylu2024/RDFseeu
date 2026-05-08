@@ -2875,9 +2875,12 @@ async function renderMessagePage() {
             try {
                 const fixed = await Promise.all([flarumLoadUserById(1), flarumLoadUserById(2), flarumLoadUserById(3)]);
                 const fixedUsers = fixed.filter(Boolean);
-                const { json } = await flarumLoadUsersSortedPage({ offset: 0, limit: 80, sortCandidates: ['-id', '-joinedAt', '-lastSeenAt'] });
-                const pageUsers = Array.isArray(json?.data) ? json.data : [];
-                const merged = mergeUsersUnique([...fixedUsers, ...pageUsers]);
+                const sortCandidates = ['-id', '-joinedAt', '-lastSeenAt'];
+                const page0 = await flarumLoadUsersSortedPage({ offset: 0, limit: 80, sortCandidates });
+                const page1 = await flarumLoadUsersSortedPage({ offset: 80, limit: 80, sortCandidates });
+                const pageUsers0 = Array.isArray(page0?.json?.data) ? page0.json.data : [];
+                const pageUsers1 = Array.isArray(page1?.json?.data) ? page1.json.data : [];
+                const merged = mergeUsersUnique([...fixedUsers, ...pageUsers0, ...pageUsers1]);
                 const selected = isAllowedShortMessageRecipientUserId(toId) ? toId : '';
                 rebuildRecipientOptions(merged, selected);
             } catch {
@@ -2951,9 +2954,12 @@ async function renderMessagePage() {
                     const serverResults = await flarumSearchUsers({ query: q, limit: 30 });
                     candidateUsers.push(...serverResults);
 
-                    const { json } = await flarumLoadUsersSortedPage({ offset: 0, limit: 120, sortCandidates: ['-id', '-joinedAt', '-lastSeenAt'] });
-                    const pageUsers = Array.isArray(json?.data) ? json.data : [];
-                    candidateUsers.push(...pageUsers);
+                    const sortCandidates = ['-id', '-joinedAt', '-lastSeenAt'];
+                    const page0 = await flarumLoadUsersSortedPage({ offset: 0, limit: 120, sortCandidates });
+                    const page1 = await flarumLoadUsersSortedPage({ offset: 120, limit: 120, sortCandidates });
+                    const pageUsers0 = Array.isArray(page0?.json?.data) ? page0.json.data : [];
+                    const pageUsers1 = Array.isArray(page1?.json?.data) ? page1.json.data : [];
+                    candidateUsers.push(...pageUsers0, ...pageUsers1);
 
                     const merged = mergeUsersUnique(candidateUsers)
                         .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
