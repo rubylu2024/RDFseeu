@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
-    <h1>Flarum API 杩炴帴娴嬭瘯</h1>
+    <h1>Flarum API 连接测试</h1>
     <div id="test-results"></div>
 
     <script>
@@ -31,28 +31,28 @@
         function getFriendlyTestErrorMessage(error, context) {
             const rawMessage = String(error?.message || '');
             if (/Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
-                return '鏃犳硶杩炴帴璁哄潧鎺ュ彛锛岃妫€鏌ョ綉缁滄垨鏈嶅姟鍣ㄧ姸鎬併€?;
+                return '无法连接论坛接口，请检查网络或服务器状态。';
             }
 
             if (/401/.test(rawMessage)) {
-                return '鎺ュ彛闇€瑕佺櫥褰曞悗鎵嶈兘璁块棶锛屽綋鍓嶆湭鎻愪緵鐧诲綍鐘舵€併€?;
+                return '接口需要登录后才能访问，当前未提供登录状态。';
             }
 
             if (/403/.test(rawMessage)) {
                 return context === 'list'
-                    ? '褰撳墠璐﹀彿鎴栧綋鍓嶈闂柟寮忔病鏈夎幏鍙栧笘瀛愬垪琛ㄧ殑鏉冮檺銆?
-                    : '褰撳墠璐﹀彿鎴栧綋鍓嶈闂柟寮忔病鏈夎闂鎺ュ彛鐨勬潈闄愩€?;
+                    ? '当前账号或当前访问方式没有获取帖子列表的权限。'
+                    : '当前账号或当前访问方式没有访问该接口的权限。';
             }
 
             if (/404/.test(rawMessage)) {
-                return '璇锋眰鐨勬帴鍙ｅ湴鍧€涓嶅瓨鍦紝璇锋鏌ヨ鍧涙帴鍙ｉ厤缃€?;
+                return '请求的接口地址不存在，请检查论坛接口配置。';
             }
 
             if (/5\d\d/.test(rawMessage)) {
-                return '璁哄潧鏈嶅姟鍣ㄦ殏鏃剁箒蹇欙紝璇风◢鍚庡啀璇曘€?;
+                return '论坛服务器暂时繁忙，请稍后再试。';
             }
 
-            return '鎺ュ彛璇锋眰澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
+            return '接口请求失败，请稍后再试。';
         }
 
         async function flarumRequest(path, options = {}) {
@@ -71,7 +71,7 @@
             });
 
             if (!response.ok) {
-                throw new Error(`Flarum API 璇锋眰澶辫触: ${response.status} ${response.statusText}`);
+                throw new Error(`Flarum API 请求失败: ${response.status} ${response.statusText}`);
             }
 
             if (response.status === 204) return null;
@@ -82,32 +82,32 @@
             const resultsDiv = document.getElementById('test-results');
             resultsDiv.innerHTML = '';
 
-            addResult('娴嬭瘯 1: 妫€鏌?Flarum 閰嶇疆', isFlarumConfigured() ? '鎴愬姛' : '澶辫触');
+            addResult('测试 1: 检查 Flarum 配置', isFlarumConfigured() ? '成功' : '失败');
 
             if (!isFlarumConfigured()) {
-                addResult('閿欒', '澶辫触', 'Flarum 閰嶇疆鏈畬鎴?);
+                addResult('错误', '失败', 'Flarum 配置未完成');
                 return;
             }
 
             try {
                 const discussions = await flarumRequest('/discussions?sort=-createdAt&page[limit]=5&include=user');
-                addResult('娴嬭瘯 2: 鑾峰彇璁ㄨ鍒楄〃', '鎴愬姛', discussions);
+                addResult('测试 2: 获取讨论列表', '成功', discussions);
             } catch (error) {
-                addResult('娴嬭瘯 2: 鑾峰彇璁ㄨ鍒楄〃', '澶辫触', getFriendlyTestErrorMessage(error, 'list'));
+                addResult('测试 2: 获取讨论列表', '失败', getFriendlyTestErrorMessage(error, 'list'));
             }
 
             try {
                 const info = await flarumRequest('/');
-                addResult('娴嬭瘯 3: 鑾峰彇 API 淇℃伅', '鎴愬姛', info);
+                addResult('测试 3: 获取 API 信息', '成功', info);
             } catch (error) {
-                addResult('娴嬭瘯 3: 鑾峰彇 API 淇℃伅', '澶辫触', getFriendlyTestErrorMessage(error, 'info'));
+                addResult('测试 3: 获取 API 信息', '失败', getFriendlyTestErrorMessage(error, 'info'));
             }
         }
 
         function addResult(testName, status, details = null) {
             const resultsDiv = document.getElementById('test-results');
             const div = document.createElement('div');
-            div.className = `test-result ${status === '鎴愬姛' ? 'success' : 'error'}`;
+            div.className = `test-result ${status === '成功' ? 'success' : 'error'}`;
             div.innerHTML = `<strong>${testName}</strong>: ${status}`;
             if (details) {
                 const detailBlock = document.createElement('pre');
