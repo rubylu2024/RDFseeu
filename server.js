@@ -51,21 +51,32 @@ function loadCustomMessagesStore() {
 }
 
 function saveCustomMessagesStore(store) {
-  const safe = {
-    publicMessages: Array.isArray(store.publicMessages) ? store.publicMessages : [],
-    publicReads: Array.isArray(store.publicReads) ? store.publicReads : [],
-    nextPublicMessageId: Number.isFinite(Number(store.nextPublicMessageId)) ? Number(store.nextPublicMessageId) : 1,
-    nextPublicReadId: Number.isFinite(Number(store.nextPublicReadId)) ? Number(store.nextPublicReadId) : 1
-  };
-  const tmp = CUSTOM_MESSAGES_STORE_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(safe, null, 2), 'utf8');
-  fs.renameSync(tmp, CUSTOM_MESSAGES_STORE_FILE);
+  try {
+    const safe = {
+      publicMessages: Array.isArray(store.publicMessages) ? store.publicMessages : [],
+      publicReads: Array.isArray(store.publicReads) ? store.publicReads : [],
+      nextPublicMessageId: Number.isFinite(Number(store.nextPublicMessageId)) ? Number(store.nextPublicMessageId) : 1,
+      nextPublicReadId: Number.isFinite(Number(store.nextPublicReadId)) ? Number(store.nextPublicReadId) : 1
+    };
+    const tmp = CUSTOM_MESSAGES_STORE_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(safe, null, 2), 'utf8');
+    fs.renameSync(tmp, CUSTOM_MESSAGES_STORE_FILE);
+  } catch (error) {
+    const err = new Error('store_write_failed');
+    err.status = 500;
+    err.detail = {
+      message: '保存公共短消息失败（写入文件失败）',
+      storeFile: CUSTOM_MESSAGES_STORE_FILE,
+      error: String(error?.message || error)
+    };
+    throw err;
+  }
 }
 
 function parseAuthHeader(authHeader) {
   const raw = typeof authHeader === 'string' ? authHeader.trim() : '';
   if (!raw) return null;
-  const tokenMatch = raw.match(/^Token\s+([^;]+)(?:;\s*userId\s*=\s*([0-9]+))?\s*$/i);
+  const tokenMatch = raw.match(/^Token\s+([^;]+)(?:;\s*userId\s*=\s*([0-9]+))?(?:\s*;.*)?$/i);
   if (!tokenMatch) return null;
   return {
     token: tokenMatch[1],
@@ -93,13 +104,26 @@ async function resolveActorFromRequest(req) {
     return cached.actor;
   }
 
-  const flarumResponse = await fetch(`${FLARUM_BASE_URL}/api/users/${encodeURIComponent(parsed.userId)}?include=groups`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/vnd.api+json',
-      'Authorization': parsed.raw
-    }
-  });
+  let flarumResponse;
+  try {
+    flarumResponse = await fetch(`${FLARUM_BASE_URL}/api/users/${encodeURIComponent(parsed.userId)}?include=groups`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/vnd.api+json',
+        'Authorization': parsed.raw
+      }
+    });
+  } catch (fetchError) {
+    const err = new Error('flarum_unreachable');
+    err.status = 500;
+    err.detail = {
+      message: '无法连接到 Flarum API，请检查 FLARUM_BASE_URL',
+      FLARUM_BASE_URL,
+      userId: parsed.userId,
+      error: String(fetchError?.message || fetchError)
+    };
+    throw err;
+  }
 
   if (!flarumResponse.ok) {
     const err = new Error('flarum_auth_failed');
@@ -125,13 +149,20 @@ function requireActor(handler) {
   return async (req, res) => {
     try {
       req.actor = await resolveActorFromRequest(req);
-      return handler(req, res);
+      return await handler(req, res);
     } catch (error) {
-      const status = Number.isFinite(Number(error?.status)) ? Number(error.status) : 401;
-      if (status === 403) {
-        return res.status(403).json({ error: 'forbidden' });
-      }
-      return res.status(status).json({ error: 'unauthorized' });
+      const status = Number.isFinite(Number(error?.status)) ? Number(error.status) : 500;
+      const detail = error?.detail !== undefined ? error.detail : String(error?.message || error);
+      console.error('[custom-messages] request failed:', {
+        method: req.method,
+        path: req.originalUrl,
+        status,
+        detail
+      });
+      if (status === 401) return res.status(401).json({ error: 'unauthorized', detail });
+      if (status === 403) return res.status(403).json({ error: 'forbidden', detail });
+      if (status === 400) return res.status(400).json({ error: 'bad_request', detail });
+      return res.status(500).json({ error: 'server_error', detail });
     }
   };
 }
@@ -143,119 +174,150 @@ function nowIso() {
 function normalizePublicMessageType(type) {
   const t = String(type || '').toLowerCase();
   if (['system', 'notice', 'warning', 'event'].includes(t)) return t;
-  return 'notice';
+  return null;
 }
 
-app.get('/custom-messages/public', requireActor((req, res) => {
-  const store = loadCustomMessagesStore();
-  const userId = String(req.actor.userId);
+app.get('/custom-messages/public', requireActor(async (req, res) => {
+  try {
+    const store = loadCustomMessagesStore();
+    const userId = String(req.actor.userId);
 
-  const active = store.publicMessages
-    .filter((m) => m && m.is_active !== false)
-    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
-
-  const readMap = new Map();
-  store.publicReads.forEach((r) => {
-    if (!r) return;
-    if (String(r.user_id) !== userId) return;
-    readMap.set(String(r.message_id), r);
-  });
-
-  const data = active.map((m) => {
-    const readRow = readMap.get(String(m.id));
-    return {
-      id: m.id,
-      title: m.title,
-      content: m.content,
-      sender_user_id: m.sender_user_id,
-      created_at: m.created_at,
-      type: m.type,
-      is_active: m.is_active !== false,
-      is_read: !!readRow,
-      read_at: readRow ? readRow.read_at : null
-    };
-  });
-
-  res.json({ data });
-}));
-
-app.post('/custom-messages/public', requireActor((req, res) => {
-  if (!req.actor.isAdmin) {
-    return res.status(403).json({ error: 'forbidden' });
-  }
-
-  const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
-  const content = typeof req.body?.content === 'string' ? req.body.content : '';
-  const type = normalizePublicMessageType(req.body?.type);
-  const is_active = req.body?.is_active === false ? false : true;
-
-  if (!title || !content) {
-    return res.status(400).json({ error: 'validation_failed' });
-  }
-
-  const store = loadCustomMessagesStore();
-  const id = store.nextPublicMessageId++;
-  const row = {
-    id,
-    title,
-    content,
-    sender_user_id: Number(req.actor.userId),
-    created_at: nowIso(),
-    type,
-    is_active
-  };
-  store.publicMessages.push(row);
-  saveCustomMessagesStore(store);
-
-  res.json({ success: true, data: row });
-}));
-
-app.post('/custom-messages/public/:id/read', requireActor((req, res) => {
-  const messageId = Number(req.params.id);
-  if (!Number.isFinite(messageId) || messageId <= 0) {
-    return res.status(400).json({ error: 'invalid_id' });
-  }
-
-  const store = loadCustomMessagesStore();
-  const userId = Number(req.actor.userId);
-
-  const exists = store.publicReads.some((r) => Number(r?.message_id) === messageId && Number(r?.user_id) === userId);
-  if (!exists) {
-    const id = store.nextPublicReadId++;
-    store.publicReads.push({
-      id,
-      message_id: messageId,
-      user_id: userId,
-      read_at: nowIso()
-    });
-    saveCustomMessagesStore(store);
-  }
-
-  res.json({ success: true });
-}));
-
-app.get('/custom-messages/unread-count', requireActor((req, res) => {
-  const store = loadCustomMessagesStore();
-  const userId = String(req.actor.userId);
-
-  const activeIds = new Set(
-    store.publicMessages
+    const active = store.publicMessages
       .filter((m) => m && m.is_active !== false)
-      .map((m) => String(m.id))
-  );
+      .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
 
-  const readIds = new Set(
-    store.publicReads
-      .filter((r) => r && String(r.user_id) === userId)
-      .map((r) => String(r.message_id))
-  );
+    const readMap = new Map();
+    store.publicReads.forEach((r) => {
+      if (!r) return;
+      if (String(r.user_id) !== userId) return;
+      readMap.set(String(r.message_id), r);
+    });
 
-  let unread = 0;
-  activeIds.forEach((id) => {
-    if (!readIds.has(id)) unread++;
-  });
+    const data = active.map((m) => {
+      const readRow = readMap.get(String(m.id));
+      return {
+        id: m.id,
+        title: m.title,
+        content: m.content,
+        sender_user_id: m.sender_user_id,
+        created_at: m.created_at,
+        type: m.type,
+        is_active: m.is_active !== false,
+        is_read: !!readRow,
+        read_at: readRow ? readRow.read_at : null
+      };
+    });
 
-  res.json({ publicUnread: unread, totalUnread: unread });
+    res.json({ data });
+  } catch (error) {
+    console.error('[custom-messages] GET /custom-messages/public failed:', error);
+    res.status(500).json({ error: 'server_error', detail: '读取公共短消息失败' });
+  }
+}));
+
+app.post('/custom-messages/public', requireActor(async (req, res) => {
+  try {
+    if (!req.actor.isAdmin) {
+      return res.status(403).json({ error: 'forbidden', detail: 'not_admin' });
+    }
+
+    const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+    const content = typeof req.body?.content === 'string' ? req.body.content : '';
+    const type = normalizePublicMessageType(req.body?.type);
+    const is_active = req.body?.is_active === false ? false : true;
+
+    if (!title || !content) {
+      return res.status(400).json({ error: 'bad_request', detail: 'title_and_content_required' });
+    }
+    if (!type) {
+      return res.status(400).json({ error: 'bad_request', detail: 'invalid_type' });
+    }
+
+    const store = loadCustomMessagesStore();
+    const id = store.nextPublicMessageId++;
+    const row = {
+      id,
+      title,
+      content,
+      sender_user_id: Number(req.actor.userId),
+      created_at: nowIso(),
+      type,
+      is_active
+    };
+    store.publicMessages.push(row);
+    saveCustomMessagesStore(store);
+
+    res.json({ data: row });
+  } catch (error) {
+    console.error('[custom-messages] POST /custom-messages/public failed:', error);
+    const status = Number.isFinite(Number(error?.status)) ? Number(error.status) : 500;
+    if (status === 500 && error?.detail?.storeFile) {
+      return res.status(500).json({ error: 'server_error', detail: error.detail });
+    }
+    res.status(500).json({ error: 'server_error', detail: '服务器保存公共短消息失败，请查看后端日志' });
+  }
+}));
+
+app.post('/custom-messages/public/:id/read', requireActor(async (req, res) => {
+  try {
+    const messageId = Number(req.params.id);
+    if (!Number.isFinite(messageId) || messageId <= 0) {
+      return res.status(400).json({ error: 'bad_request', detail: 'invalid_id' });
+    }
+
+    const store = loadCustomMessagesStore();
+    const userId = Number(req.actor.userId);
+
+    const exists = store.publicReads.some((r) => Number(r?.message_id) === messageId && Number(r?.user_id) === userId);
+    if (!exists) {
+      const id = store.nextPublicReadId++;
+      store.publicReads.push({
+        id,
+        message_id: messageId,
+        user_id: userId,
+        read_at: nowIso()
+      });
+      saveCustomMessagesStore(store);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[custom-messages] POST /custom-messages/public/:id/read failed:', error);
+    const status = Number.isFinite(Number(error?.status)) ? Number(error.status) : 500;
+    if (status === 500 && error?.detail?.storeFile) {
+      return res.status(500).json({ error: 'server_error', detail: error.detail });
+    }
+    res.status(500).json({ error: 'server_error', detail: '服务器保存已读状态失败，请查看后端日志' });
+  }
+}));
+
+app.get('/custom-messages/unread-count', requireActor(async (req, res) => {
+  try {
+    const store = loadCustomMessagesStore();
+    const userId = String(req.actor.userId);
+
+    const activeIds = new Set(
+      store.publicMessages
+        .filter((m) => m && m.is_active !== false)
+        .map((m) => String(m.id))
+    );
+
+    const readIds = new Set(
+      store.publicReads
+        .filter((r) => r && String(r.user_id) === userId)
+        .map((r) => String(r.message_id))
+    );
+
+    let unread = 0;
+    activeIds.forEach((id) => {
+      if (!readIds.has(id)) unread++;
+    });
+
+    res.json({ publicUnread: unread, totalUnread: unread });
+  } catch (error) {
+    console.error('[custom-messages] GET /custom-messages/unread-count failed:', error);
+    res.status(500).json({ error: 'server_error', detail: '读取未读数失败' });
+  }
 }));
 
 // Health check

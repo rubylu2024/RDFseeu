@@ -570,6 +570,15 @@ async function customRequest(path, options = {}) {
     const userId = localStorage.getItem('flarumUserId');
     const shouldAttachAuthHeader = !!(token && options.auth !== false && !headers.Authorization);
 
+    if (options.auth === true) {
+        if (!token || !userId) {
+            const error = new Error('请先登录后再发送短消息');
+            error.httpStatus = 401;
+            error.detail = 'missing_token_or_user_id';
+            throw error;
+        }
+    }
+
     if (shouldAttachAuthHeader) {
         headers.Authorization = userId
             ? `Token ${token}; userId=${userId}`
@@ -3210,8 +3219,22 @@ async function renderMessagePage() {
                     await refreshShortMessagesEntry();
                     await loadList();
                 } catch (error) {
-                    if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
-                        setAlert('只有管理员可以发送公共短消息。');
+                    console.error('公共短消息群发失败:', error);
+                    const status = error?.httpStatus || error?.apiError?.status;
+                    if (status === 401) {
+                        setAlert('请先登录后再发送短消息');
+                        return;
+                    }
+                    if (status === 403) {
+                        setAlert('当前账号不是管理员，不能群发公共短消息');
+                        return;
+                    }
+                    if (status === 400) {
+                        setAlert('标题和内容不能为空');
+                        return;
+                    }
+                    if (status === 500) {
+                        setAlert('服务器保存公共短消息失败，请查看后端日志');
                         return;
                     }
                     setAlert('群发失败，请稍后再试。');
