@@ -1027,6 +1027,31 @@ body::before {
     box-shadow: 0 0 2px rgba(0,0,0,0.5);
 }
 
+.pm-list-item.pm-read {
+    opacity: 0.75;
+}
+
+.pm-list-item.pm-public {
+    border-left: 4px solid #3C4394;
+}
+
+.pm-list-item.pm-public.pm-public-system,
+.pm-list-item.pm-public.pm-public-notice,
+.pm-thread.pm-public-detail.pm-public-system,
+.pm-thread.pm-public-detail.pm-public-notice {
+    background: #fff9dd;
+}
+
+.pm-list-item.pm-public.pm-public-warning,
+.pm-thread.pm-public-detail.pm-public-warning {
+    background: #ffe2e2;
+}
+
+.pm-list-item.pm-public.pm-public-event,
+.pm-thread.pm-public-detail.pm-public-event {
+    background: #e7f2ff;
+}
+
 /* 底部样式 */
 footer {
     background-color: #f5f5f5;

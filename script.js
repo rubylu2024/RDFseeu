@@ -551,6 +551,56 @@ async function flarumRequest(path, options = {}) {
     return await response.json();
 }
 
+async function customRequest(path, options = {}) {
+    const url = (path.startsWith('/') ? path : '/' + path);
+
+    const headers = {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...options.headers
+    };
+
+    if (options.json !== undefined) {
+        headers['Content-Type'] = 'application/json';
+    } else if (options.body && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    const token = getFlarumToken();
+    const userId = localStorage.getItem('flarumUserId');
+    const shouldAttachAuthHeader = !!(token && options.auth !== false && !headers.Authorization);
+
+    if (shouldAttachAuthHeader) {
+        headers.Authorization = userId
+            ? `Token ${token}; userId=${userId}`
+            : `Token ${token}`;
+    }
+
+    const response = await fetch(url, {
+        method: options.method || 'GET',
+        headers,
+        body: options.json !== undefined ? JSON.stringify(options.json) : options.body
+    });
+
+    if (!response.ok) {
+        let detail = '';
+        try {
+            const errorJson = await response.json();
+            detail = JSON.stringify(errorJson);
+        } catch {
+            detail = await response.text();
+        }
+        const error = new Error(`自定义接口请求失败: ${response.status} ${response.statusText}`);
+        error.detail = detail;
+        error.httpStatus = response.status;
+        error.apiError = parseApiErrorDetail(detail);
+        throw error;
+    }
+
+    if (response.status === 204) return null;
+    return await response.json();
+}
+
 function formatFlarumTime(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -2563,7 +2613,7 @@ window.addEventListener('DOMContentLoaded', function() {
     setupSearchBoxes();
 
     try {
-        refreshUnreadShortMessagesBadge();
+        refreshShortMessagesEntry();
     } catch (_) {}
 
     try {
@@ -2714,44 +2764,87 @@ async function flarumLoadPrivateDiscussionDetail(discussionId) {
     };
 }
 
-async function refreshUnreadShortMessagesBadge() {
-    const badges = Array.from(document.querySelectorAll('.unread-badge'));
-    const headCountEl = document.getElementById('pm-unread-count');
-
-    if (!getFlarumToken()) {
-        badges.forEach((el) => {
-            el.style.display = 'none';
-            el.textContent = '0';
-        });
-        if (headCountEl) headCountEl.textContent = '0';
-        return 0;
-    }
-
+async function flarumGetPrivateUnreadCount() {
+    if (!getFlarumToken()) return 0;
     try {
         const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
         const list = Array.isArray(json?.data) ? json.data : [];
-        const unreadCount = list.filter((d) => isDiscussionUnreadForActor(d?.attributes)).length;
-
-        badges.forEach((el) => {
-            if (unreadCount > 0) {
-                el.style.display = '';
-                el.textContent = String(unreadCount);
-            } else {
-                el.style.display = 'none';
-                el.textContent = '0';
-            }
-        });
-
-        if (headCountEl) headCountEl.textContent = String(unreadCount);
-        return unreadCount;
+        return list.filter((d) => isDiscussionUnreadForActor(d?.attributes)).length;
     } catch {
-        badges.forEach((el) => {
-            el.style.display = 'none';
-            el.textContent = '0';
-        });
-        if (headCountEl) headCountEl.textContent = '0';
         return 0;
     }
+}
+
+async function customGetPublicMessages() {
+    const json = await customRequest('/custom-messages/public', { auth: true });
+    return Array.isArray(json?.data) ? json.data : [];
+}
+
+async function customMarkPublicMessageRead(messageId) {
+    const id = String(messageId || '');
+    if (!id) return;
+    await customRequest(`/custom-messages/public/${encodeURIComponent(id)}/read`, { method: 'POST', auth: true });
+}
+
+async function customGetPublicUnreadCount() {
+    if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) return 0;
+    try {
+        const json = await customRequest('/custom-messages/unread-count', { auth: true });
+        const n = Number(json?.publicUnread ?? json?.totalUnread ?? 0);
+        return Number.isFinite(n) && n >= 0 ? n : 0;
+    } catch {
+        return 0;
+    }
+}
+
+async function refreshShortMessagesEntry() {
+    const entryEls = Array.from(document.querySelectorAll('.status-right'))
+        .filter((el) => (el?.getAttribute?.('onclick') || '').includes("message.html"));
+    const badgeEls = Array.from(document.querySelectorAll('.unread-badge'));
+    const headCountEl = document.getElementById('pm-unread-count');
+
+    const setEntryLabel = (el, label) => {
+        if (!el) return;
+        let firstText = null;
+        const toRemove = [];
+        el.childNodes.forEach((n) => {
+            if (n.nodeType !== 3) return;
+            if (!firstText) firstText = n;
+            else toRemove.push(n);
+        });
+        toRemove.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
+        if (firstText) {
+            firstText.nodeValue = label;
+            return;
+        }
+        el.insertBefore(document.createTextNode(label), el.firstChild);
+    };
+
+    if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) {
+        entryEls.forEach((el) => setEntryLabel(el, '短消息'));
+        badgeEls.forEach((el) => { el.style.display = 'none'; el.textContent = '0'; });
+        if (headCountEl) headCountEl.textContent = '0';
+        return { totalUnread: 0, publicUnread: 0, privateUnread: 0 };
+    }
+
+    const [publicUnread, privateUnread] = await Promise.all([
+        customGetPublicUnreadCount(),
+        flarumGetPrivateUnreadCount()
+    ]);
+
+    const total = Math.max(0, publicUnread + privateUnread);
+    const showText = total > 99 ? '99+' : String(total);
+    const label = total > 0 ? `短消息(${showText})` : '短消息';
+
+    entryEls.forEach((el) => setEntryLabel(el, label));
+
+    badgeEls.forEach((el) => {
+        el.style.display = 'none';
+        el.textContent = '0';
+    });
+
+    if (headCountEl) headCountEl.textContent = String(total);
+    return { totalUnread: total, publicUnread, privateUnread };
 }
 
 async function renderMessagePage() {
@@ -2762,11 +2855,14 @@ async function renderMessagePage() {
     const detailTitleEl = document.getElementById('pm-detail-title');
     const detailMetaEl = document.getElementById('pm-detail-meta');
     const detailBodyEl = document.getElementById('pm-detail-body');
-    const tabInbox = document.getElementById('pm-tab-inbox');
-    const tabSent = document.getElementById('pm-tab-sent');
-    const composeBtn = document.getElementById('pm-compose-btn');
+    const tabAll = document.getElementById('pm-tab-all');
+    const tabPrivate = document.getElementById('pm-tab-private');
+    const tabPublic = document.getElementById('pm-tab-public');
+    const tabUnread = document.getElementById('pm-tab-unread');
+    const composePrivateBtn = document.getElementById('pm-compose-private-btn');
+    const composePublicBtn = document.getElementById('pm-compose-public-btn');
 
-    if (!listBodyEl || !detailBodyEl || !tabInbox || !tabSent || !composeBtn) return;
+    if (!listBodyEl || !detailBodyEl || !tabAll || !tabPrivate || !tabPublic || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
 
     const setAlert = (message) => {
         if (!alertEl) return;
@@ -2784,30 +2880,19 @@ async function renderMessagePage() {
         setAlert('请先登录后查看短消息。');
         listBodyEl.innerHTML = '<div class="pm-empty">请先登录后查看短消息。</div>';
         detailBodyEl.innerHTML = '<div class="pm-empty">请先登录后查看短消息。</div>';
-        await refreshUnreadShortMessagesBadge();
+        await refreshShortMessagesEntry();
         return;
     }
 
     let state = window.pmState;
     if (!state) {
         state = {
-            box: 'inbox',
-            list: [],
-            selectedId: null
+            filter: 'all',
+            items: [],
+            selected: null
         };
         window.pmState = state;
     }
-
-    const setBox = async (box) => {
-        state.box = box === 'sent' ? 'sent' : 'inbox';
-        tabInbox.classList.toggle('active', state.box === 'inbox');
-        tabSent.classList.toggle('active', state.box === 'sent');
-        if (listTitleEl) listTitleEl.textContent = state.box === 'sent' ? '发件箱' : '收件箱';
-        if (listMetaEl) listMetaEl.textContent = '';
-        state.selectedId = null;
-        renderDetailEmpty();
-        await loadList();
-    };
 
     const renderDetailEmpty = () => {
         if (detailTitleEl) detailTitleEl.textContent = '短消息内容';
@@ -2815,7 +2900,22 @@ async function renderMessagePage() {
         detailBodyEl.innerHTML = '<div class="pm-empty">请选择一条短消息查看内容。</div>';
     };
 
-    const renderCompose = async ({ toUserId }) => {
+    const isAdmin = await isCurrentUserAdmin().catch(() => false);
+    composePublicBtn.style.display = isAdmin ? '' : 'none';
+
+    const setFilter = async (filter) => {
+        state.filter = ['all', 'private', 'public', 'unread'].includes(filter) ? filter : 'all';
+        tabAll.classList.toggle('active', state.filter === 'all');
+        tabPrivate.classList.toggle('active', state.filter === 'private');
+        tabPublic.classList.toggle('active', state.filter === 'public');
+        tabUnread.classList.toggle('active', state.filter === 'unread');
+        if (listTitleEl) listTitleEl.textContent = '我的短消息';
+        state.selected = null;
+        renderDetailEmpty();
+        await loadList();
+    };
+
+    const renderComposePrivate = async ({ toUserId }) => {
         const toId = toUserId == null ? '' : String(toUserId);
         detailBodyEl.innerHTML = `
             <form class="pm-form" id="pm-compose-form">
@@ -2928,6 +3028,7 @@ async function renderMessagePage() {
             cancelBtn.onclick = () => {
                 const params = new URLSearchParams(window.location.search);
                 params.delete('to');
+                params.delete('composePublic');
                 const next = params.toString();
                 window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
                 renderDetailEmpty();
@@ -3019,8 +3120,8 @@ async function renderMessagePage() {
                     });
 
                     setAlert('');
-                    await refreshUnreadShortMessagesBadge();
-                    await setBox('inbox');
+                    await refreshShortMessagesEntry();
+                    await loadList();
                 } catch (error) {
                     if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
                         setAlert('当前账号没有使用短消息的权限，请联系网管。');
@@ -3032,64 +3133,227 @@ async function renderMessagePage() {
         }
     };
 
+    const renderComposePublic = async () => {
+        if (!isAdmin) {
+            setAlert('只有管理员可以发送公共短消息。');
+            return;
+        }
+
+        detailBodyEl.innerHTML = `
+            <form class="pm-form" id="pm-public-form">
+                <div style="margin-bottom: 10px;">
+                    <label>类型</label>
+                    <select id="pm-public-type">
+                        <option value="system">system（系统）</option>
+                        <option value="notice" selected>notice（公告）</option>
+                        <option value="warning">warning（警告）</option>
+                        <option value="event">event（活动）</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>标题</label>
+                    <input type="text" id="pm-public-title" value="" placeholder="请输入公共短消息标题">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>内容</label>
+                    <textarea id="pm-public-content" placeholder="请输入公共短消息内容"></textarea>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label><input type="checkbox" id="pm-public-active" checked> 启用</label>
+                </div>
+                <div class="pm-form-actions">
+                    <button type="submit" class="pm-btn primary">群发</button>
+                    <button type="button" class="pm-btn" id="pm-public-cancel">取消</button>
+                </div>
+            </form>
+        `;
+        if (detailTitleEl) detailTitleEl.textContent = '管理员群发';
+        if (detailMetaEl) detailMetaEl.textContent = '';
+
+        const form = document.getElementById('pm-public-form');
+        const cancelBtn = document.getElementById('pm-public-cancel');
+        const typeEl = document.getElementById('pm-public-type');
+        const titleEl = document.getElementById('pm-public-title');
+        const contentEl = document.getElementById('pm-public-content');
+        const activeEl = document.getElementById('pm-public-active');
+
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                const params = new URLSearchParams(window.location.search);
+                params.delete('composePublic');
+                const next = params.toString();
+                window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
+                renderDetailEmpty();
+            };
+        }
+
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                setAlert('');
+
+                const type = String(typeEl?.value || 'notice').trim();
+                const title = String(titleEl?.value || '').trim();
+                const content = String(contentEl?.value || '').trim();
+                const is_active = !!activeEl?.checked;
+
+                if (!title) return setAlert('请填写标题。');
+                if (!content) return setAlert('请填写内容。');
+
+                try {
+                    await customRequest('/custom-messages/public', {
+                        method: 'POST',
+                        auth: true,
+                        json: { title, content, type, is_active }
+                    });
+                    setAlert('');
+                    await refreshShortMessagesEntry();
+                    await loadList();
+                } catch (error) {
+                    if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
+                        setAlert('只有管理员可以发送公共短消息。');
+                        return;
+                    }
+                    setAlert('群发失败，请稍后再试。');
+                }
+            };
+        }
+    };
+
+    const formatPublicTypeLabel = (t) => {
+        const type = String(t || '').toLowerCase();
+        if (type === 'system') return '系统';
+        if (type === 'warning') return '警告';
+        if (type === 'event') return '活动';
+        return '公告';
+    };
+
     const loadList = async () => {
         setAlert('');
         listBodyEl.innerHTML = '<div class="pm-empty">加载中...</div>';
         try {
-            const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
-            const discussions = Array.isArray(json?.data) ? json.data : [];
-            const included = Array.isArray(json?.included) ? json.included : [];
-            const currentUserId = localStorage.getItem('flarumUserId');
+            const [privateResult, publicMessages] = await Promise.all([
+                (async () => {
+                    try {
+                        const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
+                        return { json, error: null };
+                    } catch (error) {
+                        return { json: null, error };
+                    }
+                })(),
+                (async () => {
+                    try {
+                        return await customGetPublicMessages();
+                    } catch (error) {
+                        return { __error: error };
+                    }
+                })()
+            ]);
 
-            const filtered = state.box === 'sent'
-                ? discussions.filter((d) => String(d?.relationships?.user?.data?.id || '') === String(currentUserId || ''))
-                : discussions;
+            const privateDiscussions = Array.isArray(privateResult?.json?.data) ? privateResult.json.data : [];
+            const privateIncluded = Array.isArray(privateResult?.json?.included) ? privateResult.json.included : [];
 
-            state.list = filtered.map((d) => {
+            const privateItems = privateDiscussions.map((d) => {
                 const id = d?.id;
                 const attrs = d?.attributes || {};
                 const starterId = d?.relationships?.user?.data?.id;
-                const starterUser = starterId ? pickIncluded(included, 'users', starterId) : null;
+                const starterUser = starterId ? pickIncluded(privateIncluded, 'users', starterId) : null;
                 const starterName = getPreferredDisplayName(starterUser?.attributes) || '匿名用户';
                 const unread = isDiscussionUnreadForActor(attrs);
                 const lastPostedAt = attrs.lastPostedAt || attrs.createdAt || '';
                 return {
-                    id,
+                    kind: 'private',
+                    id: String(id || ''),
                     title: attrs.title || '无标题',
-                    starterName,
-                    lastPostedAt,
+                    meta1: `发件人：${starterName}`,
+                    time: lastPostedAt,
                     unread
                 };
+            }).filter((x) => x.id);
+
+            const publicError = publicMessages && publicMessages.__error ? publicMessages.__error : null;
+            const publicItemsRaw = publicError ? [] : publicMessages;
+
+            const publicItems = (Array.isArray(publicItemsRaw) ? publicItemsRaw : []).map((m) => {
+                const type = String(m?.type || 'notice');
+                const unread = !m?.is_read;
+                const createdAt = m?.created_at || '';
+                return {
+                    kind: 'public',
+                    id: String(m?.id || ''),
+                    title: m?.title || '（无标题）',
+                    meta1: `公共：${formatPublicTypeLabel(type)}`,
+                    time: createdAt,
+                    unread,
+                    publicType: type,
+                    content: m?.content || '',
+                    senderUserId: m?.sender_user_id
+                };
+            }).filter((x) => x.id);
+
+            if (privateResult?.error?.httpStatus === 403 || privateResult?.error?.apiError?.status === 403) {
+                setAlert('当前账号没有使用短消息的权限，请联系网管。');
+            }
+
+            if (publicError?.httpStatus === 403 || publicError?.apiError?.status === 403) {
+                setAlert('当前账号没有使用短消息的权限，请联系网管。');
+            }
+
+            const merged = [...privateItems, ...publicItems].sort((a, b) => {
+                const ta = parseFlarumIsoTime(a.time)?.getTime() || 0;
+                const tb = parseFlarumIsoTime(b.time)?.getTime() || 0;
+                return tb - ta;
             });
 
-            if (listMetaEl) listMetaEl.textContent = `共 ${state.list.length} 条`;
+            const filtered = merged.filter((item) => {
+                if (state.filter === 'private') return item.kind === 'private';
+                if (state.filter === 'public') return item.kind === 'public';
+                if (state.filter === 'unread') return !!item.unread;
+                return true;
+            });
 
-            if (state.list.length === 0) {
-                listBodyEl.innerHTML = `<div class="pm-empty">${state.box === 'sent' ? '发件箱暂无短消息。' : '收件箱暂无短消息。'}</div>`;
+            state.items = filtered;
+            if (listMetaEl) listMetaEl.textContent = `共 ${filtered.length} 条`;
+
+            if (filtered.length === 0) {
+                listBodyEl.innerHTML = '<div class="pm-empty">暂无短消息。</div>';
+                await refreshShortMessagesEntry();
                 return;
             }
 
-            listBodyEl.innerHTML = state.list.map((item) => `
-                <div class="pm-list-item ${item.unread ? 'unread' : ''}" data-id="${escapeHtml(String(item.id || ''))}">
-                    <div class="pm-list-title">${escapeHtml(item.title)}</div>
-                    <div class="pm-list-meta">
-                        <span>${escapeHtml(state.box === 'sent' ? '发件人：我' : `发件人：${item.starterName}`)}</span>
-                        <span>${escapeHtml(formatFlarumTime(item.lastPostedAt).slice(0, 16))}</span>
-                        ${item.unread ? '<span style="color:#cc0000;">未读短消息</span>' : ''}
+            listBodyEl.innerHTML = filtered.map((item) => {
+                const isPublic = item.kind === 'public';
+                const publicType = isPublic ? String(item.publicType || 'notice') : '';
+                const cls = [
+                    'pm-list-item',
+                    item.unread ? 'unread' : 'pm-read',
+                    isPublic ? 'pm-public' : 'pm-private',
+                    isPublic ? `pm-public-${escapeHtml(publicType)}` : ''
+                ].filter(Boolean).join(' ');
+                const timeText = item.time ? escapeHtml(formatFlarumTime(item.time).slice(0, 16)) : '';
+                return `
+                    <div class="${cls}" data-kind="${escapeHtml(item.kind)}" data-id="${escapeHtml(item.id)}">
+                        <div class="pm-list-title">${escapeHtml(item.title)}</div>
+                        <div class="pm-list-meta">
+                            <span>${escapeHtml(item.meta1 || '')}</span>
+                            <span>${timeText}</span>
+                            ${item.unread ? '<span style="color:#cc0000;">未读</span>' : ''}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             Array.from(listBodyEl.querySelectorAll('.pm-list-item')).forEach((el) => {
                 el.addEventListener('click', async () => {
                     const id = el.getAttribute('data-id');
-                    if (!id) return;
-                    state.selectedId = id;
-                    await renderDetail(id);
+                    const kind = el.getAttribute('data-kind');
+                    if (!id || !kind) return;
+                    state.selected = { kind, id };
+                    await renderDetail({ kind, id });
                 });
             });
 
-            await refreshUnreadShortMessagesBadge();
+            await refreshShortMessagesEntry();
         } catch (error) {
             if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
                 setAlert('当前账号没有使用短消息的权限，请联系网管。');
@@ -3102,11 +3366,47 @@ async function renderMessagePage() {
         }
     };
 
-    const renderDetail = async (discussionId) => {
+    const renderDetail = async ({ kind, id }) => {
         setAlert('');
         detailBodyEl.innerHTML = '<div class="pm-empty">加载中...</div>';
         try {
-            const { discussion, included, posts } = await flarumLoadPrivateDiscussionDetail(discussionId);
+            if (kind === 'public') {
+                const message = (state.items || []).find((x) => x.kind === 'public' && String(x.id) === String(id));
+                if (!message) {
+                    detailBodyEl.innerHTML = '<div class="pm-empty">短消息不存在或已过期。</div>';
+                    return;
+                }
+                const title = message.title || '公共短消息';
+                const createdAt = message.time ? formatFlarumTime(message.time).slice(0, 16) : '';
+                const typeLabel = formatPublicTypeLabel(message.publicType);
+                if (detailTitleEl) detailTitleEl.textContent = title;
+                if (detailMetaEl) detailMetaEl.textContent = `${typeLabel}${createdAt ? ` · ${createdAt}` : ''}`;
+
+                const contentHtml = textToHtmlParagraphs(String(message.content || ''));
+                detailBodyEl.innerHTML = `
+                    <div class="pm-thread pm-public-detail pm-public-${escapeHtml(String(message.publicType || 'notice'))}">
+                        ${contentHtml || '<div class="pm-empty">暂无内容</div>'}
+                    </div>
+                `;
+
+                try {
+                    await customMarkPublicMessageRead(id);
+                    state.items = (state.items || []).map((x) => {
+                        if (x.kind === 'public' && String(x.id) === String(id)) return { ...x, unread: false };
+                        return x;
+                    });
+                } catch (error) {
+                    if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
+                        setAlert('当前账号没有使用短消息的权限，请联系网管。');
+                    }
+                }
+
+                await refreshShortMessagesEntry();
+                await loadList();
+                return;
+            }
+
+            const { discussion, included, posts } = await flarumLoadPrivateDiscussionDetail(id);
             if (!discussion) {
                 detailBodyEl.innerHTML = '<div class="pm-empty">短消息不存在或无法访问。</div>';
                 return;
@@ -3157,9 +3457,9 @@ async function renderMessagePage() {
                     const content = String(replyContent.value || '').trim();
                     if (!content) return;
                     try {
-                        await flarumCreatePost({ discussionId: String(discussionId), content });
+                        await flarumCreatePost({ discussionId: String(id), content });
                         replyContent.value = '';
-                        await renderDetail(discussionId);
+                        await renderDetail({ kind: 'private', id: String(id) });
                         await loadList();
                     } catch (error) {
                         if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
@@ -3171,7 +3471,7 @@ async function renderMessagePage() {
                 };
             }
 
-            await refreshUnreadShortMessagesBadge();
+            await refreshShortMessagesEntry();
         } catch (error) {
             if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
                 setAlert('当前账号没有使用短消息的权限，请联系网管。');
@@ -3183,23 +3483,38 @@ async function renderMessagePage() {
         }
     };
 
-    tabInbox.onclick = () => setBox('inbox');
-    tabSent.onclick = () => setBox('sent');
-    composeBtn.onclick = () => {
+    tabAll.onclick = () => setFilter('all');
+    tabPrivate.onclick = () => setFilter('private');
+    tabPublic.onclick = () => setFilter('public');
+    tabUnread.onclick = () => setFilter('unread');
+
+    composePrivateBtn.onclick = () => {
         const params = new URLSearchParams(window.location.search);
         const to = params.get('to');
-        renderCompose({ toUserId: to });
+        renderComposePrivate({ toUserId: to });
     };
 
-    await refreshUnreadShortMessagesBadge();
+    composePublicBtn.onclick = () => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('composePublic', '1');
+        window.history.replaceState(null, '', `message.html?${params.toString()}`);
+        renderComposePublic();
+    };
+
+    await refreshShortMessagesEntry();
 
     const urlParams = new URLSearchParams(window.location.search);
     const to = urlParams.get('to');
-    if (to) {
-        await renderCompose({ toUserId: to });
-    } else {
-        await setBox(state.box);
+    const composePublic = urlParams.get('composePublic');
+    if (composePublic === '1') {
+        await renderComposePublic();
+        return;
     }
+    if (to) {
+        await renderComposePrivate({ toUserId: to });
+        return;
+    }
+    await setFilter(state.filter);
 }
 
 // 测试Flarum API连接
@@ -3617,6 +3932,7 @@ async function renderPublicUserPage() {
         if (badgeType === 'mod') badgeText = '版主';
 
         const pmHref = buildMessageHrefForUserId(userId);
+        const isViewerAdmin = await isCurrentUserAdmin().catch(() => false);
 
         let topics = [];
 
@@ -3657,7 +3973,8 @@ async function renderPublicUserPage() {
                 <div>
                     <div class="public-user-name">
                         ${escapeHtml(displayName)}${badgeText ? ` <span style="font-size: 12px; color: #fff; background: ${badgeText === '管理员' ? '#cc0000' : '#0066cc'}; padding: 2px 6px; border-radius: 3px; margin-left: 6px;">${badgeText}</span>` : ''}
-                        <a href="${pmHref}" style="display: inline-block; margin-left: 10px; padding: 4px 8px; border: 1px solid #6F6F6F; background: linear-gradient(to bottom, #DEDEDE, #C2C2C2); color: #333; text-decoration: none; font-size: 13px;">发短消息</a>
+                        <a href="${pmHref}" style="display: inline-block; margin-left: 10px; padding: 4px 8px; border: 1px solid #6F6F6F; background: linear-gradient(to bottom, #DEDEDE, #C2C2C2); color: #333; text-decoration: none; font-size: 13px;">给TA发短消息</a>
+                        ${isViewerAdmin ? `<a href="message.html?composePublic=1" style="display: inline-block; margin-left: 6px; padding: 4px 8px; border: 1px solid #6F6F6F; background: linear-gradient(to bottom, #DEDEDE, #C2C2C2); color: #333; text-decoration: none; font-size: 13px;">管理员群发</a>` : ''}
                     </div>
                     <div class="public-user-meta">
                         <span>ID：${escapeHtml(String(userId))}</span>
@@ -4450,6 +4767,17 @@ function bindMyDragonflyEntry() {
     });
 }
 
+async function updateProfileAdminBroadcastLink() {
+    const link = document.getElementById('profile-admin-broadcast-link');
+    if (!link) return;
+    if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) {
+        link.style.display = 'none';
+        return;
+    }
+    const isAdmin = await isCurrentUserAdmin().catch(() => false);
+    link.style.display = isAdmin ? 'inline-block' : 'none';
+}
+
 function refreshAuthDependentUI() {
     try {
         updateUserLinks();
@@ -4460,11 +4788,15 @@ function refreshAuthDependentUI() {
     } catch (_) {}
 
     try {
-        refreshUnreadShortMessagesBadge();
+        refreshShortMessagesEntry();
     } catch (_) {}
 
     try {
         setupStatusBarClock();
+    } catch (_) {}
+
+    try {
+        updateProfileAdminBroadcastLink();
     } catch (_) {}
 
     if (typeof updateReplyFormForLoginStatus === 'function') {
