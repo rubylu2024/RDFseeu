@@ -1531,6 +1531,7 @@
         }
 
         function getProfilePoints(attributes) {
+            // 私信积分回滚由服务器 SQL 处理，不在前端扣减。
             const candidates = [
                 attributes?.points,
                 attributes?.money,
@@ -1672,27 +1673,64 @@
             const stats = { posts: 0, comments: 0 };
 
             try {
-                const [discussionsData, postsData] = await Promise.all([
-                    flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&page[limit]=50`, { auth: true }),
-                    flarumRequest(`/posts?filter[user]=${encodeURIComponent(String(userId))}&page[limit]=50`, { auth: true })
-                ]);
+                const safeUserId = String(userId || '');
+                const safeUsername = String(username || '');
+                const publicDiscussionQuery = typeof buildPublicDiscussionFilterQuery === 'function'
+                    ? buildPublicDiscussionFilterQuery()
+                    : '-is:private';
 
-                stats.posts = discussionsData?.data?.length || 0;
-                const firstPagePosts = Array.isArray(postsData?.data) ? postsData.data : [];
-                let offset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(postsData?.links?.next) : null;
-                const collected = [...firstPagePosts];
+                const collectedDiscussions = [];
+                if (safeUsername) {
+                    let offset = 0;
+                    let pageGuard = 0;
+                    while (collectedDiscussions.length < 200 && pageGuard < 6) {
+                        pageGuard += 1;
+                        const pageJson = await flarumRequest(
+                            `/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=50&page[offset]=${offset}`,
+                            { auth: true }
+                        );
+                        const pageDiscussions = typeof filterPublicDiscussions === 'function'
+                            ? filterPublicDiscussions(Array.isArray(pageJson?.data) ? pageJson.data : [])
+                            : (Array.isArray(pageJson?.data) ? pageJson.data : []);
+                        collectedDiscussions.push(...pageDiscussions);
+                        const nextOffset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(pageJson?.links?.next) : null;
+                        if (nextOffset == null || pageDiscussions.length === 0) break;
+                        offset = nextOffset;
+                    }
+                }
+                stats.posts = collectedDiscussions.length;
+
+                const firstPostsPage = await flarumRequest(
+                    `/posts?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&page[limit]=50&page[offset]=0&include=discussion,user`,
+                    { auth: true }
+                );
+                const firstPagePosts = Array.isArray(firstPostsPage?.data) ? firstPostsPage.data : [];
+                const firstPageIncluded = Array.isArray(firstPostsPage?.included) ? firstPostsPage.included : [];
+                const collected = firstPagePosts.filter((post) => {
+                    if (String(post?.relationships?.user?.data?.id || '') !== safeUserId) return false;
+                    if (typeof isPrivatePostResource === 'function' && isPrivatePostResource(post, firstPageIncluded)) return false;
+                    return true;
+                });
+                let offset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(firstPostsPage?.links?.next) : null;
                 let pageGuard = 0;
                 while (offset != null && collected.length < 200 && pageGuard < 6) {
                     pageGuard += 1;
-                    const pageJson = await flarumRequest(`/posts?sort=-createdAt&filter[user]=${encodeURIComponent(String(userId))}&page[limit]=50&page[offset]=${offset}`, { auth: true });
+                    const pageJson = await flarumRequest(
+                        `/posts?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&page[limit]=50&page[offset]=${offset}&include=discussion,user`,
+                        { auth: true }
+                    );
                     const pagePosts = Array.isArray(pageJson?.data) ? pageJson.data : [];
-                    collected.push(...pagePosts);
+                    const pageIncluded = Array.isArray(pageJson?.included) ? pageJson.included : [];
+                    pagePosts.forEach((post) => {
+                        if (String(post?.relationships?.user?.data?.id || '') !== safeUserId) return;
+                        if (typeof isPrivatePostResource === 'function' && isPrivatePostResource(post, pageIncluded)) return;
+                        collected.push(post);
+                    });
                     offset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(pageJson?.links?.next) : null;
                     if (pagePosts.length === 0) break;
                 }
 
                 const replyCount = collected
-                    .filter((post) => String(post?.relationships?.user?.data?.id || '') === String(userId || ''))
                     .filter((post) => {
                         const floor = Number(post?.attributes?.number);
                         return Number.isFinite(floor) && floor > 1;
@@ -1708,8 +1746,13 @@
 
         async function fetchUserDiscussions(username) {
             try {
-                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&page[limit]=30&include=user`, { auth: true });
-                return data?.data || [];
+                const publicDiscussionQuery = typeof buildPublicDiscussionFilterQuery === 'function'
+                    ? buildPublicDiscussionFilterQuery()
+                    : '-is:private';
+                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`, { auth: true });
+                return typeof filterPublicDiscussions === 'function'
+                    ? filterPublicDiscussions(data?.data || [])
+                    : (data?.data || []);
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
                 return [];
