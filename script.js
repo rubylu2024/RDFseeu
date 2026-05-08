@@ -3420,7 +3420,8 @@ async function renderMessagePage() {
                     <textarea id="pm-public-content" placeholder="请输入公共短消息内容"></textarea>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <label><input type="checkbox" id="pm-public-active" checked> 启用</label>
+                    <label><input type="checkbox" id="pm-public-active" checked> 立即生效并显示</label>
+                    <div class="pm-hint">不勾选时会保存为停用状态，普通用户不会看到这条公共消息。</div>
                 </div>
                 <div class="pm-form-actions">
                     <button type="submit" class="pm-btn primary">群发</button>
@@ -3487,6 +3488,14 @@ async function renderMessagePage() {
                     }
                     if (status === 500) {
                         setAlert('服务器保存公共短消息失败，请查看后端日志');
+                        return;
+                    }
+                    if (status === 404) {
+                        setAlert('当前环境未启用公共消息接口，管理员群发暂不可用。');
+                        return;
+                    }
+                    if (!status) {
+                        setAlert('公共消息服务不可用，请检查后端接口是否已部署并正常运行。');
                         return;
                     }
                     setAlert('群发失败，请稍后再试。');
@@ -4237,7 +4246,7 @@ function renderForumThread(postData) {
                     <div class="post-content">${post.content}</div>
                     <div class="floor-info" style="display: flex; justify-content: flex-end; align-items: center;">
                         <span class="floor-number" style="margin-right: auto;">${post.floor}楼</span>
-                        ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${post.author}" data-content="${plainContent}">回复</a>` : ''}
+                        ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${escapeHtml(post.author || '')}" data-content="${escapeHtml(plainContent || '')}">回复</a>` : ''}
                         <span style="margin: 0 5px; color: #ccc; display: none;" class="reply-divider">|</span>
                         <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">删除</a>
                     </div>
@@ -4398,18 +4407,20 @@ function setupReplyButtons(postData) {
     const replyTargetInput = document.getElementById('reply-target');
     const replyContent = document.getElementById('reply-content');
     const replyBoxTitle = document.querySelector('.reply-box h4');
+    const cancelReply = document.getElementById('cancel-reply');
+
+    if (!replyTargetInput || !replyContent || !replyBoxTitle || !cancelReply) return;
 
     replyLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const floor = this.dataset.floor;
             const author = this.dataset.author;
-            const content = this.dataset.content;
             
             replyTargetInput.value = floor;
             replyContent.value = `回复 ${author}(${floor}楼)：`;
             replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
-            document.getElementById('cancel-reply').style.display = 'inline';
+            cancelReply.style.display = 'inline';
             replyContent.focus();
         });
     });
@@ -5063,7 +5074,7 @@ function insertNewCommentToPage(comment, postData) {
                 ${comment.content}
             </div>
             <div class="post-actions">
-                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${comment.author}" data-content="${comment.content.replace(/"/g, '&quot;')}">回复</a>
+                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${escapeHtml(comment.author || '')}" data-content="${escapeHtml(comment.content || '')}">回复</a>
             </div>
         </div>
     `;

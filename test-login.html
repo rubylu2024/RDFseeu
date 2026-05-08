@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录测试</title>
+    <link rel="icon" type="image/png" href="images/红蜻蜓.png">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,28 +51,28 @@
     </style>
 </head>
 <body>
-    <h1>Flarum 登录测试</h1>
+    <h1>Flarum 鐧诲綍娴嬭瘯</h1>
 
     <div class="test-section">
-        <h3>1. 测试 API 连通性</h3>
-        <button onclick="testApiConnectivity()">测试 API 连通性</button>
-        <pre id="connectivity-result">等待测试...</pre>
+        <h3>1. 娴嬭瘯 API 杩為€氭€?/h3>
+        <button onclick="testApiConnectivity()">娴嬭瘯 API 杩為€氭€?/button>
+        <pre id="connectivity-result">绛夊緟娴嬭瘯...</pre>
     </div>
 
     <div class="test-section">
-        <h3>2. 测试获取 Token</h3>
+        <h3>2. 娴嬭瘯鑾峰彇 Token</h3>
         <div>
-            <input type="text" id="test-username" placeholder="用户名或邮箱">
-            <input type="password" id="test-password" placeholder="密码">
+            <input type="text" id="test-username" placeholder="鐢ㄦ埛鍚嶆垨閭">
+            <input type="password" id="test-password" placeholder="瀵嗙爜">
         </div>
-        <button onclick="testLogin()">测试登录</button>
-        <pre id="login-result">等待测试...</pre>
+        <button onclick="testLogin()">娴嬭瘯鐧诲綍</button>
+        <pre id="login-result">绛夊緟娴嬭瘯...</pre>
     </div>
 
     <div class="test-section">
-        <h3>3. 检查 CORS 配置</h3>
-        <button onclick="checkCors()">检查 CORS</button>
-        <pre id="cors-result">等待测试...</pre>
+        <h3>3. 妫€鏌?CORS 閰嶇疆</h3>
+        <button onclick="checkCors()">妫€鏌?CORS</button>
+        <pre id="cors-result">绛夊緟娴嬭瘯...</pre>
     </div>
 
     <script>
@@ -80,28 +81,28 @@
         function getFriendlyTestErrorMessage(error, context) {
             const rawMessage = String(error?.message || '');
             if (/Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
-                return '无法连接论坛接口，请检查网络或服务器状态。';
+                return '鏃犳硶杩炴帴璁哄潧鎺ュ彛锛岃妫€鏌ョ綉缁滄垨鏈嶅姟鍣ㄧ姸鎬併€?;
             }
 
             if (/401/.test(rawMessage)) {
                 return context === 'login'
-                    ? '账号或密码不正确，登录被拒绝。'
-                    : '当前访问未通过身份验证。';
+                    ? '璐﹀彿鎴栧瘑鐮佷笉姝ｇ‘锛岀櫥褰曡鎷掔粷銆?
+                    : '褰撳墠璁块棶鏈€氳繃韬唤楠岃瘉銆?;
             }
 
             if (/403/.test(rawMessage)) {
-                return '当前账号或当前访问方式没有执行该操作的权限。';
+                return '褰撳墠璐﹀彿鎴栧綋鍓嶈闂柟寮忔病鏈夋墽琛岃鎿嶄綔鐨勬潈闄愩€?;
             }
 
             if (/404/.test(rawMessage)) {
-                return '请求的接口地址不存在，请检查论坛接口配置。';
+                return '璇锋眰鐨勬帴鍙ｅ湴鍧€涓嶅瓨鍦紝璇锋鏌ヨ鍧涙帴鍙ｉ厤缃€?;
             }
 
             if (/5\\d\\d/.test(rawMessage)) {
-                return '论坛服务器暂时繁忙，请稍后再试。';
+                return '璁哄潧鏈嶅姟鍣ㄦ殏鏃剁箒蹇欙紝璇风◢鍚庡啀璇曘€?;
             }
 
-            return '请求失败，请稍后再试。';
+            return '璇锋眰澶辫触锛岃绋嶅悗鍐嶈瘯銆?;
         }
 
         async function testApiConnectivity() {
@@ -111,10 +112,10 @@
                     method: 'GET',
                     headers: { Accept: 'application/vnd.api+json' }
                 });
-                resultEl.textContent = `状态: ${response.status} ${response.statusText}\n`;
-                resultEl.textContent += `CORS: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
+                resultEl.textContent = `鐘舵€? ${response.status} ${response.statusText}\n`;
+                resultEl.textContent += `CORS: ${response.headers.get('Access-Control-Allow-Origin') || '鏈厤缃?}\n`;
                 const data = await response.json();
-                resultEl.textContent += `数据: ${JSON.stringify(data, null, 2).substring(0, 500)}...`;
+                resultEl.textContent += `鏁版嵁: ${JSON.stringify(data, null, 2).substring(0, 500)}...`;
                 resultEl.parentElement.className = 'test-section success';
             } catch (error) {
                 resultEl.textContent = getFriendlyTestErrorMessage(error, 'connectivity');
@@ -128,7 +129,7 @@
             const resultEl = document.getElementById('login-result');
 
             if (!username || !password) {
-                resultEl.textContent = '请输入用户名和密码';
+                resultEl.textContent = '璇疯緭鍏ョ敤鎴峰悕鍜屽瘑鐮?;
                 return;
             }
 
@@ -142,26 +143,26 @@
                     body: JSON.stringify({ identification: username, password })
                 });
 
-                resultEl.textContent = `状态: ${response.status} ${response.statusText}\n`;
-                resultEl.textContent += `CORS: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
+                resultEl.textContent = `鐘舵€? ${response.status} ${response.statusText}\n`;
+                resultEl.textContent += `CORS: ${response.headers.get('Access-Control-Allow-Origin') || '鏈厤缃?}\n`;
 
                 const text = await response.text();
-                resultEl.textContent += `响应内容: ${text.substring(0, 500)}\n`;
+                resultEl.textContent += `鍝嶅簲鍐呭: ${text.substring(0, 500)}\n`;
 
                 if (response.ok) {
                     const data = JSON.parse(text);
                     if (data.token) {
-                        resultEl.textContent += `\n登录成功，Token: ${data.token.substring(0, 20)}...`;
+                        resultEl.textContent += `\n鐧诲綍鎴愬姛锛孴oken: ${data.token.substring(0, 20)}...`;
                         resultEl.parentElement.className = 'test-section success';
                     } else {
-                        resultEl.textContent += '\n响应中没有 token';
+                        resultEl.textContent += '\n鍝嶅簲涓病鏈?token';
                         resultEl.parentElement.className = 'test-section error';
                     }
                 } else {
                     resultEl.parentElement.className = 'test-section error';
                 }
             } catch (error) {
-                resultEl.textContent = `${getFriendlyTestErrorMessage(error, 'login')}\n如果你是跨域访问，也可能是浏览器拦截了请求。`;
+                resultEl.textContent = `${getFriendlyTestErrorMessage(error, 'login')}\n濡傛灉浣犳槸璺ㄥ煙璁块棶锛屼篃鍙兘鏄祻瑙堝櫒鎷︽埅浜嗚姹傘€俙;
                 resultEl.parentElement.className = 'test-section error';
             }
         }
@@ -170,13 +171,13 @@
             const resultEl = document.getElementById('cors-result');
             try {
                 const response = await fetch(API_BASE + '/discussions', { method: 'OPTIONS' });
-                resultEl.textContent = `预检请求状态: ${response.status}\n`;
-                resultEl.textContent += `Access-Control-Allow-Origin: ${response.headers.get('Access-Control-Allow-Origin') || '未配置'}\n`;
-                resultEl.textContent += `Access-Control-Allow-Methods: ${response.headers.get('Access-Control-Allow-Methods') || '未配置'}\n`;
-                resultEl.textContent += `Access-Control-Allow-Headers: ${response.headers.get('Access-Control-Allow-Headers') || '未配置'}\n`;
+                resultEl.textContent = `棰勬璇锋眰鐘舵€? ${response.status}\n`;
+                resultEl.textContent += `Access-Control-Allow-Origin: ${response.headers.get('Access-Control-Allow-Origin') || '鏈厤缃?}\n`;
+                resultEl.textContent += `Access-Control-Allow-Methods: ${response.headers.get('Access-Control-Allow-Methods') || '鏈厤缃?}\n`;
+                resultEl.textContent += `Access-Control-Allow-Headers: ${response.headers.get('Access-Control-Allow-Headers') || '鏈厤缃?}\n`;
 
                 if (!response.headers.get('Access-Control-Allow-Origin')) {
-                    resultEl.textContent += '\n警告: CORS 未配置，这可能导致跨域请求失败';
+                    resultEl.textContent += '\n璀﹀憡: CORS 鏈厤缃紝杩欏彲鑳藉鑷磋法鍩熻姹傚け璐?;
                     resultEl.parentElement.className = 'test-section error';
                 } else {
                     resultEl.parentElement.className = 'test-section success';

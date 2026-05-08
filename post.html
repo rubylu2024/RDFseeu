@@ -1,12 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>红蜻蜓论坛 - 帖子加载中...</title>
+    <link rel="icon" type="image/png" href="images/红蜻蜓.png">
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
-        /* 论坛风格样式 */
+        /* 璁哄潧椋庢牸鏍峰紡 */
         .forum-thread {
             background: #fff;
             border: 1px solid #ccc;
@@ -52,7 +53,7 @@
         .avatar {
             width: 48px;
             height: 48px;
-            background: #E8E8E8 url('images/用户头像.png') no-repeat center center;
+            background: #E8E8E8 url('images/鐢ㄦ埛澶村儚.png') no-repeat center center;
             background-size: cover;
             border: 1px solid #ccc;
             border-radius: 3px;
@@ -193,14 +194,14 @@
             color: #666;
         }
 
-        /* 第一层：蓝色主题 */
+        /* 绗竴灞傦細钃濊壊涓婚 */
         .quote-level-0 {
             background: #f9fbfd;
             border-left: 3px solid #0066cc;
         }
         .quote-level-0 .quote-author { color: #0066cc; }
 
-        /* 第二层：绿色主题 */
+        /* 绗簩灞傦細缁胯壊涓婚 */
         .quote-level-1 {
             background: #f8fcf8;
             border-left: 3px solid #28a745;
@@ -209,7 +210,7 @@
         }
         .quote-level-1 .quote-author { color: #28a745; }
 
-        /* 第三层：橙色主题 */
+        /* 绗笁灞傦細姗欒壊涓婚 */
         .quote-level-2 {
             background: #fffdf9;
             border-left: 3px solid #fd7e14;
@@ -265,157 +266,157 @@
     </style>
 </head>
 <body>
-    <!-- 音频元素 -->
-    <audio id="background-music" src="audio/红蜻蜓.mp3" loop>
+    <!-- 闊抽鍏冪礌 -->
+    <audio id="background-music" src="audio/绾㈣溁铚?mp3" loop>
         Your browser does not support the audio element.
     </audio>
     
-    <!-- 弹窗广告音频 -->
-    <audio id="popup-audio" src="audio/哥只是个传说.mp3" loop>
+    <!-- 寮圭獥骞垮憡闊抽 -->
+    <audio id="popup-audio" src="audio/鍝ュ彧鏄釜浼犺.mp3" loop>
         Your browser does not support the audio element.
      </audio>
 
     <div class="forum-frame-outer">
         <div class="forum-content">
             <div class="forum-frame">
-            <!-- 顶部导航栏 -->
+            <!-- 椤堕儴瀵艰埅鏍?-->
             <div class="top-nav">
                 <div class="top-nav-container">
                     <div class="logo">
                         <div class="logo-image"></div>
-                        <a href="index.html">红蜻蜓论坛</a>
+                        <a href="index.html">绾㈣溁铚撹鍧?/a>
                         <a href="index.html" class="logo-sub">www.reddragonfly.cyou</a>
                     </div>
                     <div class="top-links">
-                        <a href="index.html">论坛</a>
-                        <a href="#">博客</a>
-                        <a href="#">问答</a>
-                        <a href="https://www.4399.com" target="_blank">游戏厅</a>
-                        <a href="#">品牌</a>
-                        <a href="#">更多</a>
+                        <a href="index.html">璁哄潧</a>
+                        <a href="#">鍗氬</a>
+                        <a href="#">闂瓟</a>
+                        <a href="https://www.4399.com" target="_blank">娓告垙鍘?/a>
+                        <a href="#">鍝佺墝</a>
+                        <a href="#">鏇村</a>
                     </div>
                     <div class="search-box">
-                        <input type="text" placeholder="搜帖、找人、搜版块">
-                        <button>搜索</button>
+                        <input type="text" placeholder="鎼滃笘銆佹壘浜恒€佹悳鐗堝潡">
+                        <button>鎼滅储</button>
                     </div>
                     <div class="user-links">
                         <button id="audio-toggle" class="audio-toggle">
-                            <span class="audio-icon">♪</span>
+                            <span class="audio-icon">鈾?/span>
                         </button>
-                        <a href="#">服务</a>
+                        <a href="#">鏈嶅姟</a>
                         <div id="user-links-container">
-                            <a href="login.html" id="login-btn">登录</a>
-                            <a href="register.html" id="register-btn">注册</a>
+                            <a href="login.html" id="login-btn">鐧诲綍</a>
+                            <a href="register.html" id="register-btn">娉ㄥ唽</a>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 分类导航 -->
+            <!-- 鍒嗙被瀵艰埅 -->
             <div class="category-nav">
                 <div class="category-nav-container">
-                    <a href="#" class="active">聚焦</a>
-                    <a href="#">人文</a>
-                    <a href="#">旅游</a>
-                    <a href="#">财经</a>
-                    <a href="#">汽车</a>
-                    <a href="#">数码</a>
-                    <a href="#">时尚</a>
-                    <a href="#">情感</a>
-                    <a href="#">娱乐</a>
-                    <a href="#">体育</a>
-                    <a href="#">图片</a>
-                    <a href="#">视频</a>
-                    <a href="#">更多</a>
+                    <a href="#" class="active">鑱氱劍</a>
+                    <a href="#">浜烘枃</a>
+                    <a href="#">鏃呮父</a>
+                    <a href="#">璐㈢粡</a>
+                    <a href="#">姹借溅</a>
+                    <a href="#">鏁扮爜</a>
+                    <a href="#">鏃跺皻</a>
+                    <a href="#">鎯呮劅</a>
+                    <a href="#">濞变箰</a>
+                    <a href="#">浣撹偛</a>
+                    <a href="#">鍥剧墖</a>
+                    <a href="#">瑙嗛</a>
+                    <a href="#">鏇村</a>
                 </div>
             </div>
             
-            <!-- 主要内容区 -->
+            <!-- 涓昏鍐呭鍖?-->
             <div class="main-container">
-                <!-- 左侧边栏 -->
+                <!-- 宸︿晶杈规爮 -->
                 <div class="left-sidebar">
                     <div class="scrollable-section">
                         <div class="section-header">
-                            <span>【公告】</span>
+                            <span>銆愬叕鍛娿€?/span>
                         </div>
                         <div class="scrollable-content">
                             <div class="announcement">
-                                <h4>近期热帖</h4>
+                                <h4>杩戞湡鐑笘</h4>
                             </div>
                             <ul>
-                                <li><a href="violation.html">红蜻蜓论坛·版务公告</a></li>
-                                <li><a href="post.html?id=1">说说你在的城市，一个月工资能买几平米？房价到底怎么涨？</a></li>
-                                <li><a href="post.html?id=2">关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知</a></li>
-                                <li><a href="post.html?id=5">转！！！中国式骗局大全</a></li>
-                                <li><a href="post.html?id=4">结婚两年，老公嫌我胖，我想离婚了，该怎么继续……</a></li>
+                                <li><a href="violation.html">绾㈣溁铚撹鍧浡风増鍔″叕鍛?/a></li>
+                                <li><a href="post.html?id=1">璇磋浣犲湪鐨勫煄甯傦紝涓€涓湀宸ヨ祫鑳戒拱鍑犲钩绫筹紵鎴夸环鍒板簳鎬庝箞娑紵</a></li>
+                                <li><a href="post.html?id=2">鍏充簬寮€灞曗€滄嫆缁濋粍璧屾瘨銆佸叡寤哄钩瀹夌ぞ鍖衡€濆浼犳暀鑲叉椿鍔ㄧ殑閫氱煡</a></li>
+                                <li><a href="post.html?id=5">杞紒锛侊紒涓浗寮忛獥灞€澶у叏</a></li>
+                                <li><a href="post.html?id=4">缁撳涓ゅ勾锛岃€佸叕瀚屾垜鑳栵紝鎴戞兂绂诲浜嗭紝璇ユ€庝箞缁х画鈥︹€?/a></li>
                             </ul>
                         </div>
                     </div>
                     <div class="sidebar-section">
-                        <h3>版面推荐</h3>
+                        <h3>鐗堥潰鎺ㄨ崘</h3>
                         <div class="double-columns">
                             <ul>
-                                <li><a href="#">- 与红蜻蜓</a></li>
-                                <li><a href="#">- 旅游论坛</a></li>
-                                <li><a href="#">- 蜻蜓主版</a></li>
-                                <li><a href="#">- 胆小勿入</a></li>
-                                <li><a href="#">- 蜻蜓之家</a></li>
-                                <li><a href="#">- 征婚交友</a></li>
-                                <li><a href="#">- 蜻蜓杂谈</a></li>
-                                <li><a href="#">- 影视动漫</a></li>
-                                <li><a href="#">- 城市论坛</a></li>
-                                <li><a href="#">- 体育运动</a></li>
-                                <li><a href="#">- 职业交流</a></li>
+                                <li><a href="#">- 涓庣孩铚昏湏</a></li>
+                                <li><a href="#">- 鏃呮父璁哄潧</a></li>
+                                <li><a href="#">- 铚昏湏涓荤増</a></li>
+                                <li><a href="#">- 鑳嗗皬鍕垮叆</a></li>
+                                <li><a href="#">- 铚昏湏涔嬪</a></li>
+                                <li><a href="#">- 寰佸浜ゅ弸</a></li>
+                                <li><a href="#">- 铚昏湏鏉傝皥</a></li>
+                                <li><a href="#">- 褰辫鍔ㄦ极</a></li>
+                                <li><a href="#">- 鍩庡競璁哄潧</a></li>
+                                <li><a href="#">- 浣撹偛杩愬姩</a></li>
+                                <li><a href="#">- 鑱屼笟浜ゆ祦</a></li>
                             </ul>
                             <ul>
-                                <li><a href="#">- 家有儿女</a></li>
-                                <li><a href="#">- 大学校园</a></li>
-                                <li><a href="#">- 原创文学</a></li>
-                                <li><a href="#">- 海外论坛</a></li>
-                                <li><a href="#">- 星座占卜</a></li>
-                                <li><a href="#">- 游戏公会</a></li>
-                                <li><a href="#">- 匿名树洞</a></li>
-                                <li><a href="#">- 娱乐八卦</a></li>
-                                <li><a href="#">- 吃货联盟</a></li>
-                                <li><a href="#">- 情感天空</a></li>
-                                <li><a href="#">- 宠物花草</a></li>
+                                <li><a href="#">- 瀹舵湁鍎垮コ</a></li>
+                                <li><a href="#">- 澶у鏍″洯</a></li>
+                                <li><a href="#">- 鍘熷垱鏂囧</a></li>
+                                <li><a href="#">- 娴峰璁哄潧</a></li>
+                                <li><a href="#">- 鏄熷骇鍗犲崪</a></li>
+                                <li><a href="#">- 娓告垙鍏細</a></li>
+                                <li><a href="#">- 鍖垮悕鏍戞礊</a></li>
+                                <li><a href="#">- 濞变箰鍏崷</a></li>
+                                <li><a href="#">- 鍚冭揣鑱旂洘</a></li>
+                                <li><a href="#">- 鎯呮劅澶╃┖</a></li>
+                                <li><a href="#">- 瀹犵墿鑺辫崏</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 右侧内容区 -->
+                <!-- 鍙充晶鍐呭鍖?-->
                 <div class="right-content-area">
                     <div class="content-wrapper">
                         <div class="main-content">
-                            <!-- 论坛帖子区域 -->
+                            <!-- 璁哄潧甯栧瓙鍖哄煙 -->
                             <div class="forum-thread" id="forum-thread">
-                                <div style="padding: 20px; text-align: center; color: #666;">帖子加载中，请稍后...</div>
+                                <div style="padding: 20px; text-align: center; color: #666;">甯栧瓙鍔犺浇涓紝璇风◢鍚?..</div>
                             </div>
 
-                            <!-- 发帖表单 -->
+                            <!-- 鍙戝笘琛ㄥ崟 -->
                             <div class="reply-box" id="reply-box">
-                                <div style="padding: 20px; text-align: center; color: #666;">帖子加载中，请稍后...</div>
+                                <div style="padding: 20px; text-align: center; color: #666;">甯栧瓙鍔犺浇涓紝璇风◢鍚?..</div>
                             </div>
                         </div>
                         
-                        <!-- 右侧边栏 -->
+                        <!-- 鍙充晶杈规爮 -->
                         <div class="right-sidebar">
                             <div class="sidebar-ad">
-                                <img src="images/地球广告.png" alt="环保宣传">
+                                <img src="images/鍦扮悆骞垮憡.png" alt="鐜繚瀹ｄ紶">
                             </div>
                             <div class="sidebar-section">
-                                <h3>社区公告</h3>
+                                <h3>绀惧尯鍏憡</h3>
                                 <ul>
-                                    <li><a href="rules.html">- 论坛规则【新人必看】</a></li>
-                                    <li><a href="help.html">- 新手帮助</a></li>
-                                    <li><a href="javascript:alert('对不起，版主申请功能暂未开放！')">- 版主申请/招募</a></li>
-                                    <li><a href="violation.html">- 违规公示</a></li>
-                                    <li><a href="javascript:alert('如果有任何意见或建议，可以发送到backtothesky3849@reddragonfly.cyou或联系QQ3853622361')">- 意见反馈</a></li>
+                                    <li><a href="rules.html">- 璁哄潧瑙勫垯銆愭柊浜哄繀鐪嬨€?/a></li>
+                                    <li><a href="help.html">- 鏂版墜甯姪</a></li>
+                                    <li><a href="javascript:alert('瀵逛笉璧凤紝鐗堜富鐢宠鍔熻兘鏆傛湭寮€鏀撅紒')">- 鐗堜富鐢宠/鎷涘嫙</a></li>
+                                    <li><a href="violation.html">- 杩濊鍏ず</a></li>
+                                    <li><a href="javascript:alert('濡傛灉鏈変换浣曟剰瑙佹垨寤鸿锛屽彲浠ュ彂閫佸埌backtothesky3849@reddragonfly.cyou鎴栬仈绯籕Q3853622361')">- 鎰忚鍙嶉</a></li>
                                 </ul>
                             </div>
                             <div class="sidebar-ad">
-                                <img src="images/肯基基广告.jpg" alt="肯基基广告">
+                                <img src="images/鑲熀鍩哄箍鍛?jpg" alt="鑲熀鍩哄箍鍛?>
                             </div>
                         </div>
                     </div>
@@ -424,11 +425,11 @@
             
             </div>
             
-            <!-- 底部状态栏 -->
+            <!-- 搴曢儴鐘舵€佹爮 -->
             <div class="status-bar">
                 <div class="status-container">
-                    <span>我的红蜻蜓</span>
-                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息中心<span class="unread-badge" style="display:none;">0</span></span>
+                    <span>鎴戠殑绾㈣溁铚?/span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">娑堟伅涓績<span class="unread-badge" style="display:none;">0</span></span>
                 </div>
             </div>
         </div>
@@ -436,28 +437,28 @@
     
     <script src="script.js?v=20260507-8"></script>
     
-    <!-- 浮窗导航图标 -->
+    <!-- 娴獥瀵艰埅鍥炬爣 -->
     <div class="floating-ad" onclick="window.location.href='https://www.dihai.wiki/'">
-        <img src="images/红蜻蜓.png" alt="红蜻蜓">
+        <img src="images/绾㈣溁铚?png" alt="绾㈣溁铚?>
     </div>
     
-    <!-- 浮窗广告 -->
+    <!-- 娴獥骞垮憡 -->
     <div class="floating-ad2" onclick="window.location.href='https://www.dihai.wiki/'">
-        <img src="images/浮窗广告.png" alt="广告">
+        <img src="images/娴獥骞垮憡.png" alt="骞垮憡">
     </div>
     
-    <!-- 右下角弹窗广告 -->
+    <!-- 鍙充笅瑙掑脊绐楀箍鍛?-->
     <div class="popup-ad">
         <div class="popup-content" onclick="window.location.href='https://www.dihai.wiki/'">
-            <span class="fake-close-btn" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.3); color: white; padding: 0 4px; font-size: 10px; cursor: pointer; z-index: 10;">×</span>
-            <img src="images/换脑广告.gif" alt="换脑广告">
-            <button class="popup-close">关闭</button>
+            <span class="fake-close-btn" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.3); color: white; padding: 0 4px; font-size: 10px; cursor: pointer; z-index: 10;">脳</span>
+            <img src="images/鎹㈣剳骞垮憡.gif" alt="鎹㈣剳骞垮憡">
+            <button class="popup-close">鍏抽棴</button>
         </div>
     </div>
     
-    <!-- 左侧假关闭按钮（实际是跳转链接） -->
+    <!-- 宸︿晶鍋囧叧闂寜閽紙瀹為檯鏄烦杞摼鎺ワ級 -->
     <div class="left-close-btn">
-        <span class="popup-close">关闭广告</span>
+        <span class="popup-close">鍏抽棴骞垮憡</span>
     </div>
 </body>
 </html>
