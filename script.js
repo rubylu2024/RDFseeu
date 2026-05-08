@@ -3158,14 +3158,18 @@ async function renderMessagePage() {
         return '系统';
     };
 
-    const setFilter = async (filter) => {
-        state.filter = normalizeFilter(filter);
+    const syncFilterTabs = () => {
         tabAll.classList.toggle('active', state.filter === 'all');
         tabSystem.classList.toggle('active', state.filter === 'system');
         tabReply.classList.toggle('active', state.filter === 'reply');
         tabQuote.classList.toggle('active', state.filter === 'quote');
         tabPrivate.classList.toggle('active', state.filter === 'private');
         tabUnread.classList.toggle('active', state.filter === 'unread');
+    };
+
+    const setFilter = async (filter) => {
+        state.filter = normalizeFilter(filter);
+        syncFilterTabs();
         if (listTitleEl) listTitleEl.textContent = '我的消息';
         state.selected = null;
         renderDetailEmpty();
@@ -3174,6 +3178,36 @@ async function renderMessagePage() {
             return;
         }
         await loadList();
+    };
+
+    const openSentMessageAfterCompose = async ({ kind, id, preferredFilter, preloadItem }) => {
+        const targetKind = String(kind || '').trim();
+        const targetId = id == null ? '' : String(id).trim();
+        if (!targetKind || !targetId) {
+            await refreshShortMessagesEntry();
+            await loadList();
+            return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        params.delete('to');
+        params.delete('composePublic');
+        const next = params.toString();
+        window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
+
+        state.filter = normalizeFilter(preferredFilter || (targetKind === 'private' ? 'private' : 'system'));
+        syncFilterTabs();
+        if (listTitleEl) listTitleEl.textContent = '我的消息';
+        state.selected = { kind: targetKind, id: targetId };
+
+        await refreshShortMessagesEntry();
+        await loadList();
+        const existsInList = (state.itemsAll || []).some((item) => item.kind === targetKind && String(item.id) === targetId);
+        if (!existsInList && preloadItem) {
+            state.itemsAll = [preloadItem, ...(Array.isArray(state.itemsAll) ? state.itemsAll : [])];
+            await renderListFromCache();
+        }
+        await renderDetail({ kind: targetKind, id: targetId });
     };
 
     const renderComposePrivate = async ({ toUserId }) => {
@@ -3355,6 +3389,7 @@ async function renderMessagePage() {
             form.onsubmit = async (e) => {
                 e.preventDefault();
                 setAlert('');
+                const submitBtn = form.querySelector('button[type="submit"]');
 
                 const recipientId = String(toSelect?.value || '').trim();
                 const title = String(titleInput?.value || '').trim();
@@ -3366,7 +3401,11 @@ async function renderMessagePage() {
                 if (!content) return setAlert('请填写内容。');
 
                 try {
-                    await flarumRequest('/discussions', {
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '发送中...';
+                    }
+                    const created = await flarumRequest('/discussions', {
                         method: 'POST',
                         auth: true,
                         json: {
@@ -3379,16 +3418,20 @@ async function renderMessagePage() {
                             }
                         }
                     });
-
+                    const discussionId = created?.data?.id ? String(created.data.id) : '';
                     setAlert('');
-                    await refreshShortMessagesEntry();
-                    await loadList();
+                    await openSentMessageAfterCompose({ kind: 'private', id: discussionId, preferredFilter: 'private' });
                 } catch (error) {
                     if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
                         setAlert('当前账号没有使用短消息的权限，请联系网管。');
                         return;
                     }
                     setAlert('发送失败，请稍后再试。');
+                } finally {
+                    if (submitBtn && document.body.contains(submitBtn)) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '发送';
+                    }
                 }
             };
         }
@@ -3453,6 +3496,7 @@ async function renderMessagePage() {
             form.onsubmit = async (e) => {
                 e.preventDefault();
                 setAlert('');
+                const submitBtn = form.querySelector('button[type="submit"]');
 
                 const type = String(typeEl?.value || 'notice').trim();
                 const title = String(titleEl?.value || '').trim();
@@ -3463,14 +3507,35 @@ async function renderMessagePage() {
                 if (!content) return setAlert('请填写内容。');
 
                 try {
-                    await customRequest('/custom-messages/public', {
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '群发中...';
+                    }
+                    const created = await customRequest('/custom-messages/public', {
                         method: 'POST',
                         auth: true,
                         json: { title, content, type, is_active }
                     });
+                    const createdRow = created?.data || null;
+                    const messageId = createdRow?.id ? String(createdRow.id) : '';
                     setAlert('');
-                    await refreshShortMessagesEntry();
-                    await loadList();
+                    await openSentMessageAfterCompose({
+                        kind: 'public',
+                        id: messageId,
+                        preferredFilter: 'system',
+                        preloadItem: createdRow ? {
+                            kind: 'public',
+                            id: String(createdRow.id),
+                            title: `【公告】${createdRow.title || '（无标题）'}`,
+                            rawTitle: createdRow.title || '（无标题）',
+                            meta1: formatPublicTypeLabel(createdRow.type),
+                            time: createdRow.created_at || '',
+                            unread: false,
+                            publicType: createdRow.type || type,
+                            content: createdRow.content || '',
+                            senderUserId: createdRow.sender_user_id
+                        } : null
+                    });
                 } catch (error) {
                     console.error('公共短消息群发失败:', error);
                     const status = error?.httpStatus || error?.apiError?.status;
@@ -3499,6 +3564,11 @@ async function renderMessagePage() {
                         return;
                     }
                     setAlert('群发失败，请稍后再试。');
+                } finally {
+                    if (submitBtn && document.body.contains(submitBtn)) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '群发';
+                    }
                 }
             };
         }
