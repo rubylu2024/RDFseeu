@@ -177,6 +177,103 @@ function normalizePublicMessageType(type) {
   return null;
 }
 
+function pickIncluded(included, type, id) {
+  const tid = String(type || '');
+  const iid = String(id || '');
+  if (!tid || !iid) return null;
+  const list = Array.isArray(included) ? included : [];
+  for (const r of list) {
+    if (!r) continue;
+    if (String(r.type) === tid && String(r.id) === iid) return r;
+  }
+  return null;
+}
+
+function getPreferredUserName(userResource) {
+  const attrs = userResource?.attributes || {};
+  const candidates = [
+    attrs.displayName,
+    attrs.nickname,
+    attrs.username,
+    attrs.name
+  ];
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim()) return c.trim();
+  }
+  return '';
+}
+
+function buildPostFloorUrl({ discussionId, floor }) {
+  const did = discussionId != null ? String(discussionId) : '';
+  const n = Number(floor);
+  const safeFloor = Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+  if (!did) return null;
+  if (!safeFloor) return `post.html?id=${encodeURIComponent(did)}`;
+  const pageSize = 20;
+  const targetPage = Math.max(1, Math.ceil(safeFloor / pageSize));
+  return `post.html?id=${encodeURIComponent(did)}&page=${targetPage}#post-${safeFloor}`;
+}
+
+function mapFlarumNotificationKind(notificationType, replyToFloor) {
+  const t = String(notificationType || '').toLowerCase();
+  if (t.includes('newpost') || t.includes('posted')) return 'reply';
+  if (t.includes('postmentioned') || t.includes('post_mentioned')) return 'quote';
+  if (t.includes('usermentioned') || t.includes('user_mentioned') || t.includes('mentioned')) return 'mention';
+  if (replyToFloor != null) return 'quote';
+  return 'system';
+}
+
+async function flarumFetchJsonWithAuth(authRaw, apiPath) {
+  const url = `${FLARUM_BASE_URL}${apiPath.startsWith('/') ? '' : '/'}${apiPath}`;
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/vnd.api+json',
+        Authorization: authRaw
+      }
+    });
+  } catch (fetchError) {
+    const err = new Error('flarum_unreachable');
+    err.status = 500;
+    err.detail = {
+      message: '无法连接到 Flarum API，请检查 FLARUM_BASE_URL',
+      FLARUM_BASE_URL,
+      apiPath,
+      error: String(fetchError?.message || fetchError)
+    };
+    throw err;
+  }
+
+  if (!response.ok) {
+    const err = new Error('flarum_request_failed');
+    err.status = response.status;
+    err.detail = await response.text().catch(() => '');
+    throw err;
+  }
+  return await response.json();
+}
+
+async function loadFlarumNotifications(authRaw, limit = 20) {
+  const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Math.min(50, Math.floor(Number(limit)))) : 20;
+  const include = encodeURIComponent('fromUser,subject,subject.discussion');
+  return await flarumFetchJsonWithAuth(
+    authRaw,
+    `/api/notifications?page[limit]=${safeLimit}&include=${include}`
+  );
+}
+
+async function loadFlarumPrivateDiscussions(authRaw, limit = 30) {
+  const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Math.min(30, Math.floor(Number(limit)))) : 30;
+  const include = encodeURIComponent('user,lastPostedUser,recipientUsers,recipientGroups');
+  const q = encodeURIComponent('is:private');
+  return await flarumFetchJsonWithAuth(
+    authRaw,
+    `/api/discussions?sort=-lastPostedAt&page[limit]=${safeLimit}&page[offset]=0&filter[q]=${q}&include=${include}`
+  );
+}
+
 app.get('/custom-messages/public', requireActor(async (req, res) => {
   try {
     const store = loadCustomMessagesStore();
@@ -308,15 +405,211 @@ app.get('/custom-messages/unread-count', requireActor(async (req, res) => {
         .map((r) => String(r.message_id))
     );
 
-    let unread = 0;
+    let publicUnread = 0;
     activeIds.forEach((id) => {
-      if (!readIds.has(id)) unread++;
+      if (!readIds.has(id)) publicUnread++;
     });
 
-    res.json({ publicUnread: unread, totalUnread: unread });
+    const authHeader = req.headers.authorization;
+    const parsed = parseAuthHeader(authHeader);
+    const authRaw = parsed?.raw;
+
+    let notificationUnread = 0;
+    try {
+      if (authRaw) {
+        const notificationsJson = await loadFlarumNotifications(authRaw, 20);
+        const list = Array.isArray(notificationsJson?.data) ? notificationsJson.data : [];
+        notificationUnread = list.filter((n) => n?.attributes?.isRead === false).length;
+      }
+    } catch (error) {
+      console.warn('[custom-messages] unread-count notificationUnread skipped:', {
+        status: error?.status,
+        detail: error?.detail
+      });
+    }
+
+    let privateUnread = 0;
+    try {
+      if (authRaw) {
+        const discussionsJson = await loadFlarumPrivateDiscussions(authRaw, 30);
+        const list = Array.isArray(discussionsJson?.data) ? discussionsJson.data : [];
+        privateUnread = list.filter((d) => {
+          const a = d?.attributes || {};
+          const lastPostedAt = a.lastPostedAt ? Date.parse(a.lastPostedAt) : NaN;
+          const lastReadAt = a.lastReadAt ? Date.parse(a.lastReadAt) : NaN;
+          if (!Number.isFinite(lastPostedAt)) return false;
+          if (!Number.isFinite(lastReadAt)) return true;
+          return lastPostedAt > lastReadAt;
+        }).length;
+      }
+    } catch (error) {
+      console.warn('[custom-messages] unread-count privateUnread skipped:', {
+        status: error?.status,
+        detail: error?.detail
+      });
+    }
+
+    const totalUnread = Math.max(0, publicUnread + notificationUnread + privateUnread);
+    res.json({ publicUnread, notificationUnread, privateUnread, totalUnread });
   } catch (error) {
     console.error('[custom-messages] GET /custom-messages/unread-count failed:', error);
     res.status(500).json({ error: 'server_error', detail: '读取未读数失败' });
+  }
+}));
+
+app.get('/custom-notifications', requireActor(async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const parsed = parseAuthHeader(authHeader);
+    if (!parsed?.raw) {
+      return res.status(401).json({ error: 'unauthorized', detail: 'missing_token_or_user' });
+    }
+
+    const rawJson = await loadFlarumNotifications(parsed.raw, 30);
+    const list = Array.isArray(rawJson?.data) ? rawJson.data : [];
+    const included = Array.isArray(rawJson?.included) ? rawJson.included : [];
+
+    const data = list.map((n) => {
+      const attrs = n?.attributes || {};
+      const relationships = n?.relationships || {};
+      const notificationType = attrs.type || n?.type || '';
+      const createdAt = typeof attrs.createdAt === 'string' ? attrs.createdAt : '';
+      const isRead = attrs.isRead === true;
+
+      const fromUserId = relationships?.fromUser?.data?.id != null ? String(relationships.fromUser.data.id) : '';
+      const fromUser = fromUserId ? pickIncluded(included, 'users', fromUserId) : null;
+      const fromUserName = getPreferredUserName(fromUser) || (fromUserId ? `用户#${fromUserId}` : '匿名用户');
+
+      const subjectRel = relationships?.subject?.data;
+      const subjectType = subjectRel?.type != null ? String(subjectRel.type) : '';
+      const subjectId = subjectRel?.id != null ? String(subjectRel.id) : '';
+      const subject = subjectType && subjectId ? pickIncluded(included, subjectType, subjectId) : null;
+
+      let discussionId = '';
+      let discussionTitle = '';
+      let postId = '';
+      let floor = null;
+
+      if (subjectType === 'posts' && subject) {
+        postId = String(subject.id || '');
+        const number = Number(subject?.attributes?.number);
+        floor = Number.isFinite(number) ? number : null;
+        const discussionRel = subject?.relationships?.discussion?.data;
+        if (discussionRel?.id != null) {
+          discussionId = String(discussionRel.id);
+          const discussionIncluded = pickIncluded(included, 'discussions', discussionId);
+          discussionTitle = typeof discussionIncluded?.attributes?.title === 'string' ? discussionIncluded.attributes.title : '';
+        }
+      }
+
+      if (!discussionId && subjectType === 'discussions' && subject) {
+        discussionId = String(subject.id || '');
+        discussionTitle = typeof subject?.attributes?.title === 'string' ? subject.attributes.title : '';
+      }
+
+      const replyToFloor =
+        attrs.replyToFloor ??
+        attrs.replyToPostNumber ??
+        attrs.replyToPost ??
+        attrs.replyTo ??
+        null;
+      const replyToFloorNum = Number(replyToFloor);
+      const safeReplyToFloor = Number.isFinite(replyToFloorNum) && replyToFloorNum > 0 ? replyToFloorNum : null;
+
+      const kind = mapFlarumNotificationKind(notificationType, safeReplyToFloor);
+      if (kind === 'quote' && safeReplyToFloor && !floor) floor = safeReplyToFloor;
+
+      const safeTitle = discussionTitle ? `《${discussionTitle}》` : (discussionId ? `《主题#${discussionId}》` : '');
+
+      let title = '系统通知';
+      let content = '';
+
+      if (kind === 'reply') {
+        title = '有人回复了你的帖子';
+        content = `${fromUserName} 回复了主题${safeTitle}`;
+      } else if (kind === 'quote') {
+        title = '有人引用了你的发言';
+        content = floor ? `${fromUserName} 引用了你在 ${floor} 楼的发言` : `${fromUserName} 引用了你的发言`;
+      } else if (kind === 'mention') {
+        title = '有人提到了你';
+        content = `${fromUserName} 提到了你`;
+      } else {
+        title = typeof attrs.title === 'string' && attrs.title.trim() ? attrs.title.trim() : '系统通知';
+        content = typeof attrs.content === 'string' ? attrs.content : (typeof attrs?.contentHtml === 'string' ? attrs.contentHtml : '');
+      }
+
+      const url = buildPostFloorUrl({ discussionId, floor });
+
+      if (!['reply', 'quote', 'mention', 'system'].includes(kind)) {
+        console.log('[custom-notifications] unknown kind mapped:', { notificationType, kind });
+      }
+
+      return {
+        id: String(n?.id || ''),
+        type: kind,
+        title,
+        content,
+        fromUserId: fromUserId ? Number(fromUserId) : null,
+        fromUserName,
+        discussionId: discussionId ? Number(discussionId) : null,
+        postId: postId ? Number(postId) : null,
+        floor: floor != null ? Number(floor) : null,
+        url,
+        createdAt,
+        isRead
+      };
+    }).filter((x) => x.id);
+
+    res.json({ data });
+  } catch (error) {
+    console.error('[custom-notifications] GET /custom-notifications failed:', error);
+    const status = Number.isFinite(Number(error?.status)) ? Number(error.status) : 500;
+    if (status === 401) return res.status(401).json({ error: 'unauthorized', detail: error?.detail || 'unauthorized' });
+    res.status(500).json({ error: 'server_error', detail: '读取通知失败' });
+  }
+}));
+
+app.post('/custom-notifications/:id/read', requireActor(async (req, res) => {
+  const notificationId = String(req.params.id || '').trim();
+  if (!notificationId) return res.status(400).json({ error: 'bad_request', detail: 'invalid_id' });
+
+  try {
+    const authHeader = req.headers.authorization;
+    const parsed = parseAuthHeader(authHeader);
+    if (!parsed?.raw) {
+      return res.status(401).json({ error: 'unauthorized', detail: 'missing_token_or_user' });
+    }
+
+    const candidates = [
+      { method: 'POST', path: `/api/notifications/${encodeURIComponent(notificationId)}/read`, body: null },
+      { method: 'POST', path: `/api/notifications/read`, body: { data: [notificationId] } },
+      { method: 'POST', path: `/api/notifications/read`, body: { data: [{ type: 'notifications', id: notificationId }] } }
+    ];
+
+    for (const c of candidates) {
+      try {
+        const url = `${FLARUM_BASE_URL}${c.path}`;
+        const response = await fetch(url, {
+          method: c.method,
+          headers: {
+            Accept: 'application/vnd.api+json',
+            'Content-Type': 'application/json',
+            Authorization: parsed.raw
+          },
+          body: c.body ? JSON.stringify(c.body) : undefined
+        });
+        if (response.ok) {
+          return res.json({ success: true });
+        }
+      } catch (err) {
+        console.warn('[custom-notifications] mark read attempt failed:', String(err?.message || err));
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[custom-notifications] POST /custom-notifications/:id/read failed:', error);
+    return res.json({ success: true });
   }
 }));
 

@@ -120,12 +120,38 @@
             border-left: 4px solid #cc0000;
         }
 
-        .pm-list-item.unread:not(.pm-public) {
+        .pm-list-item.unread.pm-private {
             background: #fff7f7;
         }
 
         .pm-list-item.unread .pm-list-title {
             font-weight: bold;
+        }
+
+        .pm-list-item.pm-read {
+            opacity: 0.6;
+        }
+
+        .pm-list-item.pm-notify-reply {
+            background: #fff;
+        }
+
+        .pm-list-item.pm-notify-quote {
+            background: #eef6ff;
+        }
+
+        .pm-list-item.pm-notify-system {
+            background: #fffbe6;
+        }
+
+        .pm-list-item.pm-public-notice,
+        .pm-list-item.pm-public-event,
+        .pm-list-item.pm-public-system {
+            background: #fffbe6;
+        }
+
+        .pm-list-item.pm-public-warning {
+            background: #ffecec;
         }
 
         .pm-list-title {
@@ -353,9 +379,11 @@
 
                                     <div class="pm-toolbar">
                                         <div class="pm-tabs">
-                                            <button type="button" class="pm-tab active" id="pm-tab-all" data-filter="all">全部</button>
+                                            <button type="button" class="pm-tab active" id="pm-tab-all" data-filter="all">全部消息</button>
+                                            <button type="button" class="pm-tab" id="pm-tab-system" data-filter="system">系统公告</button>
+                                            <button type="button" class="pm-tab" id="pm-tab-reply" data-filter="reply">帖子回复</button>
+                                            <button type="button" class="pm-tab" id="pm-tab-quote" data-filter="quote">楼层引用</button>
                                             <button type="button" class="pm-tab" id="pm-tab-private" data-filter="private">私人短消息</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-public" data-filter="public">公共短消息</button>
                                             <button type="button" class="pm-tab" id="pm-tab-unread" data-filter="unread">未读</button>
                                         </div>
                                         <div style="display:flex; gap:8px; align-items:center;">

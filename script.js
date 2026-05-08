@@ -2795,6 +2795,17 @@ async function customMarkPublicMessageRead(messageId) {
     await customRequest(`/custom-messages/public/${encodeURIComponent(id)}/read`, { method: 'POST', auth: true });
 }
 
+async function customGetNotifications() {
+    const json = await customRequest('/custom-notifications', { auth: true });
+    return Array.isArray(json?.data) ? json.data : [];
+}
+
+async function customMarkNotificationRead(notificationId) {
+    const id = String(notificationId || '');
+    if (!id) return;
+    await customRequest(`/custom-notifications/${encodeURIComponent(id)}/read`, { method: 'POST', auth: true });
+}
+
 async function customGetPublicUnreadCount() {
     if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) return 0;
     try {
@@ -2803,6 +2814,43 @@ async function customGetPublicUnreadCount() {
         return Number.isFinite(n) && n >= 0 ? n : 0;
     } catch {
         return 0;
+    }
+}
+
+async function customGetUnreadCountAggregate() {
+    if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) {
+        return { publicUnread: 0, notificationUnread: 0, privateUnread: 0, totalUnread: 0 };
+    }
+
+    try {
+        const json = await customRequest('/custom-messages/unread-count', { auth: true });
+        const publicUnread = Number(json?.publicUnread ?? 0);
+        const notificationUnread = Number(json?.notificationUnread ?? 0);
+        const totalUnread = Number(json?.totalUnread ?? 0);
+        let privateUnread = Number(json?.privateUnread ?? NaN);
+        if (!Number.isFinite(privateUnread) || privateUnread < 0) {
+            privateUnread = await flarumGetPrivateUnreadCount();
+        }
+
+        const safePublic = Number.isFinite(publicUnread) && publicUnread >= 0 ? publicUnread : 0;
+        const safeNotification = Number.isFinite(notificationUnread) && notificationUnread >= 0 ? notificationUnread : 0;
+        const safePrivate = Number.isFinite(privateUnread) && privateUnread >= 0 ? privateUnread : 0;
+        const computedTotal = safePublic + safeNotification + safePrivate;
+        const safeTotal = Number.isFinite(totalUnread) && totalUnread >= 0 ? totalUnread : computedTotal;
+
+        return {
+            publicUnread: safePublic,
+            notificationUnread: safeNotification,
+            privateUnread: safePrivate,
+            totalUnread: safeTotal
+        };
+    } catch {
+        const [publicUnread, privateUnread] = await Promise.all([
+            customGetPublicUnreadCount(),
+            flarumGetPrivateUnreadCount()
+        ]);
+        const totalUnread = Math.max(0, publicUnread + privateUnread);
+        return { publicUnread, notificationUnread: 0, privateUnread, totalUnread };
     }
 }
 
@@ -2833,15 +2881,11 @@ async function refreshShortMessagesEntry() {
         entryEls.forEach((el) => setEntryLabel(el, '短消息'));
         badgeEls.forEach((el) => { el.style.display = 'none'; el.textContent = '0'; });
         if (headCountEl) headCountEl.textContent = '0';
-        return { totalUnread: 0, publicUnread: 0, privateUnread: 0 };
+        return { totalUnread: 0, publicUnread: 0, notificationUnread: 0, privateUnread: 0 };
     }
 
-    const [publicUnread, privateUnread] = await Promise.all([
-        customGetPublicUnreadCount(),
-        flarumGetPrivateUnreadCount()
-    ]);
-
-    const total = Math.max(0, publicUnread + privateUnread);
+    const counts = await customGetUnreadCountAggregate();
+    const total = Math.max(0, Number(counts.totalUnread) || 0);
     const showText = total > 99 ? '99+' : String(total);
     const label = total > 0 ? `短消息(${showText})` : '短消息';
 
@@ -2853,7 +2897,7 @@ async function refreshShortMessagesEntry() {
     });
 
     if (headCountEl) headCountEl.textContent = String(total);
-    return { totalUnread: total, publicUnread, privateUnread };
+    return { ...counts, totalUnread: total };
 }
 
 async function renderMessagePage() {
@@ -2865,13 +2909,15 @@ async function renderMessagePage() {
     const detailMetaEl = document.getElementById('pm-detail-meta');
     const detailBodyEl = document.getElementById('pm-detail-body');
     const tabAll = document.getElementById('pm-tab-all');
+    const tabSystem = document.getElementById('pm-tab-system');
+    const tabReply = document.getElementById('pm-tab-reply');
+    const tabQuote = document.getElementById('pm-tab-quote');
     const tabPrivate = document.getElementById('pm-tab-private');
-    const tabPublic = document.getElementById('pm-tab-public');
     const tabUnread = document.getElementById('pm-tab-unread');
     const composePrivateBtn = document.getElementById('pm-compose-private-btn');
     const composePublicBtn = document.getElementById('pm-compose-public-btn');
 
-    if (!listBodyEl || !detailBodyEl || !tabAll || !tabPrivate || !tabPublic || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
+    if (!listBodyEl || !detailBodyEl || !tabAll || !tabSystem || !tabReply || !tabQuote || !tabPrivate || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
 
     const setAlert = (message) => {
         if (!alertEl) return;
@@ -2912,15 +2958,35 @@ async function renderMessagePage() {
     const isAdmin = await isCurrentUserAdmin().catch(() => false);
     composePublicBtn.style.display = isAdmin ? '' : 'none';
 
+    const normalizeFilter = (filter) => {
+        const f = String(filter || '').toLowerCase();
+        if (['all', 'system', 'reply', 'quote', 'private', 'unread'].includes(f)) return f;
+        return 'all';
+    };
+
+    const formatNotificationKindLabel = (t) => {
+        const type = String(t || '').toLowerCase();
+        if (type === 'reply') return '帖子回复';
+        if (type === 'quote') return '楼层引用';
+        if (type === 'mention') return '提到我';
+        return '系统';
+    };
+
     const setFilter = async (filter) => {
-        state.filter = ['all', 'private', 'public', 'unread'].includes(filter) ? filter : 'all';
+        state.filter = normalizeFilter(filter);
         tabAll.classList.toggle('active', state.filter === 'all');
+        tabSystem.classList.toggle('active', state.filter === 'system');
+        tabReply.classList.toggle('active', state.filter === 'reply');
+        tabQuote.classList.toggle('active', state.filter === 'quote');
         tabPrivate.classList.toggle('active', state.filter === 'private');
-        tabPublic.classList.toggle('active', state.filter === 'public');
         tabUnread.classList.toggle('active', state.filter === 'unread');
-        if (listTitleEl) listTitleEl.textContent = '我的短消息';
+        if (listTitleEl) listTitleEl.textContent = '我的消息';
         state.selected = null;
         renderDetailEmpty();
+        if (Array.isArray(state.itemsAll) && state.itemsAll.length > 0) {
+            await renderListFromCache();
+            return;
+        }
         await loadList();
     };
 
@@ -3251,11 +3317,71 @@ async function renderMessagePage() {
         return '公告';
     };
 
+    const renderListFromCache = async () => {
+        const merged = Array.isArray(state.itemsAll) ? state.itemsAll : [];
+        const filtered = merged.filter((item) => {
+            if (state.filter === 'system') return item.kind === 'public' || (item.kind === 'notification' && item.notifyType === 'system');
+            if (state.filter === 'reply') return item.kind === 'notification' && item.notifyType === 'reply';
+            if (state.filter === 'quote') return item.kind === 'notification' && item.notifyType === 'quote';
+            if (state.filter === 'private') return item.kind === 'private';
+            if (state.filter === 'unread') return !!item.unread;
+            return true;
+        });
+
+        state.items = filtered;
+        if (listMetaEl) listMetaEl.textContent = `共 ${filtered.length} 条`;
+
+        if (filtered.length === 0) {
+            listBodyEl.innerHTML = '<div class="pm-empty">暂无消息。</div>';
+            await refreshShortMessagesEntry();
+            return;
+        }
+
+        listBodyEl.innerHTML = filtered.map((item) => {
+            const isPublic = item.kind === 'public';
+            const isNotification = item.kind === 'notification';
+            const publicType = isPublic ? String(item.publicType || 'notice') : '';
+            const notifyType = isNotification ? String(item.notifyType || 'system') : '';
+            const cls = [
+                'pm-list-item',
+                item.unread ? 'unread' : 'pm-read',
+                isPublic ? 'pm-public' : '',
+                item.kind === 'private' ? 'pm-private' : '',
+                isPublic ? `pm-public-${escapeHtml(publicType)}` : '',
+                isNotification ? 'pm-notify' : '',
+                isNotification ? `pm-notify-${escapeHtml(notifyType)}` : ''
+            ].filter(Boolean).join(' ');
+            const timeText = item.time ? escapeHtml(formatFlarumTime(item.time).slice(0, 16)) : '';
+            return `
+                <div class="${cls}" data-kind="${escapeHtml(item.kind)}" data-id="${escapeHtml(item.id)}">
+                    <div class="pm-list-title">${escapeHtml(item.title)}</div>
+                    <div class="pm-list-meta">
+                        <span>${escapeHtml(item.meta1 || '')}</span>
+                        <span>${timeText}</span>
+                        ${item.unread ? '<span style="color:#cc0000;">未读</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        Array.from(listBodyEl.querySelectorAll('.pm-list-item')).forEach((el) => {
+            el.addEventListener('click', async () => {
+                const id = el.getAttribute('data-id');
+                const kind = el.getAttribute('data-kind');
+                if (!id || !kind) return;
+                state.selected = { kind, id };
+                await renderDetail({ kind, id });
+            });
+        });
+
+        await refreshShortMessagesEntry();
+    };
+
     const loadList = async () => {
         setAlert('');
         listBodyEl.innerHTML = '<div class="pm-empty">加载中...</div>';
         try {
-            const [privateResult, publicMessages] = await Promise.all([
+            const [privateResult, publicMessages, notificationsResult] = await Promise.all([
                 (async () => {
                     try {
                         const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
@@ -3269,6 +3395,14 @@ async function renderMessagePage() {
                         return await customGetPublicMessages();
                     } catch (error) {
                         return { __error: error };
+                    }
+                })(),
+                (async () => {
+                    try {
+                        const list = await customGetNotifications();
+                        return { data: list, error: null };
+                    } catch (error) {
+                        return { data: [], error };
                     }
                 })()
             ]);
@@ -3301,16 +3435,49 @@ async function renderMessagePage() {
                 const type = String(m?.type || 'notice');
                 const unread = !m?.is_read;
                 const createdAt = m?.created_at || '';
+                const rawTitle = m?.title || '（无标题）';
                 return {
                     kind: 'public',
                     id: String(m?.id || ''),
-                    title: m?.title || '（无标题）',
-                    meta1: `公共：${formatPublicTypeLabel(type)}`,
+                    title: `【公告】${rawTitle}`,
+                    rawTitle,
+                    meta1: formatPublicTypeLabel(type),
                     time: createdAt,
                     unread,
                     publicType: type,
                     content: m?.content || '',
                     senderUserId: m?.sender_user_id
+                };
+            }).filter((x) => x.id);
+
+            const notificationsError = notificationsResult?.error || null;
+            const notificationItems = (Array.isArray(notificationsResult?.data) ? notificationsResult.data : []).map((n) => {
+                const notifyType = String(n?.type || 'system').toLowerCase();
+                const unread = n?.isRead === false;
+                const createdAt = n?.createdAt || '';
+                const fromUserName = String(n?.fromUserName || '').trim();
+                const content = String(n?.content || '').trim();
+                const titleRaw = String(n?.title || '').trim() || '系统通知';
+                const listTitle = (() => {
+                    if (notifyType === 'reply') return `【帖子回复】${content || titleRaw}`;
+                    if (notifyType === 'quote') return `【楼层引用】${content || titleRaw}`;
+                    if (notifyType === 'mention') return `【提到我】${content || titleRaw}`;
+                    return `【系统】${titleRaw}`;
+                })();
+                return {
+                    kind: 'notification',
+                    id: String(n?.id || ''),
+                    title: listTitle,
+                    meta1: fromUserName ? `来自：${fromUserName}` : `类型：${formatNotificationKindLabel(notifyType)}`,
+                    time: createdAt,
+                    unread,
+                    notifyType,
+                    detailTitle: titleRaw,
+                    content,
+                    url: n?.url || '',
+                    discussionId: n?.discussionId,
+                    postId: n?.postId,
+                    floor: n?.floor
                 };
             }).filter((x) => x.id);
 
@@ -3322,61 +3489,19 @@ async function renderMessagePage() {
                 setAlert('当前账号没有使用短消息的权限，请联系网管。');
             }
 
-            const merged = [...privateItems, ...publicItems].sort((a, b) => {
+            if (notificationsError) {
+                console.error('通知加载失败:', notificationsError);
+                if (!publicError) setAlert('通知暂时无法加载，请稍后刷新。');
+            }
+
+            const merged = [...privateItems, ...publicItems, ...notificationItems].sort((a, b) => {
                 const ta = parseFlarumIsoTime(a.time)?.getTime() || 0;
                 const tb = parseFlarumIsoTime(b.time)?.getTime() || 0;
                 return tb - ta;
             });
 
-            const filtered = merged.filter((item) => {
-                if (state.filter === 'private') return item.kind === 'private';
-                if (state.filter === 'public') return item.kind === 'public';
-                if (state.filter === 'unread') return !!item.unread;
-                return true;
-            });
-
-            state.items = filtered;
-            if (listMetaEl) listMetaEl.textContent = `共 ${filtered.length} 条`;
-
-            if (filtered.length === 0) {
-                listBodyEl.innerHTML = '<div class="pm-empty">暂无短消息。</div>';
-                await refreshShortMessagesEntry();
-                return;
-            }
-
-            listBodyEl.innerHTML = filtered.map((item) => {
-                const isPublic = item.kind === 'public';
-                const publicType = isPublic ? String(item.publicType || 'notice') : '';
-                const cls = [
-                    'pm-list-item',
-                    item.unread ? 'unread' : 'pm-read',
-                    isPublic ? 'pm-public' : 'pm-private',
-                    isPublic ? `pm-public-${escapeHtml(publicType)}` : ''
-                ].filter(Boolean).join(' ');
-                const timeText = item.time ? escapeHtml(formatFlarumTime(item.time).slice(0, 16)) : '';
-                return `
-                    <div class="${cls}" data-kind="${escapeHtml(item.kind)}" data-id="${escapeHtml(item.id)}">
-                        <div class="pm-list-title">${escapeHtml(item.title)}</div>
-                        <div class="pm-list-meta">
-                            <span>${escapeHtml(item.meta1 || '')}</span>
-                            <span>${timeText}</span>
-                            ${item.unread ? '<span style="color:#cc0000;">未读</span>' : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            Array.from(listBodyEl.querySelectorAll('.pm-list-item')).forEach((el) => {
-                el.addEventListener('click', async () => {
-                    const id = el.getAttribute('data-id');
-                    const kind = el.getAttribute('data-kind');
-                    if (!id || !kind) return;
-                    state.selected = { kind, id };
-                    await renderDetail({ kind, id });
-                });
-            });
-
-            await refreshShortMessagesEntry();
+            state.itemsAll = merged;
+            await renderListFromCache();
         } catch (error) {
             if (error?.httpStatus === 403 || error?.apiError?.status === 403) {
                 setAlert('当前账号没有使用短消息的权限，请联系网管。');
@@ -3399,7 +3524,7 @@ async function renderMessagePage() {
                     detailBodyEl.innerHTML = '<div class="pm-empty">短消息不存在或已过期。</div>';
                     return;
                 }
-                const title = message.title || '公共短消息';
+                const title = message.rawTitle || message.title || '公共短消息';
                 const createdAt = message.time ? formatFlarumTime(message.time).slice(0, 16) : '';
                 const typeLabel = formatPublicTypeLabel(message.publicType);
                 if (detailTitleEl) detailTitleEl.textContent = title;
@@ -3414,7 +3539,7 @@ async function renderMessagePage() {
 
                 try {
                     await customMarkPublicMessageRead(id);
-                    state.items = (state.items || []).map((x) => {
+                    state.itemsAll = (state.itemsAll || []).map((x) => {
                         if (x.kind === 'public' && String(x.id) === String(id)) return { ...x, unread: false };
                         return x;
                     });
@@ -3425,7 +3550,48 @@ async function renderMessagePage() {
                 }
 
                 await refreshShortMessagesEntry();
-                await loadList();
+                await renderListFromCache();
+                return;
+            }
+
+            if (kind === 'notification') {
+                const message = (state.itemsAll || []).find((x) => x.kind === 'notification' && String(x.id) === String(id));
+                if (!message) {
+                    detailBodyEl.innerHTML = '<div class="pm-empty">通知不存在或已过期。</div>';
+                    return;
+                }
+
+                const url = String(message.url || '').trim();
+                if (url) {
+                    try {
+                        customMarkNotificationRead(id).then(() => refreshShortMessagesEntry()).catch(() => {});
+                        state.itemsAll = (state.itemsAll || []).map((x) => {
+                            if (x.kind === 'notification' && String(x.id) === String(id)) return { ...x, unread: false };
+                            return x;
+                        });
+                    } catch (_) {}
+                    window.location.href = url;
+                    return;
+                }
+
+                const title = message.detailTitle || '通知';
+                const createdAt = message.time ? formatFlarumTime(message.time).slice(0, 16) : '';
+                if (detailTitleEl) detailTitleEl.textContent = title;
+                if (detailMetaEl) detailMetaEl.textContent = `${formatNotificationKindLabel(message.notifyType)}${createdAt ? ` · ${createdAt}` : ''}`;
+                const contentHtml = textToHtmlParagraphs(String(message.content || ''));
+                detailBodyEl.innerHTML = `<div class="pm-thread">${contentHtml || '<div class="pm-empty">暂无内容</div>'}</div>`;
+
+                try {
+                    await customMarkNotificationRead(id);
+                    state.itemsAll = (state.itemsAll || []).map((x) => {
+                        if (x.kind === 'notification' && String(x.id) === String(id)) return { ...x, unread: false };
+                        return x;
+                    });
+                } catch (error) {
+                    console.error('通知已读失败:', error);
+                }
+                await refreshShortMessagesEntry();
+                await renderListFromCache();
                 return;
             }
 
@@ -3507,8 +3673,10 @@ async function renderMessagePage() {
     };
 
     tabAll.onclick = () => setFilter('all');
+    tabSystem.onclick = () => setFilter('system');
+    tabReply.onclick = () => setFilter('reply');
+    tabQuote.onclick = () => setFilter('quote');
     tabPrivate.onclick = () => setFilter('private');
-    tabPublic.onclick = () => setFilter('public');
     tabUnread.onclick = () => setFilter('unread');
 
     composePrivateBtn.onclick = () => {
