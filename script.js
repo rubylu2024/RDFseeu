@@ -2633,6 +2633,42 @@ async function flarumSearchUsers({ query, limit }) {
     return Array.isArray(json?.data) ? json.data : [];
 }
 
+async function flarumLoadUsersSortedPage({ offset, limit, sortCandidates }) {
+    const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.min(120, Math.floor(limit)) : 60;
+    const safeOffset = typeof offset === 'number' && Number.isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
+    const candidates = Array.isArray(sortCandidates) && sortCandidates.length > 0
+        ? sortCandidates
+        : ['-id', '-joinedAt', '-lastSeenAt', 'id'];
+
+    let lastError = null;
+    for (const sort of candidates) {
+        try {
+            const json = await flarumRequest(`/users?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}`, { auth: true });
+            return { json, usedSort: sort };
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    const json = await flarumRequest(`/users?page[limit]=${safeLimit}&page[offset]=${safeOffset}`, { auth: true });
+    return { json, usedSort: null, fallbackError: lastError };
+}
+
+function normalizeUserSearchText(value) {
+    return String(value || '').toLowerCase().replace(/\s+/g, '');
+}
+
+function userMatchesQueryFuzzy(user, query) {
+    const q = normalizeUserSearchText(query);
+    if (!q) return true;
+    const id = user?.id != null ? String(user.id) : '';
+    const attrs = user?.attributes || {};
+    const username = typeof attrs.username === 'string' ? attrs.username : '';
+    const display = buildUserSelectLabel(user);
+    const haystack = normalizeUserSearchText(`${display} ${username} ${id}`);
+    return haystack.includes(q);
+}
+
 function mergeUsersUnique(users) {
     const out = [];
     const seen = new Set();
@@ -2790,8 +2826,10 @@ async function renderMessagePage() {
                     </select>
                     <div style="margin-top: 8px;">
                         <label>搜索用户</label>
-                        <input type="text" id="pm-compose-to-search" value="" placeholder="输入昵称/用户名快速查找">
-                        <div class="pm-hint">可发送对象仅限：ID 1~3，以及 ID ≥ 131 的用户。</div>
+                        <div class="pm-suggest-wrap">
+                            <input type="text" id="pm-compose-to-search" value="" placeholder="输入昵称/用户名/ID 进行搜索">
+                            <div class="pm-suggest" id="pm-compose-suggest"></div>
+                        </div>
                     </div>
                 </div>
                 <div style="margin-bottom: 10px;">
@@ -2815,6 +2853,7 @@ async function renderMessagePage() {
         const cancelBtn = document.getElementById('pm-compose-cancel');
         const toSelect = document.getElementById('pm-compose-to-select');
         const toSearch = document.getElementById('pm-compose-to-search');
+        const suggestBox = document.getElementById('pm-compose-suggest');
         const titleInput = document.getElementById('pm-compose-title');
         const contentInput = document.getElementById('pm-compose-content');
 
@@ -2836,13 +2875,50 @@ async function renderMessagePage() {
             try {
                 const fixed = await Promise.all([flarumLoadUserById(1), flarumLoadUserById(2), flarumLoadUserById(3)]);
                 const fixedUsers = fixed.filter(Boolean);
-                const recent = await flarumSearchUsers({ query: '', limit: 30 });
-                const merged = mergeUsersUnique([...fixedUsers, ...recent]);
+                const { json } = await flarumLoadUsersSortedPage({ offset: 0, limit: 80, sortCandidates: ['-id', '-joinedAt', '-lastSeenAt'] });
+                const pageUsers = Array.isArray(json?.data) ? json.data : [];
+                const merged = mergeUsersUnique([...fixedUsers, ...pageUsers]);
                 const selected = isAllowedShortMessageRecipientUserId(toId) ? toId : '';
                 rebuildRecipientOptions(merged, selected);
             } catch {
                 rebuildRecipientOptions([], '');
             }
+        };
+
+        const setSuggestItems = (users) => {
+            if (!suggestBox) return;
+            const list = (Array.isArray(users) ? users : [])
+                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                .slice(0, 12);
+            if (list.length === 0) {
+                suggestBox.style.display = 'none';
+                suggestBox.innerHTML = '';
+                return;
+            }
+            suggestBox.innerHTML = list.map((u) => {
+                const id = String(u?.id || '');
+                const label = buildUserSelectLabel(u);
+                return `<div class="pm-suggest-item" data-id="${escapeHtml(id)}">${escapeHtml(label)}</div>`;
+            }).join('');
+            suggestBox.style.display = 'block';
+            Array.from(suggestBox.querySelectorAll('.pm-suggest-item')).forEach((el) => {
+                el.addEventListener('click', () => {
+                    const id = el.getAttribute('data-id') || '';
+                    if (toSelect) {
+                        const existing = Array.from(toSelect.options || []).some((opt) => opt && opt.value === id);
+                        if (!existing) {
+                            const opt = document.createElement('option');
+                            opt.value = id;
+                            opt.textContent = el.textContent || id;
+                            toSelect.appendChild(opt);
+                        }
+                        toSelect.value = id;
+                    }
+                    if (toSearch) toSearch.value = '';
+                    suggestBox.style.display = 'none';
+                    suggestBox.innerHTML = '';
+                });
+            });
         };
 
         if (cancelBtn) {
@@ -2861,19 +2937,47 @@ async function renderMessagePage() {
                 const q = String(toSearch.value || '').trim();
                 if (!q) {
                     await loadDefaultRecipients();
+                    setSuggestItems([]);
                     return;
                 }
                 try {
-                    const results = await flarumSearchUsers({ query: q, limit: 30 });
-                    const filtered = results.filter((u) => isAllowedShortMessageRecipientUserId(u?.id));
-                    rebuildRecipientOptions(filtered, toSelect ? toSelect.value : '');
+                    const candidateUsers = [];
+                    const numeric = /^\d+$/.test(q);
+                    if (numeric) {
+                        const byId = await flarumLoadUserById(q);
+                        if (byId) candidateUsers.push(byId);
+                    }
+
+                    const serverResults = await flarumSearchUsers({ query: q, limit: 30 });
+                    candidateUsers.push(...serverResults);
+
+                    const { json } = await flarumLoadUsersSortedPage({ offset: 0, limit: 120, sortCandidates: ['-id', '-joinedAt', '-lastSeenAt'] });
+                    const pageUsers = Array.isArray(json?.data) ? json.data : [];
+                    candidateUsers.push(...pageUsers);
+
+                    const merged = mergeUsersUnique(candidateUsers)
+                        .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                        .filter((u) => userMatchesQueryFuzzy(u, q))
+                        .sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0));
+
+                    rebuildRecipientOptions(merged, toSelect ? toSelect.value : '');
+                    setSuggestItems(merged);
                 } catch {
                     rebuildRecipientOptions([], '');
+                    setSuggestItems([]);
                 }
             };
             toSearch.addEventListener('input', () => {
                 if (lastTimer) window.clearTimeout(lastTimer);
-                lastTimer = window.setTimeout(runSearch, 250);
+                lastTimer = window.setTimeout(runSearch, 180);
+            });
+
+            document.addEventListener('click', (ev) => {
+                if (!suggestBox || suggestBox.style.display !== 'block') return;
+                const inside = ev.target && ev.target.closest ? ev.target.closest('.pm-suggest-wrap') : null;
+                if (!inside) {
+                    suggestBox.style.display = 'none';
+                }
             });
         }
 

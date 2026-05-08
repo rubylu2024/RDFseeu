@@ -219,6 +219,39 @@
             color: #888;
         }
 
+        .pm-suggest-wrap {
+            position: relative;
+        }
+
+        .pm-suggest {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 2px);
+            border: 1px solid #ccc;
+            background: #fff;
+            z-index: 50;
+            max-height: 180px;
+            overflow: auto;
+            display: none;
+        }
+
+        .pm-suggest-item {
+            padding: 6px 8px;
+            border-bottom: 1px dashed #eee;
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .pm-suggest-item:last-child {
+            border-bottom: none;
+        }
+
+        .pm-suggest-item:hover {
+            background: #fff7f7;
+        }
+
         .pm-empty {
             padding: 14px;
             text-align: center;
