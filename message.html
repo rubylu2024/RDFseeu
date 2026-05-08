@@ -33,36 +33,213 @@
             color: #333;
         }
 
-        .message-item {
-            border: 1px solid #eee;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: #fcfcfc;
-            position: relative;
+        .pm-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
         }
 
-        .message-item.unread {
+        .pm-tabs {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .pm-tab,
+        .pm-btn {
+            padding: 5px 10px;
+            border: 1px solid #6F6F6F;
+            background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .pm-tab.active {
+            background: linear-gradient(to bottom, #FFE4E4, #FFCFCF);
+            border-color: #cc0000;
+            color: #990000;
+        }
+
+        .pm-btn.primary {
+            border-color: #7d1d1d;
+            background: linear-gradient(to bottom, #ffdddd, #ffb6b6);
+            color: #7d1d1d;
+            font-weight: bold;
+        }
+
+        .pm-layout {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .pm-list {
+            width: 38%;
+            min-width: 260px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+
+        .pm-detail {
+            flex: 1;
+            border: 1px solid #ccc;
+            background: #fff;
+            min-height: 380px;
+        }
+
+        .pm-panel-head {
+            padding: 8px 10px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pm-panel-body {
+            padding: 10px;
+        }
+
+        .pm-list-item {
+            border-bottom: 1px dashed #eee;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+
+        .pm-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .pm-list-item.unread {
+            background: #fff7f7;
             border-left: 4px solid #cc0000;
         }
 
-        .message-meta {
+        .pm-list-title {
+            font-size: 14px;
+            color: #0066cc;
+            margin-bottom: 4px;
+        }
+
+        .pm-list-meta {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pm-detail-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .pm-thread {
+            border: 1px solid #eee;
+            background: #fcfcfc;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 320px;
+            overflow: auto;
+        }
+
+        .pm-post {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .pm-post:last-child {
+            border-bottom: none;
+        }
+
+        .pm-post-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
-            color: #888;
-            font-size: 13px;
-            margin-bottom: 10px;
+            gap: 10px;
         }
 
-        .message-sender {
-            font-weight: bold;
+        .pm-post-author {
             color: #cc0000;
+            font-weight: bold;
         }
 
-        .message-body {
-            line-height: 1.6;
+        .pm-post-body {
+            font-size: 14px;
             color: #333;
-            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .pm-form {
+            margin-top: 12px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .pm-form label {
+            font-size: 13px;
+            color: #666;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .pm-form input[type="text"],
+        .pm-form textarea {
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .pm-form textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .pm-form-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pm-hint {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .pm-empty {
+            padding: 14px;
+            text-align: center;
+            color: #888;
+        }
+
+        .pm-alert {
+            padding: 12px;
+            border: 1px dashed #cc0000;
+            background: #fff7f7;
+            color: #cc0000;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .pm-layout {
+                flex-direction: column;
+            }
+            .pm-list {
+                width: 100%;
+            }
         }
 
         .back-btn {
@@ -127,17 +304,39 @@
                             <div class="main-content" style="width:100%; padding: 20px;">
                                 <div class="message-container">
                                     <div class="message-header">
-                                        <h2>站内消息</h2>
-                                        <span style="font-size: 13px; color: #666;">共 1 条消息</span>
+                                        <h2>短消息</h2>
+                                        <span style="font-size: 13px; color: #666;">未读短消息：<span id="pm-unread-count">0</span></span>
                                     </div>
 
-                                    <div class="message-item unread">
-                                        <div class="message-meta">
-                                            <span class="message-sender">发件人：论坛管理组</span>
-                                            <span class="message-time">2026-04-25 10:30</span>
+                                    <div class="pm-alert" id="pm-alert"></div>
+
+                                    <div class="pm-toolbar">
+                                        <div class="pm-tabs">
+                                            <button type="button" class="pm-tab active" id="pm-tab-inbox" data-box="inbox">收件箱</button>
+                                            <button type="button" class="pm-tab" id="pm-tab-sent" data-box="sent">发件箱</button>
                                         </div>
-                                        <div class="message-body">
-                                            本论坛网页快照内容将于近期开放，感谢您的耐心等待。
+                                        <button type="button" class="pm-btn primary" id="pm-compose-btn">写短消息</button>
+                                    </div>
+
+                                    <div class="pm-layout">
+                                        <div class="pm-list">
+                                            <div class="pm-panel-head">
+                                                <span id="pm-list-title">收件箱</span>
+                                                <span class="pm-hint" id="pm-list-meta"></span>
+                                            </div>
+                                            <div class="pm-panel-body" id="pm-list-body">
+                                                <div class="pm-empty">加载中...</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="pm-detail">
+                                            <div class="pm-panel-head">
+                                                <span class="pm-detail-title" id="pm-detail-title">短消息内容</span>
+                                                <span class="pm-hint" id="pm-detail-meta"></span>
+                                            </div>
+                                            <div class="pm-panel-body" id="pm-detail-body">
+                                                <div class="pm-empty">请选择一条短消息查看内容。</div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -152,7 +351,7 @@
             <div class="status-bar">
                 <div class="status-container">
                     <span>我的红蜻蜓</span>
-                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge">1</span></span>
+                    <span class="status-right" style="position: relative; cursor: pointer;" onclick="window.location.href='message.html'">消息<span class="unread-badge" style="display: none;">0</span></span>
                 </div>
             </div>
         </div>
