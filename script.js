@@ -87,6 +87,9 @@ function showUiToast(options) {
     const actionText = typeof options?.actionText === 'string' ? options.actionText : '';
     const onAction = typeof options?.onAction === 'function' ? options.onAction : null;
     const autoCloseMs = typeof options?.autoCloseMs === 'number' && isFinite(options.autoCloseMs) && options.autoCloseMs > 0 ? Math.floor(options.autoCloseMs) : 0;
+    const messageFormatter = typeof options?.messageFormatter === 'function' ? options.messageFormatter : null;
+    const actionTextFormatter = typeof options?.actionTextFormatter === 'function' ? options.actionTextFormatter : null;
+    const shouldRenderAction = !!(actionText || actionTextFormatter);
 
     const overlay = ensureToastOverlay();
     overlay.innerHTML = `
@@ -96,19 +99,35 @@ function showUiToast(options) {
                 <button type="button" class="ui-toast-close" aria-label="关闭">×</button>
             </div>
             <div class="ui-toast-body">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
-            ${actionText ? `<div class="ui-toast-actions"><button type="button" class="ui-toast-action">${escapeHtml(actionText)}</button></div>` : ''}
+            ${shouldRenderAction ? `<div class="ui-toast-actions"><button type="button" class="ui-toast-action">${escapeHtml(actionText)}</button></div>` : ''}
         </div>
     `;
     overlay.classList.add('open');
     overlay.setAttribute('aria-hidden', 'false');
 
+    const bodyEl = overlay.querySelector('.ui-toast-body');
     const closeBtn = overlay.querySelector('.ui-toast-close');
     const actionBtn = overlay.querySelector('.ui-toast-action');
+    const countdownEndAt = autoCloseMs > 0 ? Date.now() + autoCloseMs : 0;
 
     let closed = false;
+    let autoCloseTimer = null;
+    let countdownTimer = null;
+    const renderCountdown = () => {
+        if (closed || autoCloseMs <= 0) return;
+        const secondsLeft = Math.max(0, Math.ceil((countdownEndAt - Date.now()) / 1000));
+        if (bodyEl && messageFormatter) {
+            bodyEl.innerHTML = escapeHtml(messageFormatter(secondsLeft)).replace(/\n/g, '<br>');
+        }
+        if (actionBtn && actionTextFormatter) {
+            actionBtn.textContent = actionTextFormatter(secondsLeft);
+        }
+    };
     const close = () => {
         if (closed) return;
         closed = true;
+        if (autoCloseTimer) window.clearTimeout(autoCloseTimer);
+        if (countdownTimer) window.clearInterval(countdownTimer);
         overlay.classList.remove('open');
         overlay.setAttribute('aria-hidden', 'true');
         overlay.innerHTML = '';
@@ -122,7 +141,11 @@ function showUiToast(options) {
     }
 
     if (autoCloseMs > 0) {
-        window.setTimeout(close, autoCloseMs);
+        renderCountdown();
+        if (messageFormatter || actionTextFormatter) {
+            countdownTimer = window.setInterval(renderCountdown, 250);
+        }
+        autoCloseTimer = window.setTimeout(close, autoCloseMs);
     }
 
     return { close };
@@ -2652,6 +2675,101 @@ function isDiscussionUnreadForActor(attributes) {
     return lastPostedAt.getTime() > lastReadAt.getTime();
 }
 
+function isPrivateDiscussionLocallyMarkedRead(state, discussionId, attributes) {
+    const id = discussionId == null ? '' : String(discussionId);
+    const marker = state?.privateReadMarkers?.[id];
+    if (!id || !marker) return false;
+
+    const currentPostNumber = Number(attributes?.lastPostNumber);
+    const markerPostNumber = Number(marker?.lastReadPostNumber);
+    if (Number.isFinite(currentPostNumber) && currentPostNumber > 0 && Number.isFinite(markerPostNumber) && markerPostNumber > 0) {
+        return currentPostNumber <= markerPostNumber;
+    }
+
+    const currentPostedAt = parseFlarumIsoTime(attributes?.lastPostedAt);
+    const markerReadAt = parseFlarumIsoTime(marker?.lastReadAt);
+    if (currentPostedAt && markerReadAt) {
+        return currentPostedAt.getTime() <= markerReadAt.getTime();
+    }
+
+    return false;
+}
+
+function rememberPrivateDiscussionRead(state, discussionId, attributes) {
+    if (!state) return;
+    const id = discussionId == null ? '' : String(discussionId);
+    if (!id) return;
+    if (!state.privateReadMarkers || typeof state.privateReadMarkers !== 'object') {
+        state.privateReadMarkers = {};
+    }
+    state.privateReadMarkers[id] = {
+        lastReadAt: attributes?.lastPostedAt || attributes?.createdAt || new Date().toISOString(),
+        lastReadPostNumber: Number(attributes?.lastPostNumber) > 0 ? Number(attributes.lastPostNumber) : null
+    };
+    state.useLocalUnreadCounts = true;
+}
+
+async function flarumMarkPrivateDiscussionRead(discussionId, attributes) {
+    const id = discussionId == null ? '' : String(discussionId);
+    if (!id) return false;
+
+    const lastReadPostNumber = Number(attributes?.lastPostNumber);
+    const lastReadAt = typeof attributes?.lastPostedAt === 'string' && attributes.lastPostedAt.trim()
+        ? attributes.lastPostedAt.trim()
+        : null;
+    const patchAttrs = {};
+
+    if (Number.isFinite(lastReadPostNumber) && lastReadPostNumber > 0) {
+        patchAttrs.lastReadPostNumber = Math.floor(lastReadPostNumber);
+    }
+    if (lastReadAt) {
+        patchAttrs.lastReadAt = lastReadAt;
+    }
+
+    const candidates = [];
+    if (Object.keys(patchAttrs).length > 0) {
+        candidates.push({
+            method: 'PATCH',
+            path: `/discussions/${encodeURIComponent(id)}`,
+            json: { data: { type: 'discussions', id, attributes: patchAttrs } }
+        });
+    }
+    if (patchAttrs.lastReadPostNumber != null) {
+        candidates.push({
+            method: 'PATCH',
+            path: `/discussions/${encodeURIComponent(id)}`,
+            json: {
+                data: {
+                    type: 'discussions',
+                    id,
+                    attributes: { lastReadPostNumber: patchAttrs.lastReadPostNumber }
+                }
+            }
+        });
+    }
+    candidates.push(
+        { method: 'POST', path: `/discussions/${encodeURIComponent(id)}/read` },
+        {
+            method: 'POST',
+            path: `/discussions/${encodeURIComponent(id)}/read`,
+            json: { data: { type: 'discussions', id, attributes: patchAttrs } }
+        }
+    );
+
+    for (const candidate of candidates) {
+        try {
+            await flarumRequest(candidate.path, {
+                method: candidate.method,
+                auth: true,
+                ...(candidate.json ? { json: candidate.json } : {})
+            });
+            return true;
+        } catch (_) {}
+    }
+
+    return false;
+}
+
 function buildMessageHrefForUserId(toUserId) {
     const id = toUserId == null ? '' : String(toUserId);
     const base = id ? `message.html?to=${encodeURIComponent(id)}` : 'message.html';
@@ -2769,7 +2887,10 @@ async function flarumLoadPrivateDiscussionDetail(discussionId) {
     return {
         discussion: discussionJson?.data || null,
         included,
-        posts: Array.isArray(postsJson?.data) ? postsJson.data : []
+        posts: (Array.isArray(postsJson?.data) ? postsJson.data : []).filter((post) => {
+            const contentType = String(post?.attributes?.contentType || 'comment').trim().toLowerCase();
+            return contentType === 'comment';
+        })
     };
 }
 
@@ -2854,6 +2975,29 @@ async function customGetUnreadCountAggregate() {
     }
 }
 
+function getLocalUnreadCountAggregate() {
+    const state = window.pmState;
+    if (!state?.useLocalUnreadCounts || !Array.isArray(state.itemsAll)) return null;
+
+    let publicUnread = 0;
+    let notificationUnread = 0;
+    let privateUnread = 0;
+
+    state.itemsAll.forEach((item) => {
+        if (!item?.unread) return;
+        if (item.kind === 'public') publicUnread += 1;
+        else if (item.kind === 'notification') notificationUnread += 1;
+        else if (item.kind === 'private') privateUnread += 1;
+    });
+
+    return {
+        publicUnread,
+        notificationUnread,
+        privateUnread,
+        totalUnread: publicUnread + notificationUnread + privateUnread
+    };
+}
+
 async function refreshShortMessagesEntry() {
     const entryEls = Array.from(document.querySelectorAll('.status-right'))
         .filter((el) => (el?.getAttribute?.('onclick') || '').includes("message.html"));
@@ -2878,16 +3022,16 @@ async function refreshShortMessagesEntry() {
     };
 
     if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) {
-        entryEls.forEach((el) => setEntryLabel(el, '短消息'));
+        entryEls.forEach((el) => setEntryLabel(el, '消息中心'));
         badgeEls.forEach((el) => { el.style.display = 'none'; el.textContent = '0'; });
         if (headCountEl) headCountEl.textContent = '0';
         return { totalUnread: 0, publicUnread: 0, notificationUnread: 0, privateUnread: 0 };
     }
 
-    const counts = await customGetUnreadCountAggregate();
+    const counts = getLocalUnreadCountAggregate() || await customGetUnreadCountAggregate();
     const total = Math.max(0, Number(counts.totalUnread) || 0);
     const showText = total > 99 ? '99+' : String(total);
-    const label = total > 0 ? `短消息(${showText})` : '短消息';
+    const label = total > 0 ? `消息中心(${showText})` : '消息中心';
 
     entryEls.forEach((el) => setEntryLabel(el, label));
 
@@ -2944,7 +3088,10 @@ async function renderMessagePage() {
         state = {
             filter: 'all',
             items: [],
-            selected: null
+            itemsAll: [],
+            selected: null,
+            privateReadMarkers: {},
+            useLocalUnreadCounts: false
         };
         window.pmState = state;
     }
@@ -3416,7 +3563,7 @@ async function renderMessagePage() {
                 const starterId = d?.relationships?.user?.data?.id;
                 const starterUser = starterId ? pickIncluded(privateIncluded, 'users', starterId) : null;
                 const starterName = getPreferredDisplayName(starterUser?.attributes) || '匿名用户';
-                const unread = isDiscussionUnreadForActor(attrs);
+                const unread = isDiscussionUnreadForActor(attrs) && !isPrivateDiscussionLocallyMarkedRead(state, id, attrs);
                 const lastPostedAt = attrs.lastPostedAt || attrs.createdAt || '';
                 return {
                     kind: 'private',
@@ -3603,6 +3750,7 @@ async function renderMessagePage() {
             const attrs = discussion.attributes || {};
             const title = attrs.title || '短消息';
             const updatedAt = attrs.lastPostedAt || attrs.createdAt || '';
+            const isUnread = isDiscussionUnreadForActor(attrs) && !isPrivateDiscussionLocallyMarkedRead(state, id, attrs);
 
             if (detailTitleEl) detailTitleEl.textContent = title;
             if (detailMetaEl) detailMetaEl.textContent = updatedAt ? formatFlarumTime(updatedAt).slice(0, 16) : '';
@@ -3612,7 +3760,9 @@ async function renderMessagePage() {
                 const user = userId ? pickIncluded(included, 'users', userId) : null;
                 const author = getPreferredDisplayName(user?.attributes) || '匿名用户';
                 const createdAt = p?.attributes?.createdAt ? formatFlarumTime(p.attributes.createdAt).slice(0, 16) : '';
-                const html = p?.attributes?.contentHtml || p?.attributes?.content || '';
+                const contentHtml = typeof p?.attributes?.contentHtml === 'string' ? p.attributes.contentHtml : '';
+                const contentText = typeof p?.attributes?.content === 'string' ? p.attributes.content : '';
+                const html = contentHtml || textToHtmlParagraphs(contentText);
                 return `
                     <div class="pm-post">
                         <div class="pm-post-meta">
@@ -3640,6 +3790,19 @@ async function renderMessagePage() {
 
             const replyForm = document.getElementById('pm-reply-form');
             const replyContent = document.getElementById('pm-reply-content');
+            if (isUnread) {
+                rememberPrivateDiscussionRead(state, id, attrs);
+                state.itemsAll = (state.itemsAll || []).map((x) => {
+                    if (x.kind === 'private' && String(x.id) === String(id)) return { ...x, unread: false };
+                    return x;
+                });
+                await renderListFromCache();
+                flarumMarkPrivateDiscussionRead(id, attrs).then((success) => {
+                    if (success) {
+                        refreshShortMessagesEntry().catch(() => {});
+                    }
+                }).catch(() => {});
+            }
             if (replyForm && replyContent) {
                 replyForm.onsubmit = async (e) => {
                     e.preventDefault();

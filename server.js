@@ -637,6 +637,24 @@ app.post('/custom-register', async (req, res) => {
       });
     }
 
+    if (username.length < 3 || username.length > 30) {
+      return res.status(400).json({
+        errors: [{
+          code: 'validation_failed',
+          detail: '用户名长度需为 3-30 个字符'
+        }]
+      });
+    }
+
+    if (!/^[A-Za-z0-9]+$/.test(username)) {
+      return res.status(400).json({
+        errors: [{
+          code: 'validation_failed',
+          detail: '用户名只能包含英文字母和数字，不能包含中文'
+        }]
+      });
+    }
+
     // Get admin credentials from environment variables
     const FLARUM_ADMIN_TOKEN = process.env.FLARUM_ADMIN_TOKEN;
     const FLARUM_ADMIN_USER_ID = process.env.FLARUM_ADMIN_USER_ID || 1;

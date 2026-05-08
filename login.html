@@ -196,7 +196,7 @@
                                 
                                 <div class="form-group">
                                     <label for="username">用户名或邮箱</label>
-                                    <input type="text" id="username" name="username" required placeholder="请输入用户名或邮箱">
+                                    <input type="text" id="username" name="username" required placeholder="请输入用户名或邮箱" autocomplete="username" spellcheck="false">
                                 </div>
                                 
                                 <div class="form-group">
@@ -225,6 +225,7 @@
             const loginForm = document.getElementById('login-form');
             const messageContainer = document.getElementById('message-container');
             const registerLink = document.getElementById('register-link');
+            const usernameInput = document.getElementById('username');
             
             try {
                 const params = new URLSearchParams(window.location.search);
@@ -234,16 +235,34 @@
                 }
             } catch (_) {}
 
+            function sanitizeLoginIdentification(value) {
+                return String(value || '').replace(/[^\x00-\x7F]/g, '');
+            }
+
+            usernameInput.addEventListener('input', function() {
+                const sanitized = sanitizeLoginIdentification(usernameInput.value);
+                if (sanitized !== usernameInput.value) {
+                    usernameInput.value = sanitized;
+                    showMessage('用户名或邮箱不能包含中文字符', 'error');
+                }
+            });
+
             
             // 处理登录表单提交
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const username = document.getElementById('username').value;
+                const username = sanitizeLoginIdentification(usernameInput.value).trim();
                 const password = document.getElementById('password').value;
                 
                 if (!username || !password) {
                     showMessage('请输入用户名或邮箱，以及密码', 'error');
+                    return;
+                }
+
+                if (username !== usernameInput.value.trim()) {
+                    usernameInput.value = username;
+                    showMessage('用户名或邮箱不能包含中文字符', 'error');
                     return;
                 }
                 

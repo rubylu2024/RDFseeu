@@ -252,7 +252,7 @@
                                 
                                 <div class="form-group">
                                     <label for="username">用户名</label>
-                                    <input type="text" id="username" name="username" required placeholder="仅支持字母和数字，3-30个字符">
+                                    <input type="text" id="username" name="username" required placeholder="仅支持字母和数字，3-30个字符" maxlength="30" autocomplete="username" spellcheck="false">
                                 </div>
 
                                 <div class="form-group">
@@ -372,8 +372,20 @@
                 button.setAttribute('title', isVisible ? `隐藏${fieldLabel}` : `显示${fieldLabel}`);
             }
 
+            function sanitizeUsername(value) {
+                return String(value || '').replace(/[^a-zA-Z0-9]/g, '');
+            }
+
             setPasswordVisibility(togglePasswordBtn, passwordInput, false, '密码');
             setPasswordVisibility(toggleConfirmPasswordBtn, confirmPasswordInput, false, '确认密码');
+
+            usernameInput.addEventListener('input', function() {
+                const sanitized = sanitizeUsername(usernameInput.value);
+                if (sanitized !== usernameInput.value) {
+                    usernameInput.value = sanitized;
+                    showMessage('用户名只能输入英文字母和数字，不能输入中文', 'error');
+                }
+            });
 
             // 密码明文切换
             togglePasswordBtn.addEventListener('click', function() {
@@ -387,11 +399,15 @@
             registerForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                const username = usernameInput.value;
+                const username = sanitizeUsername(usernameInput.value);
                 const nickname = nicknameInput.value;
                 const email = emailInput.value;
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
+
+                if (username !== usernameInput.value) {
+                    usernameInput.value = username;
+                }
 
                 // 重置输入框状态
                 [usernameInput, nicknameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => input.classList.remove('error'));
@@ -429,8 +445,10 @@
                     if (typeof showUiToast === 'function') {
                         showUiToast({
                             type: 'success',
-                            message: '注册成功，已为你自动登录。\n请前往邮箱激活账号后再正常发帖/回帖。\n10 秒后将自动返回之前的页面。',
-                            actionText: '立即返回',
+                            message: '注册成功，已为你自动登录。\n请前往邮箱激活账号后再正常发帖/回帖。',
+                            messageFormatter: (secondsLeft) => `注册成功，已为你自动登录。\n请前往邮箱激活账号后再正常发帖/回帖。\n${secondsLeft} 秒后将自动返回之前的页面。`,
+                            actionText: '立即返回（10s）',
+                            actionTextFormatter: (secondsLeft) => `立即返回（${secondsLeft}s）`,
                             onAction: () => { window.location.href = redirectUrl; },
                             autoCloseMs: 10000
                         });
