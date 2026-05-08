@@ -2526,6 +2526,51 @@ function buildMessageHrefForUserId(toUserId) {
     return `login.html?redirect=${encodeURIComponent(base)}`;
 }
 
+function isAllowedShortMessageRecipientUserId(userId) {
+    const n = Number(userId);
+    if (!Number.isFinite(n) || n <= 0) return false;
+    if (n >= 1 && n <= 3) return true;
+    return n >= 131;
+}
+
+function buildUserSelectLabel(user) {
+    const attrs = user?.attributes || {};
+    const id = user?.id != null ? String(user.id) : '';
+    const username = typeof attrs.username === 'string' ? attrs.username : '';
+    const display = getPreferredDisplayName(attrs, username) || username || `用户${id || ''}`;
+    const suffix = `(${username || '-'} / ID:${id || '-'})`;
+    return `${display} ${suffix}`.trim();
+}
+
+async function flarumLoadUserById(userId) {
+    const id = String(userId || '');
+    if (!id) return null;
+    const json = await flarumRequest(`/users/${encodeURIComponent(id)}`, { auth: true });
+    return json?.data || null;
+}
+
+async function flarumSearchUsers({ query, limit }) {
+    const q = typeof query === 'string' ? query.trim() : '';
+    const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.min(30, Math.floor(limit)) : 15;
+    const url = q
+        ? `/users?page[limit]=${safeLimit}&filter[q]=${encodeURIComponent(q)}`
+        : `/users?page[limit]=${safeLimit}`;
+    const json = await flarumRequest(url, { auth: true });
+    return Array.isArray(json?.data) ? json.data : [];
+}
+
+function mergeUsersUnique(users) {
+    const out = [];
+    const seen = new Set();
+    (Array.isArray(users) ? users : []).forEach((u) => {
+        const id = u?.id != null ? String(u.id) : '';
+        if (!id || seen.has(id)) return;
+        seen.add(id);
+        out.push(u);
+    });
+    return out;
+}
+
 async function flarumLoadPrivateDiscussionsPage({ offset, limit }) {
     const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.min(30, Math.floor(limit)) : 20;
     const safeOffset = typeof offset === 'number' && Number.isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
@@ -2665,9 +2710,15 @@ async function renderMessagePage() {
         detailBodyEl.innerHTML = `
             <form class="pm-form" id="pm-compose-form">
                 <div style="margin-bottom: 10px;">
-                    <label>收件人 ID</label>
-                    <input type="text" id="pm-compose-to" value="${escapeHtml(toId)}" placeholder="请输入用户ID">
-                    <div class="pm-hint">提示：点击“发短消息”按钮会自动带入收件人。</div>
+                    <label>收件人</label>
+                    <select id="pm-compose-to-select">
+                        <option value="">请选择收件人（括号内为用户名 / ID）</option>
+                    </select>
+                    <div style="margin-top: 8px;">
+                        <label>搜索用户</label>
+                        <input type="text" id="pm-compose-to-search" value="" placeholder="输入昵称/用户名快速查找">
+                        <div class="pm-hint">可发送对象仅限：ID 1~3，以及 ID ≥ 131 的用户。</div>
+                    </div>
                 </div>
                 <div style="margin-bottom: 10px;">
                     <label>标题</label>
@@ -2688,9 +2739,37 @@ async function renderMessagePage() {
 
         const form = document.getElementById('pm-compose-form');
         const cancelBtn = document.getElementById('pm-compose-cancel');
-        const toInput = document.getElementById('pm-compose-to');
+        const toSelect = document.getElementById('pm-compose-to-select');
+        const toSearch = document.getElementById('pm-compose-to-search');
         const titleInput = document.getElementById('pm-compose-title');
         const contentInput = document.getElementById('pm-compose-content');
+
+        const rebuildRecipientOptions = (users, selectedId) => {
+            if (!toSelect) return;
+            const selected = selectedId != null ? String(selectedId) : '';
+            const optionsHtml = mergeUsersUnique(users)
+                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                .sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0))
+                .map((u) => {
+                    const id = String(u.id);
+                    const label = buildUserSelectLabel(u);
+                    return `<option value="${escapeHtml(id)}"${id === selected ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+                }).join('');
+            toSelect.innerHTML = `<option value="">请选择收件人（括号内为用户名 / ID）</option>${optionsHtml}`;
+        };
+
+        const loadDefaultRecipients = async () => {
+            try {
+                const fixed = await Promise.all([flarumLoadUserById(1), flarumLoadUserById(2), flarumLoadUserById(3)]);
+                const fixedUsers = fixed.filter(Boolean);
+                const recent = await flarumSearchUsers({ query: '', limit: 30 });
+                const merged = mergeUsersUnique([...fixedUsers, ...recent]);
+                const selected = isAllowedShortMessageRecipientUserId(toId) ? toId : '';
+                rebuildRecipientOptions(merged, selected);
+            } catch {
+                rebuildRecipientOptions([], '');
+            }
+        };
 
         if (cancelBtn) {
             cancelBtn.onclick = () => {
@@ -2702,16 +2781,41 @@ async function renderMessagePage() {
             };
         }
 
+        if (toSearch) {
+            let lastTimer = null;
+            const runSearch = async () => {
+                const q = String(toSearch.value || '').trim();
+                if (!q) {
+                    await loadDefaultRecipients();
+                    return;
+                }
+                try {
+                    const results = await flarumSearchUsers({ query: q, limit: 30 });
+                    const filtered = results.filter((u) => isAllowedShortMessageRecipientUserId(u?.id));
+                    rebuildRecipientOptions(filtered, toSelect ? toSelect.value : '');
+                } catch {
+                    rebuildRecipientOptions([], '');
+                }
+            };
+            toSearch.addEventListener('input', () => {
+                if (lastTimer) window.clearTimeout(lastTimer);
+                lastTimer = window.setTimeout(runSearch, 250);
+            });
+        }
+
+        await loadDefaultRecipients();
+
         if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
                 setAlert('');
 
-                const recipientId = String(toInput?.value || '').trim();
+                const recipientId = String(toSelect?.value || '').trim();
                 const title = String(titleInput?.value || '').trim();
                 const content = String(contentInput?.value || '').trim();
 
-                if (!recipientId) return setAlert('请填写收件人 ID。');
+                if (!recipientId) return setAlert('请选择收件人。');
+                if (!isAllowedShortMessageRecipientUserId(recipientId)) return setAlert('当前收件人不在可发送范围内。');
                 if (!title) return setAlert('请填写标题。');
                 if (!content) return setAlert('请填写内容。');
 
