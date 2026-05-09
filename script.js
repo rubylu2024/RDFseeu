@@ -5362,6 +5362,21 @@ function setupSmoothScroll() {
 function setupFloatingAd() {
     const ad = document.querySelector('.floating-ad');
     if (!ad) return;
+
+    if (ad.dataset.boundAdClick !== '1') {
+        ad.dataset.boundAdClick = '1';
+        ad.removeAttribute('onclick');
+        ad.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
+            if (opened) {
+                try { opened.opener = null; } catch (_) {}
+            } else {
+                window.location.href = AD_TARGET_URL;
+            }
+        });
+    }
     
     // 立即显示浮窗导航图标
     ad.style.display = 'block';
@@ -5440,6 +5455,21 @@ function setupFloatingAd() {
 function setupFloatingAd2() {
     const ad = document.querySelector('.floating-ad2');
     if (!ad) return;
+
+    if (ad.dataset.boundAdClick !== '1') {
+        ad.dataset.boundAdClick = '1';
+        ad.removeAttribute('onclick');
+        ad.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
+            if (opened) {
+                try { opened.opener = null; } catch (_) {}
+            } else {
+                window.location.href = AD_TARGET_URL;
+            }
+        });
+    }
     
     // 立即显示浮窗广告
     ad.style.display = 'block';
@@ -5524,6 +5554,43 @@ function setupPopupAd() {
     
     const leftCloseBtn = document.querySelector('.left-close-btn');
     const popupAudio = document.getElementById('popup-audio');
+
+    const pathname = String(window.location.pathname || '').toLowerCase();
+    const leaf = pathname.split('/').filter(Boolean).pop() || '';
+    const isHomePage = leaf === '' || leaf === 'index.html';
+
+    const hidePopup = () => {
+        popupAd.style.display = 'none';
+        if (leftCloseBtn) leftCloseBtn.style.display = 'none';
+        if (popupAudio) popupAudio.pause();
+    };
+
+    if (!isHomePage) {
+        hidePopup();
+        return;
+    }
+
+    const dismissKey = 'popupAdDismissed';
+    try {
+        if (sessionStorage.getItem(dismissKey) === '1') {
+            hidePopup();
+            return;
+        }
+    } catch (_) {}
+
+    const dismissOnce = () => {
+        try { sessionStorage.setItem(dismissKey, '1'); } catch (_) {}
+        hidePopup();
+    };
+
+    const openAdTarget = () => {
+        const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
+        if (opened) {
+            try { opened.opener = null; } catch (_) {}
+        } else {
+            window.location.href = AD_TARGET_URL;
+        }
+    };
     
     // 设置弹窗广告音量为1/3
     if (popupAudio) {
@@ -5540,6 +5607,9 @@ function setupPopupAd() {
     
     // 立即显示弹窗广告和左侧假关闭按钮
     setTimeout(function() {
+        try {
+            if (sessionStorage.getItem(dismissKey) === '1') return;
+        } catch (_) {}
         console.log('Showing popup ad...');
         popupAd.style.display = 'block';
         popupAd.style.visibility = 'visible';
@@ -5578,21 +5648,28 @@ function setupPopupAd() {
     
     closeButton.addEventListener('click', function(e) {
         e.stopPropagation();
-        popupAd.style.display = 'none';
-        if (leftCloseBtn) {
-            leftCloseBtn.style.display = 'none';
-        }
-        if (popupAudio) {
-            popupAudio.pause();
-        }
+        dismissOnce();
     });
+
+    const popupContent = popupAd.querySelector('.popup-content');
+    if (popupContent && popupContent.dataset.boundPopupContent !== '1') {
+        popupContent.dataset.boundPopupContent = '1';
+        popupContent.removeAttribute('onclick');
+        popupContent.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dismissOnce();
+            openAdTarget();
+        });
+    }
 
     // 处理假关闭按钮的点击跳转
     const fakeCloseBtn = popupAd.querySelector('.fake-close-btn');
     if (fakeCloseBtn) {
         fakeCloseBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            window.location.href = AD_TARGET_URL;
+            dismissOnce();
+            openAdTarget();
         });
     }
 
@@ -5601,7 +5678,8 @@ function setupPopupAd() {
         if (sideFakeBtn) {
             sideFakeBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                window.location.href = AD_TARGET_URL;
+                dismissOnce();
+                openAdTarget();
             });
         }
     }
