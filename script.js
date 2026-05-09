@@ -4786,109 +4786,111 @@ function setupReplyForm() {
     const replyForm = document.getElementById('reply-form');
     const replyNameInput = document.getElementById('reply-name');
 
+    if (!replyForm || !replyTargetInput || !replyContent || !replyBoxTitle) return;
+
     // 初始化工具栏
     initToolbar();
-    
+
     // 检查用户权限，显示/隐藏图片按钮
     checkImagePermission();
 
-    // 取消回复按钮
-    cancelReply.removeEventListener('click', cancelReplyHandler);
-    cancelReply.addEventListener('click', cancelReplyHandler);
-
-    function cancelReplyHandler(e) {
-        e.preventDefault();
-        replyTargetInput.value = '';
-        replyContent.value = '';
-        replyBoxTitle.textContent = '发表回复';
-        cancelReply.style.display = 'none';
+    // 取消回复按钮（避免重复绑定）
+    if (cancelReply && cancelReply.dataset.boundReplyCancel !== '1') {
+        cancelReply.dataset.boundReplyCancel = '1';
+        cancelReply.addEventListener('click', (e) => {
+            e.preventDefault();
+            replyTargetInput.value = '';
+            replyContent.value = '';
+            replyBoxTitle.textContent = '发表回复';
+            cancelReply.style.display = 'none';
+        });
     }
 
-    // 表单提交（使用事件委托或移除旧事件）
-    replyForm.removeEventListener('submit', submitHandler);
-    replyForm.addEventListener('submit', submitHandler);
+    // 表单提交（避免重复绑定）
+    if (replyForm.dataset.boundReplySubmit !== '1') {
+        replyForm.dataset.boundReplySubmit = '1';
+        replyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-    async function submitHandler(e) {
-        e.preventDefault();
-        
-        const name = replyNameInput?.value?.trim() || '';
-        const content = replyContent.value.trim();
-        const replyTo = replyTargetInput.value;
+            const name = replyNameInput?.value?.trim() || '';
+            const content = replyContent.value.trim();
+            const replyTo = replyTargetInput.value;
 
-        if (!content) {
-            alert('请输入回复内容');
-            return;
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const postId = urlParams.get('id') || '1';
-        
-        // 获取当前帖子数据（从内存或缓存，避免重新加载）
-        let postData = window.currentPostData;
-        if (!postData) {
-            postData = await loadPostData(postId);
-            if (!postData) {
-                alert('无法获取帖子数据');
+            if (!content) {
+                alert('请输入回复内容');
                 return;
             }
-            window.currentPostData = postData;
-        }
 
-        // 显示提交中状态
-        const submitBtn = replyForm.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = '提交中...';
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('id') || '1';
 
-        try {
-            const contentToSend = replyTo 
-                ? `回复 ${replyTo}：\n${content}`
-                : content;
+            // 获取当前帖子数据（从内存或缓存，避免重新加载）
+            let postData = window.currentPostData;
+            if (!postData) {
+                postData = await loadPostData(postId);
+                if (!postData) {
+                    alert('无法获取帖子数据');
+                    return;
+                }
+                window.currentPostData = postData;
+            }
 
-            const response = await flarumRequest('/posts', {
-                method: 'POST',
-                auth: true,
-                json: {
-                    data: {
-                        type: 'posts',
-                        attributes: {
-                            content: contentToSend
-                        },
-                        relationships: {
-                            discussion: {
-                                data: { type: 'discussions', id: String(postId) }
+            // 显示提交中状态
+            const submitBtn = replyForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) submitBtn.textContent = '提交中...';
+
+            try {
+                const contentToSend = replyTo
+                    ? `回复 ${replyTo}：\n${content}`
+                    : content;
+
+                const response = await flarumRequest('/posts', {
+                    method: 'POST',
+                    auth: true,
+                    json: {
+                        data: {
+                            type: 'posts',
+                            attributes: {
+                                content: contentToSend
+                            },
+                            relationships: {
+                                discussion: {
+                                    data: { type: 'discussions', id: String(postId) }
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
 
-            if (response) {
-                replyContent.value = '';
-                replyTargetInput.value = '';
-                cancelReply.style.display = 'none';
-                replyBoxTitle.textContent = '发表回复';
-                
-                // 重新加载帖子数据并更新UI
-                const newPostData = await loadPostData(postId);
-                if (newPostData) {
-                    window.currentPostData = newPostData;
-                    renderForumThread(newPostData);
-                }
-                
-                // 滚动到最新回复
-                setTimeout(() => {
-                    const posts = document.querySelectorAll('.post');
-                    if (posts.length > 0) {
-                        posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
+                if (response) {
+                    replyContent.value = '';
+                    replyTargetInput.value = '';
+                    if (cancelReply) cancelReply.style.display = 'none';
+                    replyBoxTitle.textContent = '发表回复';
+
+                    // 重新加载帖子数据并更新UI
+                    const newPostData = await loadPostData(postId);
+                    if (newPostData) {
+                        window.currentPostData = newPostData;
+                        renderForumThread(newPostData);
                     }
-                }, 100);
+
+                    // 滚动到最新回复
+                    setTimeout(() => {
+                        const posts = document.querySelectorAll('.post');
+                        if (posts.length > 0) {
+                            posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('提交失败:', error);
+                alert(getFriendlyErrorMessage(error, 'create_post'));
+            } finally {
+                if (submitBtn) submitBtn.textContent = originalBtnText;
             }
-        } catch (error) {
-            console.error('提交失败:', error);
-            alert(getFriendlyErrorMessage(error, 'create_post'));
-        } finally {
-            submitBtn.textContent = originalBtnText;
-        }
+        });
     }
 }
 
