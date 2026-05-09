@@ -2009,8 +2009,11 @@ async function renderDynamicHomeLinks() {
             const fetchOneDiscussionById = async (id) => {
                 const targetId = id == null ? '' : String(id).trim();
                 if (!targetId) return null;
-                try {
-                    const json = await flarumRequest(`/discussions/${encodeURIComponent(targetId)}?include=user`, { auth: false });
+                const readOne = async (withAuth) => {
+                    const json = await flarumRequest(
+                        `/discussions/${encodeURIComponent(targetId)}?include=user`,
+                        { auth: withAuth === true ? true : false }
+                    );
                     const d = json?.data && json.data.type === 'discussions' ? json.data : null;
                     if (!d || d.attributes?.isPrivateDiscussion === true) return null;
                     return {
@@ -2020,7 +2023,17 @@ async function renderDynamicHomeLinks() {
                         author: '',
                         date: (String(d.attributes?.createdAt || '')).slice(0, 10)
                     };
-                } catch (_) {}
+                };
+
+                try {
+                    return await readOne(false);
+                } catch (_) {
+                    if (getFlarumToken()) {
+                        try {
+                            return await readOne(true);
+                        } catch (_) {}
+                    }
+                }
                 return null;
             };
 
