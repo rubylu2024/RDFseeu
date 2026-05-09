@@ -772,12 +772,16 @@ function pickIncluded(included, type, id) {
 
 function isPrivateDiscussionResource(discussion) {
     const attrs = discussion?.attributes || {};
-    if (attrs.isPrivateDiscussion === true) return true;
-    if (attrs.canEditRecipients === true) return true;
-    if (attrs.recipientCount != null) return true;
-
     const rel = discussion?.relationships || {};
-    if (rel.recipientUsers || rel.recipientGroups || rel.recipients) return true;
+
+    if (attrs.isPrivateDiscussion === true) return true;
+
+    const recipientCount = Number(attrs.recipientCount);
+    if (Number.isFinite(recipientCount) && recipientCount > 0) return true;
+
+    if (rel.recipientUsers?.data?.length > 0) return true;
+    if (rel.recipientGroups?.data?.length > 0) return true;
+    if (rel.recipients?.data?.length > 0) return true;
 
     return false;
 }
