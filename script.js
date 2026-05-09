@@ -1026,7 +1026,7 @@ async function flarumLoadDiscussion(postId) {
 async function flarumLoadDiscussionList() {
     try {
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`);
+        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`, { auth: false });
         const discussions = (Array.isArray(json?.data) ? json.data : []).filter((d) => d && d.type === 'discussions' && d.attributes?.isPrivateDiscussion !== true);
         const included = json?.included || [];
 
@@ -1182,7 +1182,7 @@ async function flarumLoadUserRecentPosts({ userId, username, limit, onlyReplies 
             let pageGuard = 0;
             while (collected.length < safeLimit && pageGuard < 8) {
                 pageGuard += 1;
-                const pageJson = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`);
+                const pageJson = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`, { auth: false });
                 const posts = Array.isArray(pageJson?.data) ? pageJson.data : [];
                 const included = Array.isArray(pageJson?.included) ? pageJson.included : [];
                 included.forEach((item) => {
@@ -1226,7 +1226,7 @@ async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
     const publicQuery = buildPublicDiscussionFilterQuery(q);
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`);
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`, { auth: false });
     return { json };
 }
 
@@ -1367,7 +1367,7 @@ async function flarumLoadRecentDiscussionsForFuzzy(maxItems = 300) {
     let offset = 0;
     while (discussions.length < take) {
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user&filter[q]=${filterQ}`);
+        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user&filter[q]=${filterQ}`, { auth: false });
         const data = Array.isArray(json?.data) ? json.data : [];
         const included = Array.isArray(json?.included) ? json.included : [];
 
