@@ -5366,9 +5366,10 @@ function setupFloatingAd() {
     if (ad.dataset.boundAdClick !== '1') {
         ad.dataset.boundAdClick = '1';
         ad.removeAttribute('onclick');
+        ad.onclick = null;
         ad.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
             if (opened) {
                 try { opened.opener = null; } catch (_) {}
@@ -5459,9 +5460,10 @@ function setupFloatingAd2() {
     if (ad.dataset.boundAdClick !== '1') {
         ad.dataset.boundAdClick = '1';
         ad.removeAttribute('onclick');
+        ad.onclick = null;
         ad.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
             if (opened) {
                 try { opened.opener = null; } catch (_) {}
@@ -5655,9 +5657,10 @@ function setupPopupAd() {
     if (popupContent && popupContent.dataset.boundPopupContent !== '1') {
         popupContent.dataset.boundPopupContent = '1';
         popupContent.removeAttribute('onclick');
+        popupContent.onclick = null;
         popupContent.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             dismissOnce();
             openAdTarget();
         });
@@ -5667,7 +5670,8 @@ function setupPopupAd() {
     const fakeCloseBtn = popupAd.querySelector('.fake-close-btn');
     if (fakeCloseBtn) {
         fakeCloseBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
+            e.preventDefault();
+            e.stopImmediatePropagation();
             dismissOnce();
             openAdTarget();
         });
@@ -5677,7 +5681,8 @@ function setupPopupAd() {
         const sideFakeBtn = leftCloseBtn.querySelector('.popup-close');
         if (sideFakeBtn) {
             sideFakeBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 dismissOnce();
                 openAdTarget();
             });
