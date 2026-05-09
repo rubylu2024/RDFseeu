@@ -978,7 +978,7 @@ async function flarumLoadDiscussion(postId) {
     const id = String(postId);
 
     try {
-        const readWithAuth = !!getFlarumToken();
+        const readWithAuth = getFlarumToken() ? undefined : false;
         // 获取 discussion 基本信息
         const discussionJson = await flarumRequest(
             `/discussions/${encodeURIComponent(id)}?include=user`,
@@ -1022,7 +1022,7 @@ async function flarumLoadDiscussion(postId) {
 async function flarumLoadDiscussionList() {
     try {
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`, { auth: !!getFlarumToken() });
+        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`);
         const discussions = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
         const included = json?.included || [];
 
@@ -1178,7 +1178,7 @@ async function flarumLoadUserRecentPosts({ userId, username, limit, onlyReplies 
             let pageGuard = 0;
             while (collected.length < safeLimit && pageGuard < 8) {
                 pageGuard += 1;
-                const pageJson = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`, { auth: !!getFlarumToken() });
+                const pageJson = await flarumRequest(`${q}&page[limit]=50&page[offset]=${offset}`);
                 const posts = Array.isArray(pageJson?.data) ? pageJson.data : [];
                 const included = Array.isArray(pageJson?.included) ? pageJson.included : [];
                 included.forEach((item) => {
@@ -1222,7 +1222,7 @@ async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
     const publicQuery = buildPublicDiscussionFilterQuery(q);
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`, { auth: !!getFlarumToken() });
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`);
     return { json };
 }
 
@@ -1363,7 +1363,7 @@ async function flarumLoadRecentDiscussionsForFuzzy(maxItems = 300) {
     let offset = 0;
     while (discussions.length < take) {
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user&filter[q]=${filterQ}`, { auth: !!getFlarumToken() });
+        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=user&filter[q]=${filterQ}`);
         const data = Array.isArray(json?.data) ? json.data : [];
         const included = Array.isArray(json?.included) ? json.included : [];
 
@@ -1997,8 +1997,40 @@ async function renderDynamicHomeLinks() {
             const hotTitle = '求助帖，真实经历，感觉自己被脑控了';
             
             // 从API数据中找到对应的帖子
-            const pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
-            const hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
+            let pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
+            let hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
+
+            const fetchOneDiscussionByKeyword = async (keyword, matcher) => {
+                const kw = String(keyword || '').trim();
+                if (!kw) return null;
+                try {
+                    const { json } = await flarumLoadDiscussionsSearchPage({
+                        query: kw,
+                        offset: 0,
+                        limit: 10,
+                        sortOrder: 'desc'
+                    });
+                    const data = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
+                    for (const d of data) {
+                        const title = String(d?.attributes?.title || '');
+                        if (matcher(title)) {
+                            return {
+                                id: Number(d?.id),
+                                title,
+                                views: getDiscussionViewCount(d?.attributes)
+                            };
+                        }
+                    }
+                } catch (_) {}
+                return null;
+            };
+
+            if (!pin2Post) {
+                pin2Post = await fetchOneDiscussionByKeyword('拒绝黄赌毒', (t) => t.includes(pin2Title) || t.includes('拒绝黄赌毒'));
+            }
+            if (!hotPost) {
+                hotPost = await fetchOneDiscussionByKeyword('脑控', (t) => t.includes(hotTitle) || t.includes('脑控') || t.includes('脑控了'));
+            }
             
             // 过滤掉已固定的帖子，用于填充其他位置
             const remainingDiscussions = discussions.filter(d => 
