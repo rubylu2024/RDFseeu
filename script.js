@@ -5,6 +5,31 @@ const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
 const POST_PAGE_SIZE = 20;
 
+function openInNewTab(url) {
+    const target = String(url || '').trim();
+    if (!target) return false;
+    try {
+        const opened = window.open(target, '_blank', 'noopener');
+        if (opened) {
+            try { opened.opener = null; } catch (_) {}
+            return true;
+        }
+    } catch (_) {}
+    try {
+        const a = document.createElement('a');
+        a.href = target;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 function isFlarumConfigured() {
     return true;
 }
@@ -5370,12 +5395,7 @@ function setupFloatingAd() {
         ad.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
-            if (opened) {
-                try { opened.opener = null; } catch (_) {}
-            } else {
-                window.location.href = AD_TARGET_URL;
-            }
+            openInNewTab(AD_TARGET_URL);
         });
     }
     
@@ -5464,12 +5484,7 @@ function setupFloatingAd2() {
         ad.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
-            if (opened) {
-                try { opened.opener = null; } catch (_) {}
-            } else {
-                window.location.href = AD_TARGET_URL;
-            }
+            openInNewTab(AD_TARGET_URL);
         });
     }
     
@@ -5586,12 +5601,7 @@ function setupPopupAd() {
     };
 
     const openAdTarget = () => {
-        const opened = window.open(AD_TARGET_URL, '_blank', 'noopener');
-        if (opened) {
-            try { opened.opener = null; } catch (_) {}
-        } else {
-            window.location.href = AD_TARGET_URL;
-        }
+        openInNewTab(AD_TARGET_URL);
     };
     
     // 设置弹窗广告音量为1/3
