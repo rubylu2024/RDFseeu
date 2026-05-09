@@ -1027,7 +1027,7 @@ async function flarumLoadDiscussionList() {
     try {
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
         const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`);
-        const discussions = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
+        const discussions = (Array.isArray(json?.data) ? json.data : []).filter((d) => d && d.type === 'discussions' && d.attributes?.isPrivateDiscussion !== true);
         const included = json?.included || [];
 
         return discussions.map((d) => {
@@ -1999,48 +1999,36 @@ async function renderDynamicHomeLinks() {
             const pin1Title = '红蜻蜓论坛·版务公告';
             const pin2Title = '关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知';
             const hotTitle = '求助帖，真实经历，感觉自己被脑控了';
+            const pin2Id = 6;
+            const hotId = 4;
             
             // 从API数据中找到对应的帖子
-            let pin2Post = discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
-            let hotPost = discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
+            let pin2Post = discussions.find((d) => Number(d.id) === Number(pin2Id)) || discussions.find(d => d.title.includes(pin2Title) || d.title.includes('拒绝黄赌毒'));
+            let hotPost = discussions.find((d) => Number(d.id) === Number(hotId)) || discussions.find(d => d.title.includes(hotTitle) || d.title.includes('脑控') || d.title.includes('脑控了'));
 
-            const fetchOneDiscussionByKeyword = async (keyword, matcher) => {
-                const kw = String(keyword || '').trim();
-                if (!kw) return null;
+            const fetchOneDiscussionById = async (id) => {
+                const targetId = id == null ? '' : String(id).trim();
+                if (!targetId) return null;
                 try {
-                    const { json } = await flarumLoadDiscussionsSearchPage({
-                        query: kw,
-                        offset: 0,
-                        limit: 10,
-                        sortOrder: 'desc'
-                    });
-                    const data = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
-                    for (const d of data) {
-                        const title = String(d?.attributes?.title || '');
-                        if (matcher(title)) {
-                            return {
-                                id: Number(d?.id),
-                                title,
-                                views: getDiscussionViewCount(d?.attributes)
-                            };
-                        }
-                    }
+                    const json = await flarumRequest(`/discussions/${encodeURIComponent(targetId)}?include=user`, { auth: false });
+                    const d = json?.data && json.data.type === 'discussions' ? json.data : null;
+                    if (!d || d.attributes?.isPrivateDiscussion === true) return null;
+                    return {
+                        id: Number(d.id),
+                        title: String(d.attributes?.title || ''),
+                        views: getDiscussionViewCount(d.attributes),
+                        author: '',
+                        date: (String(d.attributes?.createdAt || '')).slice(0, 10)
+                    };
                 } catch (_) {}
                 return null;
             };
 
-            if (!pin2Post) {
-                pin2Post = await fetchOneDiscussionByKeyword('拒绝黄赌毒', (t) => t.includes(pin2Title) || t.includes('拒绝黄赌毒'));
-            }
-            if (!hotPost) {
-                hotPost = await fetchOneDiscussionByKeyword('脑控', (t) => t.includes(hotTitle) || t.includes('脑控') || t.includes('脑控了'));
-            }
+            if (!pin2Post) pin2Post = await fetchOneDiscussionById(pin2Id);
+            if (!hotPost) hotPost = await fetchOneDiscussionById(hotId);
             
             // 过滤掉已固定的帖子，用于填充其他位置
-            const remainingDiscussions = discussions.filter(d => 
-                !d.title.includes(pin2Title) && !d.title.includes('拒绝黄赌毒') &&
-                !d.title.includes(hotTitle) && !d.title.includes('脑控') && !d.title.includes('脑控了')
-            );
+            const remainingDiscussions = discussions.filter((d) => Number(d.id) !== Number(pin2Id) && Number(d.id) !== Number(hotId));
 
             const rankedDiscussions = remainingDiscussions
                 .slice()
