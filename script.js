@@ -235,7 +235,7 @@ function setupStatusBarClock() {
         const { year, month, day, hour, minute, second } = getBeijingNowParts();
         const greeting = getTimeGreetingByHour(hour);
         const y = Number.isFinite(year) ? year - 11 : '';
-        const text = `${greeting}！现在是北京时间${y}年${month}月${day}日 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        const text = `${greeting}！现在是北京时间${y}年${month}月${day}日\n${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
         document.querySelectorAll('.status-center').forEach((node) => {
             node.textContent = text;
         });
@@ -2629,6 +2629,12 @@ window.addEventListener('DOMContentLoaded', function() {
     // 处理所有 href="#" 的链接
     document.addEventListener('click', (e) => {
         const target = e.target.closest('a');
+
+        if (target && target.closest('.top-links') && String(target.textContent || '').trim() === '博客') {
+            e.preventDefault();
+            window.location.href = 'blog-entry.html';
+            return;
+        }
 
         if (target && String(target.textContent || '').trim() === '服务') {
             e.preventDefault();
@@ -5573,8 +5579,13 @@ function setupPopupAd() {
     const popupAudio = document.getElementById('popup-audio');
 
     const pathname = String(window.location.pathname || '').toLowerCase();
-    const leaf = pathname.split('/').filter(Boolean).pop() || '';
-    const isHomePage = leaf === '' || leaf === 'index.html';
+    const normalizedPath = pathname.replace(/\/+$/, '');
+    const segments = normalizedPath.split('/').filter(Boolean);
+    const leaf = segments[segments.length - 1] || '';
+    const isHomePage = normalizedPath === '' ||
+        normalizedPath === '/' ||
+        leaf === 'index.html' ||
+        (segments.length === 1 && leaf === 'rdfseeu');
 
     const hidePopup = () => {
         popupAd.style.display = 'none';
@@ -5622,7 +5633,6 @@ function setupPopupAd() {
         try {
             if (sessionStorage.getItem(dismissKey) === '1') return;
         } catch (_) {}
-        console.log('Showing popup ad...');
         popupAd.style.display = 'block';
         popupAd.style.visibility = 'visible';
         popupAd.style.opacity = '1';

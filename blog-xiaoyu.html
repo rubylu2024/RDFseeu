@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小玉的秘密花园</title>
+    <link rel="icon" type="image/png" href="images/红蜻蜓.png">
+    <link rel="stylesheet" href="styles.css?v=20260506-2">
+    <style>
+        .blog-page {
+            max-width: 980px;
+            margin: 20px auto;
+        }
+
+        .blog-shell {
+            background: #fff;
+            border: 1px solid #ccc;
+            line-height: 1.8;
+        }
+
+        .blog-banner {
+            height: 145px;
+            border: 1px solid #c9c9c9;
+            margin: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            background: url('images/页面背景图.jpg') center/cover no-repeat;
+        }
+
+        .blog-banner::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.2));
+        }
+
+        .blog-banner-text {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .blog-banner-text h1 {
+            margin: 0 0 6px;
+            font-size: 20px;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            font-weight: bold;
+        }
+
+        .blog-banner-text .sub {
+            font-size: 12px;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        .blog-tabs {
+            margin: 0 10px 10px;
+            border: 1px solid #e6d3db;
+            background: #fff;
+        }
+
+        .blog-tabs-inner {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 10px;
+            border-top: 4px solid #f0a9c7;
+            background: linear-gradient(to bottom, #fff, #fff7fb);
+        }
+
+        .blog-tabs a {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 13px;
+            color: #b63a7a;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .blog-tabs a.active {
+            border-color: #f0a9c7;
+            background: #fff0f7;
+        }
+
+        .blog-body {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 12px;
+            padding: 0 10px 10px;
+        }
+
+        @media (max-width: 900px) {
+            .blog-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebox {
+            border: 1px solid #e6d3db;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+
+        .sidebox-title {
+            padding: 8px 10px;
+            background: #fff0f7;
+            border-bottom: 1px solid #e6d3db;
+            color: #b63a7a;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .sidebox-body {
+            padding: 10px;
+            font-size: 12px;
+            color: #444;
+        }
+
+        .profile {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .profile img {
+            width: 78px;
+            height: 78px;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+
+        .profile ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .profile li {
+            margin: 4px 0;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            color: #444;
+        }
+
+        .calendar th,
+        .calendar td {
+            border: 1px solid #f0d6e2;
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        .calendar th {
+            background: #fff7fb;
+            color: #b63a7a;
+            font-weight: bold;
+        }
+
+        .calendar .muted {
+            color: #bbb;
+        }
+
+        .calendar .mark {
+            background: #fff0f7;
+            border-color: #f0a9c7;
+            color: #b63a7a;
+            font-weight: bold;
+        }
+
+        .mainbox {
+            border: 1px solid #e6d3db;
+            background: #fff;
+        }
+
+        .pager {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0d6e2;
+            background: #fff7fb;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .pager a {
+            color: #b63a7a;
+            text-decoration: none;
+            padding: 2px 6px;
+            border: 1px solid transparent;
+        }
+
+        .pager a.current {
+            border-color: #f0a9c7;
+            background: #fff0f7;
+        }
+
+        .entry {
+            padding: 12px 14px;
+            border-top: 1px dashed #f0d6e2;
+        }
+
+        .entry:first-of-type {
+            border-top: none;
+        }
+
+        .entry h2 {
+            margin: 0 0 6px;
+            font-size: 16px;
+            color: #b63a7a;
+            font-weight: bold;
+        }
+
+        .entry-meta {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .entry p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .entry .note {
+            background: #fff9c4;
+            border: 1px solid #fbc02d;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .comment-area {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #f0d6e2;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .comment-line {
+            background: #fff7fb;
+            border: 1px solid #f0d6e2;
+            padding: 8px 10px;
+        }
+
+        .comment-line a {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+
+        .missing-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0 2px;
+        }
+
+        .missing-image {
+            width: 160px;
+            height: 110px;
+            border: 1px dashed #f0a9c7;
+            background: #fff7fb url('images/图片不存在.jpg') no-repeat center center;
+            background-size: contain;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0;
+        }
+
+        .stealth-link {
+            font-size: 11px;
+            color: #a8a8a8;
+            text-decoration: none;
+        }
+
+        .stealth-link:hover {
+            text-decoration: underline;
+        }
+
+        .blog-tabs a[href="#"],
+        .pager a[href="#"],
+        .pager span {
+            cursor: pointer;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .gallery {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            display: block;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="blog-page">
+        <div class="blog-shell">
+            <div class="blog-banner">
+                <div class="blog-banner-text">
+                    <h1>童星阿玉</h1>
+                    <div class="sub">博客圈</div>
+                </div>
+            </div>
+
+            <div class="blog-tabs">
+                <div class="blog-tabs-inner">
+                    <a class="active" href="#">日志</a>
+                    <a href="#">相本</a>
+                    <a href="#">绘本</a>
+                    <a href="#">留言板</a>
+                    <a href="#">好友</a>
+                    <a href="#">行事历</a>
+                    <a href="#">管理介面</a>
+                </div>
+            </div>
+
+            <div class="blog-body">
+                <div>
+                    <div class="sidebox">
+                        <div class="sidebox-title">个人档</div>
+                        <div class="sidebox-body">
+                            <div class="profile">
+                                <img src="images/用户头像.png" alt="头像">
+                                <ul>
+                                    <li>昵称：童星阿玉</li>
+                                    <li>博客圈：小玉的秘密花园</li>
+                                    <li>follower：212</li>
+                                    <li>最后登陆时间：2009-08-16</li>
+                                </ul>
+                            </div>
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #f0d6e2;">
+                                <div style="color: #b63a7a; font-weight: bold; margin-bottom: 6px;">个人简介</div>
+                                <div>韩玉礼，演员。</div>
+                                <div>参演作品：《地生花》《死神的女儿》</div>
+                                <div style="margin-top: 6px;">喜欢拍照、唱歌、演戏​，正在等待属于自己的舞台​，请大家支持我~</div>
+                                <div style="margin-top: 6px;">总有一天，我会被所有人看见。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebox">
+                        <div class="sidebox-title">行事历</div>
+                        <div class="sidebox-body">
+                            <table class="calendar" aria-label="行事历">
+                                <thead>
+                                    <tr>
+                                        <th colspan="7">2009年08月</th>
+                                    </tr>
+                                    <tr>
+                                        <th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td>
+                                    </tr>
+                                    <tr>
+                                        <td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="mark">16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td><td>22</td>
+                                    </tr>
+                                    <tr>
+                                        <td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td><td>29</td>
+                                    </tr>
+                                    <tr>
+                                        <td>30</td><td>31</td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td><td class="muted"> </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="sidebox">
+                        <div class="sidebox-title">文章分类</div>
+                        <div class="sidebox-body">
+                            <div>宣传海报</div>
+                            <div>艺术照</div>
+                            <div>日志</div>
+                            <div style="margin-top: 10px; text-align: right;">
+                                <a class="stealth-link" href="blog_user_backup_20090816.html">用户资料备份</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mainbox">
+                    <div class="pager">
+                        <span>第一页</span>
+                        <span>上一页</span>
+                        <a class="current" href="#">1</a>
+                        <a href="#">2</a>
+                        <a href="#">3</a>
+                        <a href="#">4</a>
+                        <a href="#">5</a>
+                        <span>下一页</span>
+                        <span>最后一页</span>
+                    </div>
+
+                    <div class="entry">
+                        <h2>再见，我的朋友</h2>
+                        <div class="entry-meta">2009-08-16 02:13</div>
+                        <p>今天一直在下雨，我想了很久，还是应该写下来。</p>
+                        <p>你以前说，如果有一天我真的成了大明星，你会在第一排给我鼓掌，你还说，我笑起来的时候不像照片里那么假。</p>
+                        <p>我不知道该怎么说这件事，也不知道到底是谁的错，大人们总是说不要乱讲，说过去的事情就过去了，说小孩子不要记那么清楚。</p>
+                        <p>崔家奇，我想我会永远记得你，再见了。</p>
+
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>下雨天：</strong>别再想了。</div>
+                            <div class="comment-line"><strong>MOMO：</strong>早点休息吧。</div>
+                            <div class="comment-line"><strong>糖分不足：</strong>你一定会被更多人看见。</div>
+                            <div class="comment-line"><strong>海边列车：</strong>不要再提那天的事情。</div>
+                            <div class="comment-line"><strong>KIKI：</strong>八月不是快到了吗？</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>我觉得有人一直在看我</h2>
+                        <div class="entry-meta">2009-06-09 23:48</div>
+                        <p>最近总觉得不太对，窗户外面明明没有人，可是我一转头，就会看到一张脸贴在那里。晚上都不敢关灯，一闭眼就会看到很恐怖的画面，有时候是舞台，有时候是学校走廊，有时候是一个人站在镜子后面看我。</p>
+                        <p>最近也越来越没有食欲了，吃不下妈妈做的饭，小蛋糕也不想吃，一提到吃东西脑子里只有想吃肉。</p>
+                        <p>爸爸妈妈又说八月要送我去外地面试新角色，他们说这是最后一次机会，说只要红了，一切都会变好。可是我不想去了..........</p>
+
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>玻璃汽水：</strong>今天状态是不是不太好？</div>
+                            <div class="comment-line"><strong>MOMO：</strong>不要害怕。</div>
+                            <div class="comment-line"><strong>夜里别回头：</strong>你最近是不是又看到那个东西了？</div>
+                            <div class="comment-line"><strong>404room：</strong>有人一直在看着你。</div>
+                            <div class="comment-line"><strong>停电以后：</strong>你已经被选中了。</div>
+                            <div class="comment-line"><strong>匿名用户：</strong><a href="https://www.dihai.wiki/" target="_blank" rel="noopener noreferrer">https://www.dihai.wiki/</a></div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>今天去拍新的照片了</h2>
+                        <div class="entry-meta">2009-06-08 21:32</div>
+                        <p>摄影棚今天特别热，灯一打脸就开始出汗，化妆老师一直帮我补粉。拍完的时候头都有点晕，不过有几张我还挺喜欢的，等修好以后再发上来。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>MOMO：</strong>这次的衣服很好看！</div>
+                            <div class="comment-line"><strong>玻璃汽水：</strong>感觉比上次自然很多。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>半夜偷偷上传的新照片</h2>
+                        <div class="entry-meta">2009-06-07 00:58</div>
+                        <p>刚刚趁爸妈睡了把照片传上来了，网速特别慢，传了十几分钟。其实这组我还挺喜欢的。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>旧CD机：</strong>第三张最好看。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>这张看起来像真正的明星吗</h2>
+                        <div class="entry-meta">2009-06-06 22:10</div>
+                        <p>今天选了很久，最后决定把这张设成头像。修完以后感觉和平时的自己不太一样。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>17岁的夏天：</strong>像杂志封面。</div>
+                            <div class="comment-line"><strong>MOMO：</strong>已经很像正式艺人了。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>今天练习到凌晨三点</h2>
+                        <div class="entry-meta">2009-06-05 03:12</div>
+                        <p>老师让我重新练走位，说我镜头感还是不够。回来以后又自己对着镜子练了一会儿，练到后面都有点困迷糊了。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>KIKI：</strong>早点睡呀。</div>
+                            <div class="comment-line"><strong>糖分不足：</strong>努力的人一定会被看见。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>八月的面试要加油</h2>
+                        <div class="entry-meta">2009-06-04 19:40</div>
+                        <p>下个月要去外地参加面试了，这几天一直在练台词和表情。其实我还是有点紧张，因为听说这次去的人很多。希望不要忘词。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>海边列车：</strong>加油呀，别给自己太大压力。</div>
+                            <div class="comment-line"><strong>MOMO：</strong>一定可以过的！</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>妈妈说这次一定可以</h2>
+                        <div class="entry-meta">2009-06-03 20:05</div>
+                        <p>妈妈今天陪我去试镜，回来的路上一直说我这次状态很好。我其实没什么感觉，不过听她这么说还是有点开心。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>下雨天：</strong>家里人支持真的很好。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>今天又重新做了一张宣传图</h2>
+                        <div class="entry-meta">2009-06-02 01:18</div>
+                        <p>电脑卡了一晚上，字和背景调了半天，最后还是觉得不够像真正的海报。不过比之前那版好一点。等以后拍到正式作品就好了。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>lonelycat：</strong>已经很好看了。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>大家会喜欢这样的笑容吗</h2>
+                        <div class="entry-meta">2009-06-01 23:26</div>
+                        <p>今天修照片的时候发现自己笑得有点奇怪，不知道是不是太用力了。有时候看久了会觉得照片里的人不像我。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>17岁的夏天：</strong>不会呀，我觉得很好看。</div>
+                            <div class="comment-line"><strong>夜里别回头：</strong>最后一张有点怪怪的。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>昨天的照片删掉了</h2>
+                        <div class="entry-meta">2009-05-31 00:44</div>
+                        <p>昨天发的那组照片后来还是删了，总觉得看着不太舒服，尤其是最后一张。可能是光的问题吧。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>夜里别回头：</strong>最后那张背景里是不是有东西？</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>新的艺术照终于修好了</h2>
+                        <div class="entry-meta">2009-05-29 17:03</div>
+                        <p>修图师今天把图发给我了，磨皮有点太重，不过整体还可以。我最喜欢坐在窗边那张，就是眼睛看起来有点没精神。</p>
+                        <div class="missing-images">
+                            <div class="missing-image">图片不存在.jpg</div>
+                        </div>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>玻璃汽水：</strong>窗边那张特别像电影截图。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>昨天梦到自己又在拍戏</h2>
+                        <div class="entry-meta">2009-05-28 07:12</div>
+                        <p>梦里我在一个特别大的摄影棚，周围全是灯，还有人一直叫我的名字。醒来的时候天都快亮了，结果今天上课差点迟到。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>MOMO：</strong>是不是最近太累了。</div>
+                            <div class="comment-line"><strong>棉花糖：</strong>梦到拍戏说明要走运啦。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>如果能被更多人看到就好了</h2>
+                        <div class="entry-meta">2009-05-26 22:07</div>
+                        <p>有时候会想，如果我的照片真的被很多人看到，会是什么感觉。应该会很开心吧。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>海边列车：</strong>总会有人看到你的。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>我是不是应该再笑一点</h2>
+                        <div class="entry-meta">2009-05-25 18:55</div>
+                        <p>今天老师又说我镜头前表情太淡了，让我多笑一点。可是有时候笑久了脸会特别僵。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>玻璃汽水：</strong>自然一点就很好。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>今天又失眠了</h2>
+                        <div class="entry-meta">2009-05-24 02:21</div>
+                        <p>最近总睡不好，明明已经很累了，躺下以后脑子还是特别清醒。窗帘外面的路灯一直照进来，看久了眼睛有点疼。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>海边列车：</strong>别总熬夜。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>镜子里的我好奇怪</h2>
+                        <div class="entry-meta">2009-05-23 08:13</div>
+                        <p>化妆的时候盯着镜子看太久，突然觉得里面那个人不像自己。可能最近太累了吧。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>夜里别回头：</strong>不要半夜照镜子。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>总有一天我会红的吧</h2>
+                        <div class="entry-meta">2009-05-20 20:33</div>
+                        <p>妈妈今天又跟我说，做这一行一定要坚持，不然前面吃的苦就都白费了。我也不知道以后会怎么样，不过我还是想继续拍戏。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>糖分不足：</strong>会的，你条件很好。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>如果一直发下去，会有人记得我吗</h2>
+                        <div class="entry-meta">2009-05-18 01:09</div>
+                        <p>刚刚整理博客的时候发现已经发了好多东西了。有时候会想，如果以后没人更新了，这些页面还会不会一直留着。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>404room：</strong>会有人记得的。</div>
+                        </div>
+                    </div>
+
+                    <div class="entry">
+                        <h2>如果有人搜索我，会看到这些吗</h2>
+                        <div class="entry-meta">2009-05-15 16:12</div>
+                        <p>今天突然想到这个问题，就跑去搜了一下自己的名字，结果什么都没有。其实有点失落，不过也正常吧，希望以后能搜到我的照片和作品。</p>
+                        <div class="comment-area">
+                            <div class="comment-line"><strong>KIKI：</strong>以后一定会有很多结果的。</div>
+                            <div class="comment-line"><strong>下雨天：</strong>慢慢来呀。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const message = '该页面已停止维护。';
+            document.addEventListener('click', function (e) {
+                const a = e.target && e.target.closest ? e.target.closest('a') : null;
+                if (a) {
+                    const href = a.getAttribute('href');
+                    if (href === '#') {
+                        e.preventDefault();
+                        alert(message);
+                    }
+                    return;
+                }
+
+                const span = e.target && e.target.closest ? e.target.closest('.pager span') : null;
+                if (span) {
+                    e.preventDefault();
+                    alert(message);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
