@@ -781,7 +781,7 @@ function buildUserProfileHref(userId) {
     if (!id) return '#';
     const currentUserId = localStorage.getItem('flarumUserId');
     if (getFlarumToken() && currentUserId && String(currentUserId) === id) return 'profile.html';
-    return `user.html?id=${encodeURIComponent(id)}`;
+    return `profile.html?id=${encodeURIComponent(id)}`;
 }
 
 function buildUserLinkHtml(userId, displayName) {
@@ -2708,11 +2708,6 @@ window.addEventListener('DOMContentLoaded', function() {
         updateReplyFormForLoginStatus();
     }
 
-    if (window.location.pathname.includes('user.html')) {
-        updateUserLinks();
-        renderPublicUserPage();
-    }
-
     if (window.location.pathname.includes('all-posts.html')) {
         updateUserLinks();
         renderAllPostsPage();
@@ -3160,15 +3155,15 @@ async function renderMessagePage() {
     const detailTitleEl = document.getElementById('pm-detail-title');
     const detailMetaEl = document.getElementById('pm-detail-meta');
     const detailBodyEl = document.getElementById('pm-detail-body');
-    const tabAll = document.getElementById('pm-tab-all');
-    const tabSystem = document.getElementById('pm-tab-system');
-    const tabReply = document.getElementById('pm-tab-reply');
-    const tabPrivate = document.getElementById('pm-tab-private');
-    const tabUnread = document.getElementById('pm-tab-unread');
+    const filterAll = document.getElementById('pm-filter-all');
+    const filterSystem = document.getElementById('pm-filter-system');
+    const filterReply = document.getElementById('pm-filter-reply');
+    const filterPrivate = document.getElementById('pm-filter-private');
+    const filterUnread = document.getElementById('pm-filter-unread');
     const composePrivateBtn = document.getElementById('pm-compose-private-btn');
     const composePublicBtn = document.getElementById('pm-compose-public-btn');
 
-    if (!listBodyEl || !detailBodyEl || !tabAll || !tabSystem || !tabReply || !tabPrivate || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
+    if (!listBodyEl || !detailBodyEl || !filterAll || !filterSystem || !filterReply || !filterPrivate || !filterUnread || !composePrivateBtn || !composePublicBtn) return;
 
     const setAlert = (message) => {
         if (!alertEl) return;
@@ -3203,6 +3198,15 @@ async function renderMessagePage() {
         window.pmState = state;
     }
 
+    const normalizeFilter = (filter) => {
+        const f = String(filter || '').toLowerCase();
+        if (f === 'quote') return 'reply';
+        if (['all', 'system', 'reply', 'private', 'unread'].includes(f)) return f;
+        return 'all';
+    };
+
+    state.filter = normalizeFilter(state.filter);
+
     const renderDetailEmpty = () => {
         if (detailTitleEl) detailTitleEl.textContent = '短消息内容';
         if (detailMetaEl) detailMetaEl.textContent = '';
@@ -3212,11 +3216,9 @@ async function renderMessagePage() {
     const isAdmin = await isCurrentUserAdmin().catch(() => false);
     composePublicBtn.style.display = isAdmin ? '' : 'none';
 
-    const normalizeFilter = (filter) => {
-        const f = String(filter || '').toLowerCase();
-        if (f === 'quote') return 'reply';
-        if (['all', 'system', 'reply', 'private', 'unread'].includes(f)) return f;
-        return 'all';
+    const setComposePrivateBtnActive = (active) => {
+        if (!composePrivateBtn) return;
+        composePrivateBtn.classList.toggle('primary', !!active);
     };
 
     const formatNotificationKindLabel = (t) => {
@@ -3227,17 +3229,18 @@ async function renderMessagePage() {
         return '系统';
     };
 
-    const syncFilterTabs = () => {
-        tabAll.classList.toggle('active', state.filter === 'all');
-        tabSystem.classList.toggle('active', state.filter === 'system');
-        tabReply.classList.toggle('active', state.filter === 'reply');
-        tabPrivate.classList.toggle('active', state.filter === 'private');
-        tabUnread.classList.toggle('active', state.filter === 'unread');
+    const syncFilterControls = () => {
+        filterAll.checked = state.filter === 'all';
+        filterSystem.checked = state.filter === 'system';
+        filterReply.checked = state.filter === 'reply';
+        filterPrivate.checked = state.filter === 'private';
+        filterUnread.checked = state.filter === 'unread';
     };
 
     const setFilter = async (filter) => {
+        setComposePrivateBtnActive(false);
         state.filter = normalizeFilter(filter);
-        syncFilterTabs();
+        syncFilterControls();
         if (listTitleEl) listTitleEl.textContent = '我的消息';
         state.selected = null;
         renderDetailEmpty();
@@ -3264,7 +3267,7 @@ async function renderMessagePage() {
         window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
 
         state.filter = normalizeFilter(preferredFilter || (targetKind === 'private' ? 'private' : 'system'));
-        syncFilterTabs();
+        syncFilterControls();
         if (listTitleEl) listTitleEl.textContent = '我的消息';
         state.selected = { kind: targetKind, id: targetId };
 
@@ -3279,6 +3282,7 @@ async function renderMessagePage() {
     };
 
     const renderComposePrivate = async ({ toUserId }) => {
+        setComposePrivateBtnActive(true);
         const toId = toUserId == null ? '' : String(toUserId);
         detailBodyEl.innerHTML = `
             <form class="pm-form" id="pm-compose-form">
@@ -3394,6 +3398,7 @@ async function renderMessagePage() {
                 params.delete('composePublic');
                 const next = params.toString();
                 window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
+                setComposePrivateBtnActive(false);
                 renderDetailEmpty();
             };
         }
@@ -3847,6 +3852,7 @@ async function renderMessagePage() {
     };
 
     const renderDetail = async ({ kind, id }) => {
+        setComposePrivateBtnActive(false);
         setAlert('');
         detailBodyEl.innerHTML = '<div class="pm-empty">加载中...</div>';
         try {
@@ -4020,12 +4026,11 @@ async function renderMessagePage() {
         }
     };
 
-    tabAll.onclick = () => setFilter('all');
-    tabSystem.onclick = () => setFilter('system');
-    tabReply.onclick = () => setFilter('reply');
-    tabQuote.onclick = () => setFilter('quote');
-    tabPrivate.onclick = () => setFilter('private');
-    tabUnread.onclick = () => setFilter('unread');
+    filterAll.onchange = () => { if (filterAll.checked) setFilter(filterAll.value || 'all').catch(() => {}); };
+    filterSystem.onchange = () => { if (filterSystem.checked) setFilter(filterSystem.value || 'system').catch(() => {}); };
+    filterReply.onchange = () => { if (filterReply.checked) setFilter(filterReply.value || 'reply').catch(() => {}); };
+    filterPrivate.onchange = () => { if (filterPrivate.checked) setFilter(filterPrivate.value || 'private').catch(() => {}); };
+    filterUnread.onchange = () => { if (filterUnread.checked) setFilter(filterUnread.value || 'unread').catch(() => {}); };
 
     composePrivateBtn.onclick = () => {
         const params = new URLSearchParams(window.location.search);
@@ -4034,6 +4039,7 @@ async function renderMessagePage() {
     };
 
     composePublicBtn.onclick = () => {
+        setComposePrivateBtnActive(false);
         const params = new URLSearchParams(window.location.search);
         params.set('composePublic', '1');
         window.history.replaceState(null, '', `message.html?${params.toString()}`);
@@ -4419,123 +4425,6 @@ function renderForumThread(postData) {
             }
         }
     }, 100);
-}
-
-async function renderPublicUserPage() {
-    const container = document.getElementById('public-user-container');
-    if (!container) return;
-
-    if (!isFlarumConfigured()) {
-        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">论坛后端未配置</div>';
-        return;
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id');
-    if (!userId) {
-        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">未指定用户</div>';
-        return;
-    }
-
-    const currentUserId = localStorage.getItem('flarumUserId');
-    if (getFlarumToken() && currentUserId && String(currentUserId) === String(userId)) {
-        window.location.href = 'profile.html';
-        return;
-    }
-
-    container.innerHTML = '<div style="padding: 20px; text-align: center;">加载中...</div>';
-
-    try {
-        const userJson = await flarumRequest(`/users/${encodeURIComponent(String(userId))}`, { auth: false });
-        const user = userJson?.data;
-        if (!user) {
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">用户不存在或无法访问</div>';
-            return;
-        }
-
-        const attributes = user.attributes || {};
-        const displayName = getPreferredDisplayName(attributes, attributes.username || '');
-        const username = typeof attributes.username === 'string' ? attributes.username : '';
-        const avatarUrl = getUserAvatarUrl(user);
-        const points = getUserPoints(attributes);
-        const joinTimeRaw = attributes.joinTime || attributes.createdAt || '';
-        const joinTime = joinTimeRaw ? formatFlarumTime(joinTimeRaw) : '';
-        const bioRaw = typeof attributes.bio === 'string'
-            ? attributes.bio
-            : (typeof attributes.signature === 'string' ? attributes.signature : '');
-        const bio = bioRaw ? escapeHtml(bioRaw).replace(/\n/g, '<br>') : '暂无简介';
-
-        let badgeText = '';
-        const badgeType = await getUserGroupBadgeType(userId);
-        if (badgeType === 'admin') badgeText = '管理员';
-        if (badgeType === 'mod') badgeText = '版主';
-
-        const pmHref = buildMessageHrefForUserId(userId);
-        const isViewerAdmin = await isCurrentUserAdmin().catch(() => false);
-
-        let topics = [];
-
-        if (username) {
-            try {
-                const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-                const discussionsJson = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=10&filter[author]=${encodeURIComponent(username)}&filter[q]=${filterQ}`, { auth: false });
-                const discussions = filterPublicDiscussions(Array.isArray(discussionsJson?.data) ? discussionsJson.data : []);
-                topics = discussions.map((d) => ({
-                    id: d.id,
-                    title: d.attributes?.title || '',
-                    createdAt: d.attributes?.createdAt || '',
-                    commentCount: d.attributes?.commentCount,
-                    viewCount: getDiscussionViewCount(d.attributes)
-                }));
-            } catch {
-                topics = [];
-            }
-        }
-
-        const topicsHtml = topics.length > 0
-            ? topics.map((t) => `
-                <li>
-                    <a href="post.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.title || '')}</a>
-                    <div class="public-user-item-meta">
-                        <span>${(t.createdAt || '').slice(0, 16).replace('T', ' ')}</span>
-                        <span>回复 ${typeof t.commentCount === 'number' ? t.commentCount : 0}</span>
-                        <span>浏览 ${formatViewCount(t.viewCount)}</span>
-                    </div>
-                </li>
-            `).join('')
-            : '<li style="color: #888;">暂无主题</li>';
-
-        container.innerHTML = `
-            <div class="public-user-header">
-                <div class="public-user-avatar">
-                    <img src="${avatarUrl}" alt="avatar">
-                </div>
-                <div>
-                    <div class="public-user-name">
-                        ${escapeHtml(displayName)}${badgeText ? ` <span style="font-size: 12px; color: #fff; background: ${badgeText === '管理员' ? '#cc0000' : '#0066cc'}; padding: 2px 6px; border-radius: 3px; margin-left: 6px;">${badgeText}</span>` : ''}
-                        <a href="${pmHref}" style="display: inline-block; margin-left: 10px; padding: 4px 8px; border: 1px solid #6F6F6F; background: linear-gradient(to bottom, #DEDEDE, #C2C2C2); color: #333; text-decoration: none; font-size: 13px;">给TA发短消息</a>
-                        ${isViewerAdmin ? `<a href="message.html?composePublic=1" style="display: inline-block; margin-left: 6px; padding: 4px 8px; border: 1px solid #6F6F6F; background: linear-gradient(to bottom, #DEDEDE, #C2C2C2); color: #333; text-decoration: none; font-size: 13px;">管理员群发</a>` : ''}
-                    </div>
-                    <div class="public-user-meta">
-                        <span>ID：${escapeHtml(String(userId))}</span>
-                        ${username ? `<span>用户名：${escapeHtml(username)}</span>` : ''}
-                        ${joinTime ? `<span>加入：${escapeHtml(joinTime)}</span>` : ''}
-                        <span>积分：${points == null ? '-' : escapeHtml(String(points))}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="public-user-bio">${bio}</div>
-            <div class="public-user-panel">
-                <h3>最近主题</h3>
-                <ul class="public-user-list">${topicsHtml}</ul>
-            </div>
-        `;
-
-        document.title = `用户资料 - ${displayName}`;
-    } catch (error) {
-        const friendlyMessage = getFriendlyErrorMessage(error, '加载用户资料');
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #666;">${escapeHtml(friendlyMessage || '加载失败')}</div>`;
-    }
 }
 
 // 设置回复按钮

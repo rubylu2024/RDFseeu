@@ -1187,7 +1187,7 @@
 
                                                 <div id="user-signature" class="profile-signature">这个用户很懒，还没有留下个性签名。</div>
                                                 <div style="margin-top: 10px;">
-                                                    <a href="message.html" class="retro-btn" style="display: inline-block; text-decoration: none;">写短消息</a>
+                                                    <a href="message.html" class="retro-btn" id="profile-pm-link" style="display: inline-block; text-decoration: none;">写短消息</a>
                                                     <a href="message.html?composePublic=1" class="retro-btn" id="profile-admin-broadcast-link" style="display: none; text-decoration: none; margin-left: 8px;">管理员群发</a>
                                                 </div>
 
@@ -1371,7 +1371,12 @@
             const profileContent = document.getElementById('profile-content');
             const errorContent = document.getElementById('error-content');
             const token = typeof getFlarumToken === 'function' ? getFlarumToken() : localStorage.getItem('flarumToken');
-            const userId = localStorage.getItem('flarumUserId');
+            const viewerUserId = localStorage.getItem('flarumUserId');
+            const viewerLoggedIn = Boolean(token && viewerUserId);
+            const params = new URLSearchParams(window.location.search);
+            const paramUserId = String(params.get('id') || '').trim();
+            const targetUserId = paramUserId || (viewerUserId ? String(viewerUserId) : '');
+            const isOwner = viewerLoggedIn && targetUserId && String(viewerUserId) === String(targetUserId);
 
             currentProfileContext = null;
             loadingOverlay.style.display = 'flex';
@@ -1380,33 +1385,44 @@
             errorContent.innerHTML = '';
             clearToasts();
 
-            if (!token || !userId) {
-                showProfileError('请先登录后再查看个人资料。', true);
+            if (typeof isFlarumConfigured === 'function' && !isFlarumConfigured()) {
+                showProfileError('论坛后端未配置。', false);
                 loadingOverlay.style.display = 'none';
                 return;
             }
 
             try {
-                const userData = await fetchUserData(userId);
+                if (!targetUserId) {
+                    showProfileError('请先登录后再查看个人资料。', true);
+                    loadingOverlay.style.display = 'none';
+                    return;
+                }
+
+                const userData = await fetchUserData(targetUserId, isOwner);
                 if (!userData || !userData.data) {
                     throw new Error('未获取到用户资料');
                 }
 
                 const context = buildProfileContext(userData);
                 currentProfileContext = context;
-                
+
+                const isViewerAdmin = viewerLoggedIn ? await isCurrentUserAdmin().catch(() => false) : false;
+                applyProfileMode({ isOwner, viewerLoggedIn, isViewerAdmin, targetUserId: context.userId });
+
                 const [stats, discussions] = await Promise.all([
-                    fetchUserStats(userId, context.username),
-                    fetchUserDiscussions(context.username)
+                    fetchUserStats(context.userId, context.username, isOwner),
+                    fetchUserDiscussions(context.username, isOwner)
                 ]);
                 activityState.discussions = Array.isArray(discussions) ? discussions : [];
                 activityState.page = 1;
 
-                renderUserProfile(context);
-                renderProfileEditor(context);
+                renderUserProfile(context, { isOwner, viewerLoggedIn });
+                if (isOwner) {
+                    renderProfileEditor(context);
+                }
                 renderUserStats(stats);
                 renderActivitySection();
-                bindProfileActions();
+                bindProfileActions({ isOwner });
 
                 profileContent.style.display = 'block';
                 if (pendingProfileMessage) {
@@ -1481,7 +1497,101 @@
         }
 
         function renderUserProfile(context) {
-            localStorage.setItem('flarumUsername', context.displayName);
+        }
+
+        function applyProfileMode({ isOwner, viewerLoggedIn, isViewerAdmin, targetUserId }) {
+            const pmLink = document.getElementById('profile-pm-link');
+            const adminBroadcastLink = document.getElementById('profile-admin-broadcast-link');
+            const breadcrumb = document.querySelector('.profile-breadcrumb span');
+            if (breadcrumb) breadcrumb.textContent = isOwner ? '个人资料' : '用户资料';
+
+            if (pmLink) {
+                if (isOwner) {
+                    pmLink.textContent = '写短消息';
+                    pmLink.setAttribute('href', 'message.html');
+                } else {
+                    pmLink.textContent = '给TA发短消息';
+                    const href = typeof buildMessageHrefForUserId === 'function'
+                        ? buildMessageHrefForUserId(targetUserId)
+                        : `message.html?to=${encodeURIComponent(String(targetUserId || ''))}`;
+                    pmLink.setAttribute('href', href);
+                }
+            }
+
+            if (adminBroadcastLink) {
+                adminBroadcastLink.style.display = isViewerAdmin ? '' : 'none';
+            }
+
+            const avatarTrigger = document.getElementById('avatar-trigger');
+            const avatarInput = document.getElementById('avatar-upload-input');
+            const avatarOverlay = document.querySelector('.avatar-upload-overlay');
+            if (!isOwner) {
+                if (avatarInput) {
+                    avatarInput.value = '';
+                    avatarInput.style.display = 'none';
+                    avatarInput.disabled = true;
+                }
+                if (avatarOverlay) avatarOverlay.style.display = 'none';
+                if (avatarTrigger) {
+                    avatarTrigger.removeAttribute('role');
+                    avatarTrigger.removeAttribute('tabindex');
+                    avatarTrigger.removeAttribute('aria-label');
+                    avatarTrigger.style.cursor = 'default';
+                }
+
+                const nicknameForm = document.getElementById('profile-nickname-form');
+                const signatureForm = document.getElementById('profile-signature-form');
+                const passwordBtn = document.getElementById('open-password-modal-btn');
+                const passwordModal = document.getElementById('password-modal');
+                const nicknamePanel = nicknameForm ? nicknameForm.closest('.profile-panel') : null;
+                const signaturePanel = signatureForm ? signatureForm.closest('.profile-panel') : null;
+                if (nicknamePanel) nicknamePanel.style.display = 'none';
+                if (signaturePanel) signaturePanel.style.display = 'none';
+                const securityPanel = passwordBtn ? passwordBtn.closest('.profile-panel') : null;
+                if (securityPanel) securityPanel.style.display = 'none';
+                if (passwordModal) passwordModal.style.display = 'none';
+            } else {
+                if (avatarInput) {
+                    avatarInput.style.display = '';
+                    avatarInput.disabled = false;
+                }
+                if (avatarOverlay) avatarOverlay.style.display = '';
+                if (avatarTrigger) {
+                    avatarTrigger.setAttribute('role', 'button');
+                    avatarTrigger.setAttribute('tabindex', '0');
+                    avatarTrigger.setAttribute('aria-label', '上传头像');
+                    avatarTrigger.style.cursor = '';
+                }
+
+                const nicknameForm = document.getElementById('profile-nickname-form');
+                const signatureForm = document.getElementById('profile-signature-form');
+                const passwordBtn = document.getElementById('open-password-modal-btn');
+                const passwordModal = document.getElementById('password-modal');
+                const nicknamePanel = nicknameForm ? nicknameForm.closest('.profile-panel') : null;
+                const signaturePanel = signatureForm ? signatureForm.closest('.profile-panel') : null;
+                if (nicknamePanel) nicknamePanel.style.display = '';
+                if (signaturePanel) signaturePanel.style.display = '';
+                const securityPanel = passwordBtn ? passwordBtn.closest('.profile-panel') : null;
+                if (securityPanel) securityPanel.style.display = '';
+                if (passwordModal) passwordModal.style.display = '';
+            }
+
+            const viewerTag = document.getElementById('profile-status-tags');
+            const statusLoginEl = document.getElementById('status-login');
+            if (statusLoginEl) statusLoginEl.textContent = viewerLoggedIn ? '已登录' : '未登录';
+            if (!viewerLoggedIn && viewerTag) {
+                const tags = Array.from(viewerTag.querySelectorAll('.status-tag'));
+                if (tags[0]) tags[0].textContent = '当前未登录';
+                if (tags[0]) tags[0].className = 'status-tag warn';
+            }
+        }
+
+        function renderUserProfile(context, options) {
+            const isOwner = options && options.isOwner === true;
+            const viewerLoggedIn = options && options.viewerLoggedIn === true;
+            if (isOwner) {
+                localStorage.setItem('flarumUsername', context.displayName);
+            }
             document.getElementById('user-name').textContent = context.displayName;
             document.getElementById('user-group-badge').innerHTML = context.badgeHTML;
             document.getElementById('user-title').textContent = context.title;
@@ -1489,12 +1599,12 @@
             document.getElementById('meta-user-id').textContent = context.userId || '-';
             document.getElementById('meta-joined').textContent = formatProfileDate(context.joinedAt);
             document.getElementById('info-last-active').textContent = formatProfileDate(context.lastActiveAt);
-            document.getElementById('status-login').textContent = '已登录';
+            document.getElementById('status-login').textContent = viewerLoggedIn ? '已登录' : '未登录';
             document.getElementById('status-activation').textContent = context.isActivated ? '已激活' : '待激活';
             document.getElementById('status-title').textContent = context.title;
 
             const tags = [
-                '<span class="status-tag ok">当前已登录</span>',
+                `<span class="status-tag ${viewerLoggedIn ? 'ok' : 'warn'}">${viewerLoggedIn ? '当前已登录' : '当前未登录'}</span>`,
                 `<span class="status-tag ${context.isActivated ? 'ok' : 'warn'}">${context.isActivated ? '账号已激活' : '账号待激活'}</span>`,
                 `<span class="status-tag">${escapeHtml(context.groupNames.join('，'))}</span>`,
                 `<span class="status-tag">${escapeHtml(context.trustTitle)}</span>`
@@ -1597,7 +1707,8 @@
             nextBtn.disabled = activityState.page >= totalPages || totalItems === 0;
         }
 
-        function bindProfileActions() {
+        function bindProfileActions(options) {
+            const isOwner = options && options.isOwner === true;
             const logoutBtn = document.getElementById('logout-btn');
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
@@ -1624,34 +1735,42 @@
                 };
             }
 
-            avatarTrigger.onclick = function() {
-                avatarInput.click();
-            };
+            if (isOwner) {
+                if (avatarTrigger && avatarInput) {
+                    avatarTrigger.onclick = function() {
+                        avatarInput.click();
+                    };
 
-            avatarTrigger.onkeydown = function(event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    avatarInput.click();
+                    avatarTrigger.onkeydown = function(event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            avatarInput.click();
+                        }
+                    };
                 }
-            };
 
-            avatarInput.onchange = function() {
-                handleAvatarUpload(this);
-            };
-
-            nicknameForm.onsubmit = handleNicknameSave;
-            signatureForm.onsubmit = handleSignatureSave;
-            passwordForm.onsubmit = handlePasswordSave;
-
-            resetPasswordBtn.onclick = resetPasswordForm;
-            openPasswordModalBtn.onclick = openPasswordModal;
-            closePasswordModalBtn.onclick = closePasswordModal;
-
-            passwordModal.onclick = function(event) {
-                if (event.target === passwordModal) {
-                    closePasswordModal();
+                if (avatarInput) {
+                    avatarInput.onchange = function() {
+                        handleAvatarUpload(this);
+                    };
                 }
-            };
+
+                if (nicknameForm) nicknameForm.onsubmit = handleNicknameSave;
+                if (signatureForm) signatureForm.onsubmit = handleSignatureSave;
+                if (passwordForm) passwordForm.onsubmit = handlePasswordSave;
+
+                if (resetPasswordBtn) resetPasswordBtn.onclick = resetPasswordForm;
+                if (openPasswordModalBtn) openPasswordModalBtn.onclick = openPasswordModal;
+                if (closePasswordModalBtn) closePasswordModalBtn.onclick = closePasswordModal;
+
+                if (passwordModal) {
+                    passwordModal.onclick = function(event) {
+                        if (event.target === passwordModal) {
+                            closePasswordModal();
+                        }
+                    };
+                }
+            }
 
             activityPrevBtn.onclick = function() {
                 if (activityState.page > 1) {
@@ -1666,11 +1785,11 @@
             };
         }
 
-        async function fetchUserData(userId) {
-            return await flarumRequest(`/users/${userId}?include=groups`, { auth: true });
+        async function fetchUserData(userId, auth) {
+            return await flarumRequest(`/users/${userId}?include=groups`, { auth: !!auth });
         }
 
-        async function fetchUserStats(userId, username) {
+        async function fetchUserStats(userId, username, auth) {
             const stats = { posts: 0, comments: 0 };
 
             try {
@@ -1688,7 +1807,7 @@
                         pageGuard += 1;
                         const pageJson = await flarumRequest(
                             `/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=50&page[offset]=${offset}`,
-                            { auth: true }
+                            { auth: !!auth }
                         );
                         const pageDiscussions = typeof filterPublicDiscussions === 'function'
                             ? filterPublicDiscussions(Array.isArray(pageJson?.data) ? pageJson.data : [])
@@ -1703,7 +1822,7 @@
 
                 const firstPostsPage = await flarumRequest(
                     `/posts?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&page[limit]=50&page[offset]=0&include=discussion,user`,
-                    { auth: true }
+                    { auth: !!auth }
                 );
                 const firstPagePosts = Array.isArray(firstPostsPage?.data) ? firstPostsPage.data : [];
                 const firstPageIncluded = Array.isArray(firstPostsPage?.included) ? firstPostsPage.included : [];
@@ -1718,7 +1837,7 @@
                     pageGuard += 1;
                     const pageJson = await flarumRequest(
                         `/posts?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&page[limit]=50&page[offset]=${offset}&include=discussion,user`,
-                        { auth: true }
+                        { auth: !!auth }
                     );
                     const pagePosts = Array.isArray(pageJson?.data) ? pageJson.data : [];
                     const pageIncluded = Array.isArray(pageJson?.included) ? pageJson.included : [];
@@ -1745,12 +1864,12 @@
             return stats;
         }
 
-        async function fetchUserDiscussions(username) {
+        async function fetchUserDiscussions(username, auth) {
             try {
                 const publicDiscussionQuery = typeof buildPublicDiscussionFilterQuery === 'function'
                     ? buildPublicDiscussionFilterQuery()
                     : '-is:private';
-                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`, { auth: true });
+                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`, { auth: !!auth });
                 return typeof filterPublicDiscussions === 'function'
                     ? filterPublicDiscussions(data?.data || [])
                     : (data?.data || []);

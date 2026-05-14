@@ -1014,8 +1014,12 @@ body::before {
 
 @media (max-width: 520px) {
     .status-container {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: 1fr auto;
+        column-gap: 10px;
         row-gap: 4px;
+        min-height: 52px;
     }
 
     .status-container > span:first-child,
@@ -1024,9 +1028,22 @@ body::before {
         font-size: 14px;
     }
 
+    .status-container > span:first-child {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        align-self: center;
+    }
+
+    .status-right {
+        grid-column: 3;
+        grid-row: 1 / 3;
+        align-self: center;
+        justify-self: end;
+    }
+
     .status-center {
-        order: 3;
-        flex: 0 0 100%;
+        grid-column: 2;
+        grid-row: 2;
         padding: 2px 0 0;
         font-size: 12px;
         line-height: 1.25;

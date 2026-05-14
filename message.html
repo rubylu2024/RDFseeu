@@ -48,6 +48,33 @@
             align-items: center;
         }
 
+        .pm-filter {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid #6F6F6F;
+            background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+            user-select: none;
+        }
+
+        .pm-filter input[type="radio"] {
+            margin: 0;
+        }
+
+        .pm-filter input[type="radio"]:checked + span {
+            color: #990000;
+            font-weight: bold;
+        }
+
+        .pm-filter:has(input[type="radio"]:checked) {
+            background: linear-gradient(to bottom, #FFE4E4, #FFCFCF);
+            border-color: #cc0000;
+        }
+
         .pm-actions {
             display: flex;
             gap: 8px;
@@ -337,12 +364,12 @@
                 gap: 6px;
             }
 
-            .pm-tab {
+            .pm-filter {
                 width: 100%;
-                padding: 8px 4px;
+                padding: 8px 6px;
                 font-size: 12px;
                 line-height: 1.15;
-                text-align: center;
+                justify-content: center;
             }
 
             .pm-actions {
@@ -431,14 +458,14 @@
 
                                     <div class="pm-toolbar">
                                         <div class="pm-tabs">
-                                            <button type="button" class="pm-tab active" id="pm-tab-all" data-filter="all">全部消息</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-system" data-filter="system">系统公告</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-reply" data-filter="reply">帖子回复</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-private" data-filter="private">私人短消息</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-unread" data-filter="unread">未读</button>
+                                            <label class="pm-filter"><input type="radio" id="pm-filter-all" name="pm-filter" value="all" checked><span>全部消息</span></label>
+                                            <label class="pm-filter"><input type="radio" id="pm-filter-system" name="pm-filter" value="system"><span>系统公告</span></label>
+                                            <label class="pm-filter"><input type="radio" id="pm-filter-reply" name="pm-filter" value="reply"><span>帖子回复</span></label>
+                                            <label class="pm-filter"><input type="radio" id="pm-filter-private" name="pm-filter" value="private"><span>私人短消息</span></label>
+                                            <label class="pm-filter"><input type="radio" id="pm-filter-unread" name="pm-filter" value="unread"><span>未读</span></label>
                                         </div>
                                         <div class="pm-actions">
-                                            <button type="button" class="pm-btn primary" id="pm-compose-private-btn">写短消息</button>
+                                            <button type="button" class="pm-btn" id="pm-compose-private-btn">写短消息</button>
                                             <button type="button" class="pm-btn" id="pm-compose-public-btn" style="display:none;">管理员群发</button>
                                         </div>
                                     </div>
@@ -485,9 +512,6 @@
     <script src="script.js?v=20260509-1"></script>
 </body>
 </html>
-
-
-
 
 
 
