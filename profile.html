@@ -1283,7 +1283,7 @@
                                             </div>
                                         </div>
 
-                                        <section class="profile-panel" style="margin-bottom: 16px;">
+                                        <section class="profile-panel" id="profile-activity-panel" style="margin-bottom: 16px;">
                                             <div class="panel-head">
                                                 <h3>我的主题</h3>
                                             </div>
@@ -1410,8 +1410,8 @@
                 applyProfileMode({ isOwner, viewerLoggedIn, isViewerAdmin, targetUserId: context.userId });
 
                 const [stats, discussions] = await Promise.all([
-                    fetchUserStats(context.userId, context.username, isOwner),
-                    fetchUserDiscussions(context.username, isOwner)
+                    fetchUserStats(context.userId, context.username, false),
+                    fetchUserDiscussions(context.userId, context.username, false)
                 ]);
                 activityState.discussions = Array.isArray(discussions) ? discussions : [];
                 activityState.page = 1;
@@ -1525,7 +1525,9 @@
             const avatarTrigger = document.getElementById('avatar-trigger');
             const avatarInput = document.getElementById('avatar-upload-input');
             const avatarOverlay = document.querySelector('.avatar-upload-overlay');
+            const activityPanel = document.getElementById('profile-activity-panel');
             if (!isOwner) {
+                if (activityPanel) activityPanel.style.display = 'none';
                 if (avatarInput) {
                     avatarInput.value = '';
                     avatarInput.style.display = 'none';
@@ -1551,6 +1553,7 @@
                 if (securityPanel) securityPanel.style.display = 'none';
                 if (passwordModal) passwordModal.style.display = 'none';
             } else {
+                if (activityPanel) activityPanel.style.display = '';
                 if (avatarInput) {
                     avatarInput.style.display = '';
                     avatarInput.disabled = false;
@@ -1864,15 +1867,33 @@
             return stats;
         }
 
-        async function fetchUserDiscussions(username, auth) {
+        async function fetchUserDiscussions(userId, username, auth) {
             try {
                 const publicDiscussionQuery = typeof buildPublicDiscussionFilterQuery === 'function'
                     ? buildPublicDiscussionFilterQuery()
                     : '-is:private';
-                const data = await flarumRequest(`/discussions?filter[author]=${encodeURIComponent(String(username || ''))}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`, { auth: !!auth });
-                return typeof filterPublicDiscussions === 'function'
-                    ? filterPublicDiscussions(data?.data || [])
-                    : (data?.data || []);
+
+                const safeUserId = String(userId || '').trim();
+                const safeUsername = String(username || '').trim();
+                const candidates = [];
+                if (safeUsername) {
+                    candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
+                }
+                if (safeUserId) {
+                    candidates.push(`/discussions?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
+                    candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUserId)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
+                }
+                if (candidates.length === 0) return [];
+
+                for (const path of candidates) {
+                    try {
+                        const data = await flarumRequest(path, { auth: !!auth });
+                        const list = Array.isArray(data?.data) ? data.data : [];
+                        const filtered = typeof filterPublicDiscussions === 'function' ? filterPublicDiscussions(list) : list;
+                        if (Array.isArray(filtered) && filtered.length > 0) return filtered;
+                    } catch (_) {}
+                }
+                return [];
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
                 return [];
