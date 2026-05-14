@@ -48,6 +48,12 @@
             align-items: center;
         }
 
+        .pm-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .pm-tab,
         .pm-btn {
             padding: 5px 10px;
@@ -310,6 +316,51 @@
             }
         }
 
+        @media (max-width: 520px) {
+            .message-container {
+                padding: 12px;
+            }
+
+            .message-header {
+                flex-wrap: wrap;
+            }
+
+            .pm-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pm-tabs {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+            }
+
+            .pm-tab {
+                width: 100%;
+                padding: 8px 4px;
+                font-size: 12px;
+                line-height: 1.15;
+                text-align: center;
+            }
+
+            .pm-actions {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .pm-btn {
+                width: 100%;
+                padding: 8px 4px;
+                font-size: 12px;
+                line-height: 1.15;
+                text-align: center;
+            }
+        }
+
         .back-btn {
             display: inline-block;
             margin-top: 20px;
@@ -383,11 +434,10 @@
                                             <button type="button" class="pm-tab active" id="pm-tab-all" data-filter="all">全部消息</button>
                                             <button type="button" class="pm-tab" id="pm-tab-system" data-filter="system">系统公告</button>
                                             <button type="button" class="pm-tab" id="pm-tab-reply" data-filter="reply">帖子回复</button>
-                                            <button type="button" class="pm-tab" id="pm-tab-quote" data-filter="quote">楼层引用</button>
                                             <button type="button" class="pm-tab" id="pm-tab-private" data-filter="private">私人短消息</button>
                                             <button type="button" class="pm-tab" id="pm-tab-unread" data-filter="unread">未读</button>
                                         </div>
-                                        <div style="display:flex; gap:8px; align-items:center;">
+                                        <div class="pm-actions">
                                             <button type="button" class="pm-btn primary" id="pm-compose-private-btn">写短消息</button>
                                             <button type="button" class="pm-btn" id="pm-compose-public-btn" style="display:none;">管理员群发</button>
                                         </div>
@@ -435,7 +485,6 @@
     <script src="script.js?v=20260509-1"></script>
 </body>
 </html>
-
 
 
 

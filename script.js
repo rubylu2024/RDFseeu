@@ -235,7 +235,8 @@ function setupStatusBarClock() {
         const { year, month, day, hour, minute, second } = getBeijingNowParts();
         const greeting = getTimeGreetingByHour(hour);
         const y = Number.isFinite(year) ? year - 11 : '';
-        const text = `${greeting}！现在是北京时间${y}年${month}月${day}日\n${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        const timeText = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        const text = `${greeting}！现在是北京时间\n${y}年${month}月${day}日 ${timeText}`;
         document.querySelectorAll('.status-center').forEach((node) => {
             node.textContent = text;
         });
@@ -3162,13 +3163,12 @@ async function renderMessagePage() {
     const tabAll = document.getElementById('pm-tab-all');
     const tabSystem = document.getElementById('pm-tab-system');
     const tabReply = document.getElementById('pm-tab-reply');
-    const tabQuote = document.getElementById('pm-tab-quote');
     const tabPrivate = document.getElementById('pm-tab-private');
     const tabUnread = document.getElementById('pm-tab-unread');
     const composePrivateBtn = document.getElementById('pm-compose-private-btn');
     const composePublicBtn = document.getElementById('pm-compose-public-btn');
 
-    if (!listBodyEl || !detailBodyEl || !tabAll || !tabSystem || !tabReply || !tabQuote || !tabPrivate || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
+    if (!listBodyEl || !detailBodyEl || !tabAll || !tabSystem || !tabReply || !tabPrivate || !tabUnread || !composePrivateBtn || !composePublicBtn) return;
 
     const setAlert = (message) => {
         if (!alertEl) return;
@@ -3214,14 +3214,15 @@ async function renderMessagePage() {
 
     const normalizeFilter = (filter) => {
         const f = String(filter || '').toLowerCase();
-        if (['all', 'system', 'reply', 'quote', 'private', 'unread'].includes(f)) return f;
+        if (f === 'quote') return 'reply';
+        if (['all', 'system', 'reply', 'private', 'unread'].includes(f)) return f;
         return 'all';
     };
 
     const formatNotificationKindLabel = (t) => {
         const type = String(t || '').toLowerCase();
         if (type === 'reply') return '帖子回复';
-        if (type === 'quote') return '楼层引用';
+        if (type === 'quote') return '帖子回复';
         if (type === 'mention') return '提到我';
         return '系统';
     };
@@ -3230,7 +3231,6 @@ async function renderMessagePage() {
         tabAll.classList.toggle('active', state.filter === 'all');
         tabSystem.classList.toggle('active', state.filter === 'system');
         tabReply.classList.toggle('active', state.filter === 'reply');
-        tabQuote.classList.toggle('active', state.filter === 'quote');
         tabPrivate.classList.toggle('active', state.filter === 'private');
         tabUnread.classList.toggle('active', state.filter === 'unread');
     };
@@ -3654,8 +3654,7 @@ async function renderMessagePage() {
         const merged = Array.isArray(state.itemsAll) ? state.itemsAll : [];
         const filtered = merged.filter((item) => {
             if (state.filter === 'system') return item.kind === 'public' || (item.kind === 'notification' && item.notifyType === 'system');
-            if (state.filter === 'reply') return item.kind === 'notification' && item.notifyType === 'reply';
-            if (state.filter === 'quote') return item.kind === 'notification' && item.notifyType === 'quote';
+            if (state.filter === 'reply') return item.kind === 'notification' && (item.notifyType === 'reply' || item.notifyType === 'quote');
             if (state.filter === 'private') return item.kind === 'private';
             if (state.filter === 'unread') return !!item.unread;
             return true;
@@ -3793,7 +3792,7 @@ async function renderMessagePage() {
                 const titleRaw = String(n?.title || '').trim() || '系统通知';
                 const listTitle = (() => {
                     if (notifyType === 'reply') return `【帖子回复】${content || titleRaw}`;
-                    if (notifyType === 'quote') return `【楼层引用】${content || titleRaw}`;
+                    if (notifyType === 'quote') return `【帖子回复】${content || titleRaw}`;
                     if (notifyType === 'mention') return `【提到我】${content || titleRaw}`;
                     return `【系统】${titleRaw}`;
                 })();

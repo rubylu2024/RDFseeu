@@ -989,6 +989,10 @@ body::before {
     align-items: center;
 }
 
+.status-container > span {
+    min-width: 0;
+}
+
 .status-bar span {
     color: white;
     font-size: 15px;
@@ -1006,6 +1010,27 @@ body::before {
     font-size: 15px;
     white-space: pre-line;
     line-height: 1.2;
+}
+
+@media (max-width: 520px) {
+    .status-container {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .status-container > span:first-child,
+    .status-right {
+        white-space: nowrap;
+        font-size: 14px;
+    }
+
+    .status-center {
+        order: 3;
+        flex: 0 0 100%;
+        padding: 2px 0 0;
+        font-size: 12px;
+        line-height: 1.25;
+    }
 }
 
 /* 未读消息红点 */
