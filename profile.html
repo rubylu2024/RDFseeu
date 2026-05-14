@@ -1285,7 +1285,7 @@
 
                                         <section class="profile-panel" id="profile-activity-panel" style="margin-bottom: 16px;">
                                             <div class="panel-head">
-                                                <h3>我的主题</h3>
+                                                <h3 id="profile-activity-title">我的主题</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <ul id="activity-list" class="content-list">
@@ -1360,7 +1360,8 @@
         const activityState = {
             page: 1,
             pageSize: 5,
-            discussions: []
+            discussions: [],
+            isOwnerView: true
         };
 
         document.addEventListener('DOMContentLoaded', initProfilePage);
@@ -1405,6 +1406,7 @@
 
                 const context = buildProfileContext(userData);
                 currentProfileContext = context;
+                activityState.isOwnerView = isOwner;
 
                 const isViewerAdmin = viewerLoggedIn ? await isCurrentUserAdmin().catch(() => false) : false;
                 applyProfileMode({ isOwner, viewerLoggedIn, isViewerAdmin, targetUserId: context.userId });
@@ -1503,7 +1505,9 @@
             const pmLink = document.getElementById('profile-pm-link');
             const adminBroadcastLink = document.getElementById('profile-admin-broadcast-link');
             const breadcrumb = document.querySelector('.profile-breadcrumb span');
+            const activityTitle = document.getElementById('profile-activity-title');
             if (breadcrumb) breadcrumb.textContent = isOwner ? '个人资料' : '用户资料';
+            if (activityTitle) activityTitle.textContent = isOwner ? '我的主题' : 'TA的主题';
 
             if (pmLink) {
                 if (isOwner) {
@@ -1527,7 +1531,7 @@
             const avatarOverlay = document.querySelector('.avatar-upload-overlay');
             const activityPanel = document.getElementById('profile-activity-panel');
             if (!isOwner) {
-                if (activityPanel) activityPanel.style.display = 'none';
+                if (activityPanel) activityPanel.style.display = '';
                 if (avatarInput) {
                     avatarInput.value = '';
                     avatarInput.style.display = 'none';
@@ -1680,7 +1684,9 @@
             const items = source.slice(startIndex, startIndex + activityState.pageSize);
 
             if (items.length === 0) {
-                list.innerHTML = '<li class="empty-state">你还没有发布过主题，去首页试试发第一帖吧。</li>';
+                list.innerHTML = activityState.isOwnerView
+                    ? '<li class="empty-state">你还没有发布过主题，去首页试试发第一帖吧。</li>'
+                    : '<li class="empty-state">TA还没有发布过主题。</li>';
             } else {
                 list.innerHTML = items.map((post) => {
                     const title = post?.attributes?.title || '无标题';
@@ -1880,7 +1886,6 @@
                     candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
                 }
                 if (safeUserId) {
-                    candidates.push(`/discussions?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
                     candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUserId)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
                 }
                 if (candidates.length === 0) return [];
