@@ -1808,26 +1808,49 @@
                     ? buildPublicDiscussionFilterQuery()
                     : '-is:private';
 
-                const collectedDiscussions = [];
-                if (safeUsername) {
+                const pickStarterId = (discussion) => {
+                    const id = discussion?.relationships?.user?.data?.id;
+                    return id == null ? '' : String(id);
+                };
+
+                const loadStarterDiscussions = async ({ starterUserId, limit, pageLimit, pageGuardLimit }) => {
+                    const starterId = starterUserId == null ? '' : String(starterUserId);
+                    if (!starterId) return [];
+                    const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 30;
+                    const safePageLimit = typeof pageLimit === 'number' && Number.isFinite(pageLimit) && pageLimit > 0 ? Math.min(50, Math.floor(pageLimit)) : 50;
+                    const safeGuard = typeof pageGuardLimit === 'number' && Number.isFinite(pageGuardLimit) && pageGuardLimit > 0 ? Math.floor(pageGuardLimit) : 8;
+
+                    const collected = [];
                     let offset = 0;
-                    let pageGuard = 0;
-                    while (collectedDiscussions.length < 200 && pageGuard < 6) {
-                        pageGuard += 1;
+                    let guard = 0;
+                    while (collected.length < safeLimit && guard < safeGuard) {
+                        guard += 1;
                         const pageJson = await flarumRequest(
-                            `/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=50&page[offset]=${offset}`,
+                            `/discussions?sort=-createdAt&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=${safePageLimit}&page[offset]=${offset}&include=user`,
                             { auth: !!auth }
                         );
+                        const pageDiscussionsRaw = Array.isArray(pageJson?.data) ? pageJson.data : [];
                         const pageDiscussions = typeof filterPublicDiscussions === 'function'
-                            ? filterPublicDiscussions(Array.isArray(pageJson?.data) ? pageJson.data : [])
-                            : (Array.isArray(pageJson?.data) ? pageJson.data : []);
-                        collectedDiscussions.push(...pageDiscussions);
-                        const nextOffset = typeof parseOffsetFromPageLink === 'function' ? parseOffsetFromPageLink(pageJson?.links?.next) : null;
-                        if (nextOffset == null || pageDiscussions.length === 0) break;
+                            ? filterPublicDiscussions(pageDiscussionsRaw)
+                            : pageDiscussionsRaw;
+
+                        pageDiscussions.forEach((d) => {
+                            if (collected.length >= safeLimit) return;
+                            if (pickStarterId(d) !== starterId) return;
+                            collected.push(d);
+                        });
+
+                        const nextOffset = typeof parseOffsetFromPageLink === 'function'
+                            ? parseOffsetFromPageLink(pageJson?.links?.next)
+                            : null;
+                        if (nextOffset == null || pageDiscussionsRaw.length === 0) break;
                         offset = nextOffset;
                     }
-                }
-                stats.posts = collectedDiscussions.length;
+                    return collected;
+                };
+
+                const starterDiscussions = await loadStarterDiscussions({ starterUserId: safeUserId, limit: 200, pageLimit: 50, pageGuardLimit: 8 });
+                stats.posts = starterDiscussions.length;
 
                 const firstPostsPage = await flarumRequest(
                     `/posts?sort=-createdAt&filter[user]=${encodeURIComponent(safeUserId)}&page[limit]=50&page[offset]=0&include=discussion,user`,
@@ -1880,25 +1903,39 @@
                     : '-is:private';
 
                 const safeUserId = String(userId || '').trim();
-                const safeUsername = String(username || '').trim();
-                const candidates = [];
-                if (safeUsername) {
-                    candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUsername)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
-                }
-                if (safeUserId) {
-                    candidates.push(`/discussions?sort=-createdAt&filter[author]=${encodeURIComponent(safeUserId)}&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=30&include=user`);
-                }
-                if (candidates.length === 0) return [];
+                if (!safeUserId) return [];
 
-                for (const path of candidates) {
-                    try {
-                        const data = await flarumRequest(path, { auth: !!auth });
-                        const list = Array.isArray(data?.data) ? data.data : [];
-                        const filtered = typeof filterPublicDiscussions === 'function' ? filterPublicDiscussions(list) : list;
-                        if (Array.isArray(filtered) && filtered.length > 0) return filtered;
-                    } catch (_) {}
+                const pickStarterId = (discussion) => {
+                    const id = discussion?.relationships?.user?.data?.id;
+                    return id == null ? '' : String(id);
+                };
+
+                const collected = [];
+                let offset = 0;
+                let guard = 0;
+                while (collected.length < 30 && guard < 8) {
+                    guard += 1;
+                    const pageJson = await flarumRequest(
+                        `/discussions?sort=-createdAt&filter[q]=${encodeURIComponent(publicDiscussionQuery)}&page[limit]=50&page[offset]=${offset}&include=user`,
+                        { auth: !!auth }
+                    );
+                    const pageDiscussionsRaw = Array.isArray(pageJson?.data) ? pageJson.data : [];
+                    const pageDiscussions = typeof filterPublicDiscussions === 'function'
+                        ? filterPublicDiscussions(pageDiscussionsRaw)
+                        : pageDiscussionsRaw;
+                    pageDiscussions.forEach((d) => {
+                        if (collected.length >= 30) return;
+                        if (pickStarterId(d) !== safeUserId) return;
+                        collected.push(d);
+                    });
+
+                    const nextOffset = typeof parseOffsetFromPageLink === 'function'
+                        ? parseOffsetFromPageLink(pageJson?.links?.next)
+                        : null;
+                    if (nextOffset == null || pageDiscussionsRaw.length === 0) break;
+                    offset = nextOffset;
                 }
-                return [];
+                return collected;
             } catch (error) {
                 console.error('获取用户帖子失败:', error);
                 return [];
