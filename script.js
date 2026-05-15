@@ -4185,18 +4185,9 @@ function renderForumThread(postData) {
                                     &lt;/&gt;
                                 </button>
                                 <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
-                                <button type="button" class="toolbar-btn emoji-btn" data-action="emoji" title="表情">
-                                    😊
-                                </button>
                                 <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
-                                    🖼️
+                                    图
                                 </button>
-                            </div>
-                            <!-- emoji选择器 -->
-                            <div class="emoji-picker" id="emoji-picker" style="display: none; position: absolute; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
-                                <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;">
-                                    ${['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮‍💨','😥','😢','😭','😱','😨','😰','😥','🤯','😲','😳','🥵','🤤','🥴','😵','💫','🤢','🤮','🤒','🤕','😷','🤧','🥶','🥵','😴','😪','🤫','🤭','🤗','🤑','🤤','😋','😛','😜','🤪','😝','🤐','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','🧐','🤓','😎','🥸','🥳','🤠','🥰','😍','🤩','😘','😗','😚','😙','🙂','😊','😇','🤣','😂','😅','😆','😁','😄','😃','😀'].map(e => `<span class="emoji-item" style="font-size: 18px; cursor: pointer; padding: 4px; text-align: center;" data-emoji="${e}">${e}</span>`).join('')}
-                                </div>
                             </div>
                             <!-- 隐藏的图片上传输入 -->
                             <input type="file" id="image-upload" accept="image/*" style="display: none;">
@@ -4816,8 +4807,6 @@ function setupReplyForm() {
 // 初始化工具栏
 function initToolbar() {
     const toolbar = document.querySelector('.toolbar');
-    const emojiPicker = document.getElementById('emoji-picker');
-    const emojiBtn = document.querySelector('.emoji-btn');
     const imageBtn = document.getElementById('insert-image-btn');
     const imageUpload = document.getElementById('image-upload');
     const replyContent = document.getElementById('reply-content');
@@ -4851,32 +4840,9 @@ function initToolbar() {
             case 'code':
                 wrapSelection(replyContent, '`', '`');
                 break;
-            case 'emoji':
-                toggleEmojiPicker();
-                break;
             case 'image':
                 imageUpload.click();
                 break;
-        }
-    });
-
-    // emoji选择
-    emojiPicker?.addEventListener('click', function(e) {
-        const emojiItem = e.target.closest('.emoji-item');
-        if (emojiItem) {
-            insertAtCursor(replyContent, emojiItem.dataset.emoji);
-            emojiPicker.style.display = 'none';
-        }
-    });
-
-    // 点击外部关闭emoji选择器
-    document.addEventListener('click', function(e) {
-        if (emojiPicker && emojiPicker.style.display === 'block') {
-            const isInsideToolbar = e.target.closest('.toolbar');
-            const isInsidePicker = e.target.closest('.emoji-picker');
-            if (!isInsideToolbar && !isInsidePicker) {
-                emojiPicker.style.display = 'none';
-            }
         }
     });
 
@@ -4939,14 +4905,6 @@ function initToolbar() {
             }
         }
     });
-}
-
-// 切换emoji选择器显示
-function toggleEmojiPicker() {
-    const emojiPicker = document.getElementById('emoji-picker');
-    if (emojiPicker) {
-        emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
-    }
 }
 
 // 在光标位置插入文本
