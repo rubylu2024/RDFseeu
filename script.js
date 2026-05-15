@@ -72,6 +72,59 @@ function bindCustomEmojiPicker(root, textarea) {
     });
 }
 
+function renderComposerPreview(source) {
+    const normalized = String(source || '').replace(/\r\n/g, '\n');
+    const blocks = normalized.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+
+    if (blocks.length === 0) {
+        return '';
+    }
+
+    return blocks.map((block) => renderPreviewBlock(block)).join('');
+}
+
+function renderPreviewBlock(block) {
+    const lines = block.split('\n');
+    const isQuote = lines.every((line) => line.trim().startsWith('>'));
+
+    if (isQuote) {
+        const quoteText = lines
+            .map((line) => escapePreviewHtml(line.replace(/^\s*>\s?/, '')))
+            .join('<br>');
+        return `<blockquote>${applyInlineFormatting(quoteText)}</blockquote>`;
+    }
+
+    const paragraphHtml = lines
+        .map((line) => escapePreviewHtml(line))
+        .join('<br>');
+    return `<p>${applyInlineFormatting(paragraphHtml)}</p>`;
+}
+
+function applyInlineFormatting(html) {
+    return html
+        .replace(/\[img\](https?:\/\/[^\s\[]+)\[\/img\]/gi, '<img src="$1" alt="表情">')
+        .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1">')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<u>$1</u>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+}
+
+function escapePreviewHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function stripComposerReplyPrefix(source) {
+    return String(source || '').replace(/^回复\s+(?:(?:.*?\()?\d+楼\)?|.+?\(\d+楼\))：\s*/u, '');
+}
+
 function openInNewTab(url) {
     const target = String(url || '').trim();
     if (!target) return false;
@@ -1326,10 +1379,10 @@ async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder
     const safeOffset = typeof offset === 'number' && isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
-    const publicQuery = buildPublicDiscussionFilterQuery(q);
     const readWithAuth = getFlarumToken() ? undefined : false;
+    const filterQ = readWithAuth === false ? buildPublicDiscussionFilterQuery(q) : q;
     const json = await flarumRequest(
-        `/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`,
+        `/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(filterQ)}&include=user`,
         { auth: readWithAuth }
     );
     return { json };
@@ -4311,8 +4364,13 @@ function renderForumThread(postData) {
                             ${buildCustomEmojiPickerHtml()}
                             <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
                             <input type="hidden" id="reply-target" name="reply-target" value="">
-                            <div>
+                            <div class="reply-preview-box" id="reply-preview-box">
+                                <h5>预览</h5>
+                                <div class="reply-preview-content" id="reply-preview-content"></div>
+                            </div>
+                            <div class="reply-actions">
                                 <button type="submit">发表回复</button>
+                                <button type="button" class="reply-preview-btn" id="reply-preview-btn">预览</button>
                                 <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
                             </div>
                         </form>
@@ -4784,15 +4842,44 @@ async function updateReplyFormForLoginStatus() {
             </div>
             <form class="reply-form" id="reply-form">
                 <div class="toolbar reply-toolbar">
+                    <button type="button" class="toolbar-btn" data-action="bold" title="粗体 (Ctrl+B)">
+                        <b>B</b>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-action="italic" title="斜体 (Ctrl+I)">
+                        <i>I</i>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-action="underline" title="下划线 (Ctrl+U)">
+                        <u>U</u>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-action="strike" title="删除线">
+                        <s>S</s>
+                    </button>
+                    <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
+                    <button type="button" class="toolbar-btn" data-action="quote" title="引用">
+                        "
+                    </button>
+                    <button type="button" class="toolbar-btn" data-action="code" title="代码">
+                        &lt;/&gt;
+                    </button>
+                    <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
                     <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
                         <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
                     </button>
+                    <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
+                        图
+                    </button>
                 </div>
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
                 ${buildCustomEmojiPickerHtml()}
                 <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
                 <input type="hidden" id="reply-target" name="reply-target" value="">
-                <div>
+                <div class="reply-preview-box" id="reply-preview-box">
+                    <h5>预览</h5>
+                    <div class="reply-preview-content" id="reply-preview-content"></div>
+                </div>
+                <div class="reply-actions">
                     <button type="submit">发表回复</button>
+                    <button type="button" class="reply-preview-btn" id="reply-preview-btn">预览</button>
                     <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
                 </div>
             </form>
@@ -4819,6 +4906,9 @@ function setupReplyForm() {
     const replyBoxTitle = document.querySelector('.reply-box h4');
     const replyForm = document.getElementById('reply-form');
     const replyNameInput = document.getElementById('reply-name');
+    const previewBtn = document.getElementById('reply-preview-btn');
+    const previewBox = document.getElementById('reply-preview-box');
+    const previewContent = document.getElementById('reply-preview-content');
 
     if (!replyForm || !replyTargetInput || !replyContent || !replyBoxTitle) return;
 
@@ -4838,6 +4928,24 @@ function setupReplyForm() {
             replyContent.value = '';
             replyBoxTitle.textContent = '发表回复';
             cancelReply.style.display = 'none';
+            if (previewBox) previewBox.style.display = 'none';
+        });
+    }
+
+    if (previewBtn && previewBtn.dataset.boundReplyPreview !== '1') {
+        previewBtn.dataset.boundReplyPreview = '1';
+        previewBtn.addEventListener('click', () => {
+            const rawText = replyContent.value.trim();
+            if (!previewBox || !previewContent) return;
+
+            if (!rawText) {
+                previewBox.style.display = 'none';
+                return;
+            }
+
+            const previewSource = expandCustomEmojiTokens(rawText);
+            previewContent.innerHTML = renderComposerPreview(previewSource);
+            previewBox.style.display = 'block';
         });
     }
 
@@ -4851,12 +4959,16 @@ function setupReplyForm() {
             const rawContent = replyContent.value.trim();
             const replyTo = replyTargetInput.value;
 
-            if (!rawContent) {
+            const composerBody = replyTo
+                ? stripComposerReplyPrefix(rawContent).trim()
+                : rawContent;
+
+            if (!composerBody) {
                 alert('请输入回复内容');
                 return;
             }
 
-            const content = expandCustomEmojiTokens(rawContent);
+            const content = expandCustomEmojiTokens(composerBody);
 
             const urlParams = new URLSearchParams(window.location.search);
             const postId = urlParams.get('id') || '1';
@@ -4879,7 +4991,7 @@ function setupReplyForm() {
 
             try {
                 const contentToSend = replyTo
-                    ? `回复 ${replyTo}：\n${content}`
+                    ? `回复 ${replyTo}楼：\n\n${content}`
                     : content;
 
                 const response = await flarumRequest('/posts', {
@@ -4905,6 +5017,7 @@ function setupReplyForm() {
                     replyTargetInput.value = '';
                     if (cancelReply) cancelReply.style.display = 'none';
                     replyBoxTitle.textContent = '发表回复';
+                    if (previewBox) previewBox.style.display = 'none';
 
                     // 重新加载帖子数据并更新UI
                     const newPostData = await loadPostData(postId);
