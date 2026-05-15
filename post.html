@@ -132,102 +132,206 @@
         }
 
         .reply-box {
-            background: #fafafa;
-            border: 1px solid #ccc;
-            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
             margin-top: 15px;
         }
 
         .reply-box h4 {
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-size: 16px;
+            margin: 0 0 14px;
             color: #333;
+            font-weight: bold;
         }
 
         .reply-form {
             display: flex;
             flex-direction: column;
-            gap: 10px;
         }
 
-        .reply-form input {
-            padding: 6px;
-            border: 1px solid #ccc;
-            width: 300px;
-        }
-
-        .reply-form textarea {
-            padding: 8px;
-            border: 1px solid #ccc;
-            resize: vertical;
-            min-height: 100px;
-            font-family: Arial, sans-serif;
-        }
-
-        .reply-form button {
-            align-self: flex-start;
-            padding: 6px 16px;
-            background: #cc0000;
-            color: white;
-            border: 1px solid #990000;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .reply-actions {
+        .reply-user-info {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .reply-user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .reply-user-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .reply-user-level {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .toolbar {
+            margin-bottom: 10px;
+            padding: 5px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            margin: 0 2px;
+            transition: all 0.2s;
+            vertical-align: middle;
+            padding: 0;
+        }
+
+        .toolbar-btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .toolbar-divider {
+            display: inline-block;
+            width: 1px;
+            height: 20px;
+            background: #ddd;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+
+        .reply-content-area {
+            width: 100%;
+            min-height: 180px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            line-height: 1.6;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .reply-content-area:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+        }
+
+        .reply-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
+        .reply-submit-btn {
+            padding: 10px 30px;
+            background: #cc0000;
+            color: #fff;
+            border: 1px solid #990000;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .reply-submit-btn:hover {
+            background: #d63030;
+        }
+
         .reply-preview-btn {
-            background: #fff !important;
-            color: #333 !important;
-            border: 1px solid #bbb !important;
-            font-weight: normal !important;
+            padding: 10px 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
         }
 
         .reply-preview-btn:hover {
-            background: #f3f3f3 !important;
+            background: #f5f5f5;
+        }
+
+        .cancel-reply {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .cancel-reply:hover {
+            text-decoration: underline;
         }
 
         .reply-preview-box {
             display: none;
-            padding: 12px;
+            margin-top: 15px;
+            padding: 15px;
             background: #fafafa;
-            border: 1px solid #ddd;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
         }
 
         .reply-preview-box h5 {
-            margin-bottom: 8px;
-            color: #666;
-            font-size: 13px;
+            margin: 0 0 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .reply-preview-content {
+            line-height: 1.8;
+            color: #333;
+            word-break: break-word;
         }
 
         .reply-preview-content p {
-            margin-bottom: 10px;
-            line-height: 1.7;
+            margin: 0 0 12px;
         }
 
         .reply-preview-content blockquote {
-            margin: 10px 0;
+            margin: 12px 0;
             padding: 8px 12px;
-            border-left: 3px solid #ccc;
+            border-left: 4px solid #ccc;
             background: #f7f7f7;
             color: #555;
         }
 
         .reply-preview-content code {
-            padding: 2px 4px;
-            background: #f0f0f0;
+            padding: 2px 5px;
+            background: #f3f3f3;
             border-radius: 3px;
-            font-family: Consolas, Monaco, monospace;
+            font-family: Consolas, monospace;
         }
 
         .reply-preview-content img {
             max-width: 100%;
             height: auto;
+            border-radius: 4px;
         }
 
         .forum-stats {
@@ -491,7 +595,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260509-10"></script>
+    <script src="script.js?v=20260515-1"></script>
     
     <!-- 浮窗导航图标 -->
     <div class="floating-ad" onclick="window.open('https://www.dihai.wiki/','_blank','noopener')">

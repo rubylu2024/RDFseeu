@@ -373,7 +373,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260509-1"></script>
+    <script src="script.js?v=20260515-1"></script>
     <script>
         function renderNewPostPage() {
             const editorContainer = document.getElementById('editor-container');
@@ -598,7 +598,7 @@
 
                 try {
                     const formData = new FormData();
-                    formData.append('file', file);
+                    formData.append('files[]', file);
 
                     const headers = {};
                     const token = getFlarumToken();
@@ -609,7 +609,7 @@
                             : `Token ${token}`;
                     }
 
-                    const response = await fetch('/api/files', {
+                    const response = await fetch('/api/fof/upload', {
                         method: 'POST',
                         headers,
                         body: formData,
@@ -621,11 +621,13 @@
                     }
 
                     const json = await response.json();
-                    const url = json && json.data && json.data.attributes ? json.data.attributes.url : '';
-                    if (url) {
-                        insertAtCursor(textarea, `![${file.name}](${url})`);
+                    const contentToInsert = typeof getUploadedContentForEditor === 'function'
+                        ? getUploadedContentForEditor(json, file.name)
+                        : '';
+                    if (contentToInsert) {
+                        insertAtCursor(textarea, contentToInsert);
                     } else {
-                        throw new Error('未返回图片地址');
+                        throw new Error('未返回可用的上传内容');
                     }
                 } catch (error) {
                     console.error('图片上传失败:', error);
@@ -721,4 +723,3 @@
     </script>
 </body>
 </html>
-

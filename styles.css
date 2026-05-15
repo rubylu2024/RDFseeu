@@ -1622,7 +1622,8 @@ footer {
 }
 
 .post-content img[src*="/emojis/"],
-.preview-content img[src*="/emojis/"] {
+.preview-content img[src*="/emojis/"],
+.reply-preview-content img[src*="/emojis/"] {
     max-height: 28px;
     width: auto;
     vertical-align: middle;
