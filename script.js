@@ -1236,7 +1236,11 @@ async function flarumLoadUsersPage({ query, offset, limit }) {
     const q = typeof query === 'string' ? query.trim() : '';
     const safeLimit = typeof limit === 'number' && isFinite(limit) && limit > 0 ? Math.min(15, Math.floor(limit)) : 15;
     const safeOffset = typeof offset === 'number' && isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
-    const json = await flarumRequest(`/users?page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}`, { auth: false });
+    const readWithAuth = getFlarumToken() ? undefined : false;
+    const json = await flarumRequest(
+        `/users?page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}`,
+        { auth: readWithAuth }
+    );
     return { json };
 }
 
@@ -1246,7 +1250,11 @@ async function flarumLoadPostsSearchPage({ query, offset, limit, sortOrder }) {
     const safeOffset = typeof offset === 'number' && isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
-    const json = await flarumRequest(`/posts?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}&include=discussion,user`, { auth: false });
+    const readWithAuth = getFlarumToken() ? undefined : false;
+    const json = await flarumRequest(
+        `/posts?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(q)}&include=discussion,user`,
+        { auth: readWithAuth }
+    );
     return { json };
 }
 
@@ -1319,24 +1327,31 @@ async function flarumLoadDiscussionsSearchPage({ query, offset, limit, sortOrder
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     const sort = order === 'desc' ? '-createdAt' : 'createdAt';
     const publicQuery = buildPublicDiscussionFilterQuery(q);
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`, { auth: false });
+    const readWithAuth = getFlarumToken() ? undefined : false;
+    const json = await flarumRequest(
+        `/discussions?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&filter[q]=${encodeURIComponent(publicQuery)}&include=user`,
+        { auth: readWithAuth }
+    );
     return { json };
 }
 
 async function flarumLoadUsersForFuzzy(maxItems = 200) {
     const take = typeof maxItems === 'number' && isFinite(maxItems) && maxItems > 0 ? Math.floor(maxItems) : 200;
     const pageLimit = 50;
+    const readWithAuth = getFlarumToken() ? undefined : false;
 
     const users = [];
     let offset = 0;
-    while (users.length < take) {
-        const json = await flarumRequest(`/users?page[limit]=${pageLimit}&page[offset]=${offset}`, { auth: false });
+    let pageGuard = 0;
+    while (users.length < take && pageGuard < 8) {
+        pageGuard += 1;
+        const json = await flarumRequest(`/users?page[limit]=${pageLimit}&page[offset]=${offset}`, { auth: readWithAuth });
         const data = Array.isArray(json?.data) ? json.data : [];
         data.forEach((u) => {
             if (u && u.type === 'users') users.push(u);
         });
         const nextOffset = parseOffsetFromPageLink(json?.links?.next);
-        if (nextOffset == null || data.length === 0) break;
+        if (nextOffset == null || data.length === 0 || nextOffset === offset) break;
         offset = nextOffset;
     }
     return users.slice(0, take);
@@ -1345,12 +1360,18 @@ async function flarumLoadUsersForFuzzy(maxItems = 200) {
 async function flarumLoadPostsForFuzzy(maxItems = 200) {
     const take = typeof maxItems === 'number' && isFinite(maxItems) && maxItems > 0 ? Math.floor(maxItems) : 200;
     const pageLimit = 50;
+    const readWithAuth = getFlarumToken() ? undefined : false;
 
     const posts = [];
     const includedByKey = new Map();
     let offset = 0;
-    while (posts.length < take) {
-        const json = await flarumRequest(`/posts?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=discussion,user`, { auth: false });
+    let pageGuard = 0;
+    while (posts.length < take && pageGuard < 8) {
+        pageGuard += 1;
+        const json = await flarumRequest(
+            `/posts?sort=-createdAt&page[limit]=${pageLimit}&page[offset]=${offset}&include=discussion,user`,
+            { auth: readWithAuth }
+        );
         const data = Array.isArray(json?.data) ? json.data : [];
         const included = Array.isArray(json?.included) ? json.included : [];
         data.forEach((p) => {
@@ -1361,7 +1382,7 @@ async function flarumLoadPostsForFuzzy(maxItems = 200) {
             includedByKey.set(`${x.type}:${x.id}`, x);
         });
         const nextOffset = parseOffsetFromPageLink(json?.links?.next);
-        if (nextOffset == null || data.length === 0) break;
+        if (nextOffset == null || data.length === 0 || nextOffset === offset) break;
         offset = nextOffset;
     }
     return { posts: posts.slice(0, take), included: Array.from(includedByKey.values()) };
@@ -2068,13 +2089,39 @@ async function renderSearchPage() {
         }
     };
 
-    try {
-        await Promise.all([renderDiscussions(), renderPosts(), renderUsers()]);
-    } catch (error) {
-        const friendly = getFriendlyErrorMessage(error, '搜索');
-        if (errorBox) {
-            errorBox.textContent = friendly || '搜索失败，请稍后再试。';
+    const sectionTasks = [
+        { key: 'discussions', label: '帖子搜索', wrap: discussionWrap, run: renderDiscussions },
+        { key: 'posts', label: '楼层搜索', wrap: postWrap, run: renderPosts },
+        { key: 'users', label: '用户搜索', wrap: userWrap, run: renderUsers }
+    ];
+
+    const results = await Promise.allSettled(sectionTasks.map((task) => task.run()));
+    const failedTasks = [];
+
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') return;
+
+        const task = sectionTasks[index];
+        failedTasks.push({
+            label: task.label,
+            error: result.reason
+        });
+
+        if (task.wrap) {
+            const friendly = getFriendlyErrorMessage(result.reason, '搜索');
+            task.wrap.innerHTML = `<div style="padding: 12px; color: #666;">${escapeHtml(friendly || `${task.label}加载失败，请稍后再试。`)}</div>`;
+        }
+    });
+
+    if (errorBox) {
+        if (failedTasks.length > 0) {
+            const primary = failedTasks[0];
+            const friendly = getFriendlyErrorMessage(primary.error, '搜索');
+            errorBox.textContent = `${primary.label}：${friendly || '加载失败，请稍后再试。'}`;
             errorBox.style.display = 'block';
+        } else {
+            errorBox.style.display = 'none';
+            errorBox.textContent = '';
         }
     }
 }
@@ -4252,7 +4299,9 @@ function renderForumThread(postData) {
                                     &lt;/&gt;
                                 </button>
                                 <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
-                                <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
+                                <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
+                                    <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
+                                </button>
                                 <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
                                     图
                                 </button>
@@ -4735,7 +4784,9 @@ async function updateReplyFormForLoginStatus() {
             </div>
             <form class="reply-form" id="reply-form">
                 <div class="toolbar reply-toolbar">
-                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
+                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
+                        <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
+                    </button>
                 </div>
                 ${buildCustomEmojiPickerHtml()}
                 <textarea id="reply-content" placeholder="分享你的看法..."></textarea>

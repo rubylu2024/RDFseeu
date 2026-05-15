@@ -418,7 +418,9 @@
                                     <button type="button" class="toolbar-btn" data-action="quote" title="引用">"</button>
                                     <button type="button" class="toolbar-btn" data-action="code" title="代码">&lt;/&gt;</button>
                                     <span class="toolbar-divider"></span>
-                                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
+                                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
+                                        <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
+                                    </button>
                                     <button type="button" class="toolbar-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display:none;">图</button>
                                 </div>
                                 <input type="file" id="image-upload" accept="image/*">
@@ -719,5 +721,4 @@
     </script>
 </body>
 </html>
-
 
