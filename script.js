@@ -4,6 +4,73 @@
 const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
 const POST_PAGE_SIZE = 20;
+const CUSTOM_EMOJIS = Array.from({ length: 126 }, (_, i) => ({
+    label: `表情${i + 1}`,
+    file: `Forum${i + 1}.png`
+}));
+
+function getCustomEmojiToken(file) {
+    const match = /^Forum(\d+)\.png$/i.exec(String(file || ''));
+    if (!match) return '';
+    const index = Number(match[1]);
+    if (!Number.isInteger(index) || index < 1 || index > CUSTOM_EMOJIS.length) return '';
+    return `[表情${index}]`;
+}
+
+function getCustomEmojiUrl(file) {
+    return `https://www.reddragonfly.cyou/emojis/${encodeURIComponent(file)}`;
+}
+
+function expandCustomEmojiTokens(source) {
+    return String(source || '').replace(/\[表情\s*(\d{1,3})\]/g, function(match, rawIndex) {
+        const index = Number(rawIndex);
+        if (!Number.isInteger(index) || index < 1 || index > CUSTOM_EMOJIS.length) {
+            return match;
+        }
+        return `[img]${getCustomEmojiUrl(`Forum${index}.png`)}[/img]`;
+    });
+}
+
+function buildCustomEmojiPickerHtml() {
+    return `
+        <div class="custom-emoji-picker" style="display:none;">
+            <div class="custom-emoji-grid">
+                ${CUSTOM_EMOJIS.map((item) => `
+                    <button type="button" class="custom-emoji-item" data-file="${item.file}" title="${item.label}">
+                        <img src="${getCustomEmojiUrl(item.file)}" alt="${item.label}">
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function bindCustomEmojiPicker(root, textarea) {
+    if (!root || !textarea) return;
+
+    const toggleBtn = root.querySelector('[data-action="custom-emoji"]');
+    const picker = root.querySelector('.custom-emoji-picker');
+
+    if (!toggleBtn || !picker) return;
+    if (picker.dataset.boundCustomEmoji === '1') return;
+    picker.dataset.boundCustomEmoji = '1';
+
+    toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+    });
+
+    picker.addEventListener('click', function(e) {
+        const item = e.target.closest('.custom-emoji-item');
+        if (!item) return;
+
+        const file = item.getAttribute('data-file');
+        if (!file) return;
+
+        insertAtCursor(textarea, getCustomEmojiToken(file) || '');
+        picker.style.display = 'none';
+    });
+}
 
 function openInNewTab(url) {
     const target = String(url || '').trim();
@@ -4164,7 +4231,7 @@ function renderForumThread(postData) {
                         </div>
                         <form class="reply-form" id="reply-form">
                             <!-- 富文本工具栏 -->
-                            <div class="toolbar" style="margin-bottom: 10px; padding: 5px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
+                            <div class="toolbar reply-toolbar" style="margin-bottom: 10px; padding: 5px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
                                 <button type="button" class="toolbar-btn" data-action="bold" title="粗体 (Ctrl+B)">
                                     <b>B</b>
                                 </button>
@@ -4185,12 +4252,14 @@ function renderForumThread(postData) {
                                     &lt;/&gt;
                                 </button>
                                 <span style="display: inline-block; width: 1px; height: 20px; background: #ddd; margin: 0 5px;"></span>
+                                <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
                                 <button type="button" class="toolbar-btn image-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display: none;">
                                     图
                                 </button>
                             </div>
                             <!-- 隐藏的图片上传输入 -->
                             <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                            ${buildCustomEmojiPickerHtml()}
                             <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
                             <input type="hidden" id="reply-target" name="reply-target" value="">
                             <div>
@@ -4665,6 +4734,10 @@ async function updateReplyFormForLoginStatus() {
                 </div>
             </div>
             <form class="reply-form" id="reply-form">
+                <div class="toolbar reply-toolbar">
+                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
+                </div>
+                ${buildCustomEmojiPickerHtml()}
                 <textarea id="reply-content" placeholder="分享你的看法..."></textarea>
                 <input type="hidden" id="reply-target" name="reply-target" value="">
                 <div>
@@ -4700,6 +4773,7 @@ function setupReplyForm() {
 
     // 初始化工具栏
     initToolbar();
+    bindCustomEmojiPicker(replyForm, replyContent);
 
     // 检查用户权限，显示/隐藏图片按钮
     checkImagePermission();
@@ -4723,13 +4797,15 @@ function setupReplyForm() {
             e.preventDefault();
 
             const name = replyNameInput?.value?.trim() || '';
-            const content = replyContent.value.trim();
+            const rawContent = replyContent.value.trim();
             const replyTo = replyTargetInput.value;
 
-            if (!content) {
+            if (!rawContent) {
                 alert('请输入回复内容');
                 return;
             }
+
+            const content = expandCustomEmojiTokens(rawContent);
 
             const urlParams = new URLSearchParams(window.location.search);
             const postId = urlParams.get('id') || '1';
@@ -4806,8 +4882,7 @@ function setupReplyForm() {
 
 // 初始化工具栏
 function initToolbar() {
-    const toolbar = document.querySelector('.toolbar');
-    const imageBtn = document.getElementById('insert-image-btn');
+    const toolbar = document.querySelector('.reply-form .toolbar');
     const imageUpload = document.getElementById('image-upload');
     const replyContent = document.getElementById('reply-content');
 

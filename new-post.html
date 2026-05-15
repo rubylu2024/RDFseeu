@@ -418,9 +418,11 @@
                                     <button type="button" class="toolbar-btn" data-action="quote" title="引用">"</button>
                                     <button type="button" class="toolbar-btn" data-action="code" title="代码">&lt;/&gt;</button>
                                     <span class="toolbar-divider"></span>
+                                    <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情">[表情]</button>
                                     <button type="button" class="toolbar-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display:none;">图</button>
                                 </div>
                                 <input type="file" id="image-upload" accept="image/*">
+                                ${buildCustomEmojiPickerHtml()}
                                 <textarea id="post-content" class="post-content-area" placeholder="分享你的故事..." required></textarea>
                             </div>
 
@@ -461,6 +463,7 @@
             });
 
             setupNewPostToolbar(contentInput);
+            bindCustomEmojiPicker(form, contentInput);
 
             previewBtn.addEventListener('click', function() {
                 const text = contentInput.value.trim();
@@ -469,7 +472,10 @@
                     return;
                 }
 
-                previewContent.innerHTML = renderComposerPreview(text);
+                const previewSource = typeof expandCustomEmojiTokens === 'function'
+                    ? expandCustomEmojiTokens(text)
+                    : text;
+                previewContent.innerHTML = renderComposerPreview(previewSource);
                 previewBox.style.display = 'block';
             });
 
@@ -477,17 +483,21 @@
                 e.preventDefault();
 
                 const title = titleInput.value.trim();
-                const content = contentInput.value.trim();
+                const rawContent = contentInput.value.trim();
 
                 if (!title) {
                     alert('请输入标题');
                     return;
                 }
 
-                if (!content) {
+                if (!rawContent) {
                     alert('请输入内容');
                     return;
                 }
+
+                const content = typeof expandCustomEmojiTokens === 'function'
+                    ? expandCustomEmojiTokens(rawContent)
+                    : rawContent;
 
                 submitBtn.textContent = '发布中...';
                 submitBtn.disabled = true;
@@ -657,6 +667,7 @@
 
         function applyInlineFormatting(html) {
             return html
+                .replace(/\[img\](https?:\/\/[^\s\[]+)\[\/img\]/gi, '<img src="$1" alt="表情">')
                 .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1">')
                 .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
                 .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -708,7 +719,5 @@
     </script>
 </body>
 </html>
-
-
 
 

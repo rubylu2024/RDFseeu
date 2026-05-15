@@ -1529,3 +1529,59 @@ footer {
         font-size: 11px;
     }
 }
+
+.custom-emote-toggle {
+    width: auto;
+    min-width: 56px;
+    padding: 0 8px;
+    font-size: 12px;
+    font-family: SimSun, "宋体", serif;
+}
+
+.custom-emoji-picker {
+    margin: 6px 0 8px;
+    padding: 8px;
+    border: 1px solid #999;
+    background: #fffdf2;
+    box-shadow: 2px 2px 0 #ccc;
+    max-width: 420px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.custom-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: 6px;
+}
+
+.custom-emoji-item {
+    border: 1px solid #b8b8b8;
+    background: linear-gradient(to bottom, #fff, #eee);
+    cursor: pointer;
+    padding: 4px;
+    min-height: 42px;
+    text-align: center;
+}
+
+.custom-emoji-item:hover {
+    border-color: #cc0000;
+    background: #fff1f1;
+}
+
+.custom-emoji-item img {
+    display: block;
+    max-width: 32px;
+    max-height: 32px;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+}
+
+.post-content img[src*="/emojis/"],
+.preview-content img[src*="/emojis/"] {
+    max-height: 28px;
+    width: auto;
+    vertical-align: middle;
+    display: inline-block;
+}
