@@ -400,27 +400,8 @@
             }
         }
 
-        function readConsumablePointsFromSources(userAttributes, userStats) {
-            const candidates = [
-                userAttributes?.money,
-                userAttributes?.moneyAmount,
-                userAttributes?.money_balance,
-                userAttributes?.balance,
-                userStats?.money,
-                userStats?.moneyAmount,
-                userStats?.money_balance,
-                userStats?.balance
-            ];
-
-            for (const value of candidates) {
-                if (typeof value === 'number' && Number.isFinite(value)) return value;
-                if (typeof value === 'string' && value.trim()) {
-                    const parsed = Number(value);
-                    if (Number.isFinite(parsed)) return parsed;
-                }
-            }
-
-            return null;
+        function readConsumablePointsFromSources(userAttributes) {
+            return typeof getUserPoints === 'function' ? getUserPoints(userAttributes) : null;
         }
 
         async function loadNewPostAccessInfo() {
@@ -430,15 +411,10 @@
             }
 
             try {
-                const [userJson, userStats] = await Promise.all([
-                    flarumRequest(`/users/${encodeURIComponent(userId)}`, { auth: true }),
-                    typeof loadCustomUserStats === 'function'
-                        ? loadCustomUserStats(userId).catch(() => null)
-                        : Promise.resolve(null)
-                ]);
+                const userJson = await flarumRequest(`/users/${encodeURIComponent(userId)}`, { auth: true });
                 const userAttributes = userJson?.data?.attributes || {};
                 return {
-                    consumablePoints: readConsumablePointsFromSources(userAttributes, userStats)
+                    consumablePoints: readConsumablePointsFromSources(userAttributes)
                 };
             } catch (error) {
                 console.warn('加载发帖积分信息失败:', error);

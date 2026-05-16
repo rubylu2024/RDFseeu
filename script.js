@@ -618,7 +618,6 @@ function getPreferredDisplayName(userAttributes, fallback = '匿名用户') {
 function getUserPoints(userAttributes) {
     // 私信积分回滚由服务器 SQL 处理，不在前端扣减。
     const candidates = [
-        userAttributes?.points,
         userAttributes?.money,
         userAttributes?.moneyAmount,
         userAttributes?.money_balance,
@@ -635,12 +634,13 @@ function getUserPoints(userAttributes) {
     return null;
 }
 
-function getUserExperience(userAttributes, userStats) {
+function getUserExperience(userAttributes) {
     const candidates = [
-        userStats?.experience,
-        userAttributes?.experience,
-        userAttributes?.exp,
-        userAttributes?.totalExperience
+        userAttributes?.points,
+        userAttributes?.votes,
+        userAttributes?.reputation,
+        userAttributes?.rank,
+        userAttributes?.gamificationPoints
     ];
 
     for (const value of candidates) {
@@ -649,20 +649,6 @@ function getUserExperience(userAttributes, userStats) {
     }
 
     return 0;
-}
-
-async function loadCustomUserStats(userId) {
-    if (!userId) return null;
-
-    try {
-        return await customRequest(`/custom-user-stats/${encodeURIComponent(userId)}`, {
-            method: 'GET',
-            auth: false
-        });
-    } catch (error) {
-        console.warn('加载用户积分/经验统计失败，使用 Flarum 用户属性兜底:', error);
-        return null;
-    }
 }
 
 function getFriendlyErrorMessage(error, context = 'generic') {
@@ -3358,12 +3344,6 @@ window.addEventListener('DOMContentLoaded', function() {
     // 处理所有 href="#" 的链接
     document.addEventListener('click', (e) => {
         const target = e.target.closest('a');
-
-        if (target && target.closest('.top-links') && String(target.textContent || '').trim() === '博客') {
-            e.preventDefault();
-            window.location.href = 'blog-xiaoyu.html';
-            return;
-        }
 
         if (target && String(target.textContent || '').trim() === '服务') {
             e.preventDefault();

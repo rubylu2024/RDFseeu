@@ -1096,12 +1096,45 @@
 
         @media (max-width: 520px) {
             .profile-banner {
-                align-items: flex-start;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .avatar-card {
+                width: 100%;
+                text-align: center;
             }
 
             .avatar-container {
                 width: 96px;
                 height: 96px;
+            }
+
+            .profile-main {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .profile-name-row {
+                gap: 8px;
+            }
+
+            .profile-name-row h2 {
+                font-size: 22px;
+                word-break: break-word;
+            }
+
+            .profile-meta-chips,
+            .profile-status-tags,
+            .profile-action-row {
+                gap: 8px;
+            }
+
+            .meta-chip,
+            .status-tag {
+                max-width: 100%;
+                word-break: break-word;
             }
         }
     </style>
@@ -1408,9 +1441,7 @@
                     throw new Error('未获取到用户资料');
                 }
 
-                const profileUserId = String(userData?.data?.id || targetUserId || '');
-                const userStats = await loadCustomUserStats(profileUserId);
-                const context = buildProfileContext(userData, userStats);
+                const context = buildProfileContext(userData);
                 currentProfileContext = context;
                 activityState.isOwnerView = isOwner;
 
@@ -1449,7 +1480,7 @@
             }
         }
 
-        function buildProfileContext(userData, userStats) {
+        function buildProfileContext(userData) {
             const user = userData.data;
             const included = userData.included || [];
             const attributes = user?.attributes || {};
@@ -1461,13 +1492,9 @@
             const signature = typeof attributes.bio === 'string'
                 ? attributes.bio
                 : (typeof attributes.signature === 'string' ? attributes.signature : '');
-            const statsPoints = Number(userStats?.points);
-            const attributePoints = typeof getUserPoints === 'function' ? getUserPoints(attributes) : null;
-            const points = Number.isFinite(statsPoints) && statsPoints >= 0
-                ? statsPoints
-                : (attributePoints != null ? attributePoints : 0);
+            const points = typeof getUserPoints === 'function' ? getUserPoints(attributes) : 0;
             const experience = typeof getUserExperience === 'function'
-                ? getUserExperience(attributes, userStats)
+                ? getUserExperience(attributes)
                 : 0;
             const trustLevel = Number(attributes.trustLevel || 0);
             const email = attributes.email || '-';
