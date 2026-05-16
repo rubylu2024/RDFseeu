@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>红蜻蜓论坛 - 发表新帖</title>
     <link rel="icon" type="image/png" href="images/红蜻蜓.png">
-    <link rel="stylesheet" href="styles.css?v=20260506-2">
+    <link rel="stylesheet" href="styles.css?v=20260515-2">
     <style>
         .new-post-container {
             padding: 20px;
@@ -156,6 +156,16 @@
             align-items: center;
         }
 
+        .submit-meta {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        .submit-meta.warning {
+            color: #cc0000;
+        }
+
         .btn-submit {
             padding: 10px 30px;
             background: #cc0000;
@@ -175,20 +185,6 @@
             background: #ccc;
             border-color: #999;
             cursor: not-allowed;
-        }
-
-        .btn-preview {
-            padding: 10px 20px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .btn-preview:hover {
-            background: #f5f5f5;
         }
 
         .notice-box {
@@ -373,11 +369,92 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260515-1"></script>
+    <script src="script.js?v=20260515-7"></script>
     <script>
-        function renderNewPostPage() {
+        const newPostDraft = {
+            title: '',
+            content: ''
+        };
+
+        function syncNewPostDraft() {
+            const titleInput = document.getElementById('post-title');
+            const contentInput = document.getElementById('post-content');
+            if (titleInput) newPostDraft.title = titleInput.value || '';
+            if (contentInput) newPostDraft.content = contentInput.value || '';
+        }
+
+        function restoreNewPostDraft() {
+            const titleInput = document.getElementById('post-title');
+            const contentInput = document.getElementById('post-content');
+            const charCount = document.getElementById('title-char-count');
+            if (titleInput) {
+                titleInput.value = newPostDraft.title || '';
+            }
+            if (contentInput) {
+                contentInput.value = newPostDraft.content || '';
+            }
+            if (charCount && titleInput) {
+                const count = titleInput.value.length;
+                charCount.textContent = `${count}/50`;
+                charCount.className = 'char-count' + (count >= 45 ? ' warning' : '');
+            }
+        }
+
+        function readConsumablePointsFromSources(userAttributes, userStats) {
+            const candidates = [
+                userAttributes?.money,
+                userAttributes?.moneyAmount,
+                userAttributes?.money_balance,
+                userAttributes?.balance,
+                userStats?.money,
+                userStats?.moneyAmount,
+                userStats?.money_balance,
+                userStats?.balance
+            ];
+
+            for (const value of candidates) {
+                if (typeof value === 'number' && Number.isFinite(value)) return value;
+                if (typeof value === 'string' && value.trim()) {
+                    const parsed = Number(value);
+                    if (Number.isFinite(parsed)) return parsed;
+                }
+            }
+
+            return null;
+        }
+
+        async function loadNewPostAccessInfo() {
+            const userId = localStorage.getItem('flarumUserId');
+            if (!userId || typeof flarumRequest !== 'function') {
+                return { consumablePoints: null };
+            }
+
+            try {
+                const [userJson, userStats] = await Promise.all([
+                    flarumRequest(`/users/${encodeURIComponent(userId)}`, { auth: true }),
+                    typeof loadCustomUserStats === 'function'
+                        ? loadCustomUserStats(userId).catch(() => null)
+                        : Promise.resolve(null)
+                ]);
+                const userAttributes = userJson?.data?.attributes || {};
+                return {
+                    consumablePoints: readConsumablePointsFromSources(userAttributes, userStats)
+                };
+            } catch (error) {
+                console.warn('加载发帖积分信息失败:', error);
+                return { consumablePoints: null };
+            }
+        }
+
+        function formatConsumablePointsText(value) {
+            return value == null ? '--' : String(value);
+        }
+
+        async function renderNewPostPage() {
             const editorContainer = document.getElementById('editor-container');
             if (!editorContainer) return;
+
+            syncNewPostDraft();
 
             const isLoggedIn = typeof getFlarumToken === 'function' && !!getFlarumToken();
             if (!isLoggedIn) {
@@ -392,12 +469,20 @@
             }
 
             const username = localStorage.getItem('flarumUsername') || '已登录用户';
+            const accessInfo = await loadNewPostAccessInfo();
+            const consumablePoints = accessInfo.consumablePoints;
+            const canPost = consumablePoints != null && consumablePoints > 0;
+            const accessHint = consumablePoints == null
+                ? '暂时无法读取积分，请稍后刷新后重试。'
+                : (canPost
+                    ? `提示：发帖会扣除 1 积分，当前可用积分：${formatConsumablePointsText(consumablePoints)}`
+                    : `当前可用积分：${formatConsumablePointsText(consumablePoints)}，积分需大于 0 才能发帖`);
 
             editorContainer.innerHTML = `
                 <div class="post-editor">
                     <div class="post-editor-header">
                         <h2>发表新帖</h2>
-                        <div class="editor-meta">当前登录：${username}</div>
+                        <div class="editor-meta">当前登录：${username} · 可用积分：${formatConsumablePointsText(consumablePoints)}</div>
                     </div>
                     <div class="post-editor-body">
                         <form id="new-post-form">
@@ -415,22 +500,20 @@
                                     <button type="button" class="toolbar-btn" data-action="underline" title="下划线 (Ctrl+U)"><u>U</u></button>
                                     <button type="button" class="toolbar-btn" data-action="strike" title="删除线"><s>S</s></button>
                                     <span class="toolbar-divider"></span>
-                                    <button type="button" class="toolbar-btn" data-action="quote" title="引用">"</button>
-                                    <button type="button" class="toolbar-btn" data-action="code" title="代码">&lt;/&gt;</button>
-                                    <span class="toolbar-divider"></span>
                                     <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
                                         <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
                                     </button>
                                     <button type="button" class="toolbar-btn" data-action="image" title="插入图片" id="insert-image-btn" style="display:none;">图</button>
                                 </div>
-                                <input type="file" id="image-upload" accept="image/*">
+                                <input type="file" id="image-upload" accept="${getUploadImageAcceptValue()}">
+                                <div class="upload-status" id="new-post-upload-status" aria-live="polite" style="display: none;"></div>
                                 ${buildCustomEmojiPickerHtml()}
                                 <textarea id="post-content" class="post-content-area" placeholder="分享你的故事..." required></textarea>
                             </div>
 
                             <div class="submit-area">
-                                <button type="submit" class="btn-submit" id="submit-btn">发表帖子</button>
-                                <button type="button" class="btn-preview" id="preview-btn">预览</button>
+                                <button type="submit" class="btn-submit" id="submit-btn"${canPost ? '' : ' disabled'}>${canPost ? '发表帖子' : '积分不足，无法发帖'}</button>
+                                <div class="submit-meta${canPost ? '' : ' warning'}" id="new-post-points-hint">${accessHint}</div>
                             </div>
 
                             <div class="preview-box" id="preview-box">
@@ -443,6 +526,7 @@
             `;
 
             setupNewPostForm();
+            restoreNewPostDraft();
             checkImagePermissionForNewPost();
         }
 
@@ -452,34 +536,44 @@
             const contentInput = document.getElementById('post-content');
             const charCount = document.getElementById('title-char-count');
             const submitBtn = document.getElementById('submit-btn');
-            const previewBtn = document.getElementById('preview-btn');
             const previewBox = document.getElementById('preview-box');
             const previewContent = document.getElementById('preview-content');
 
             if (!form || !titleInput || !contentInput || !submitBtn) return;
 
+            const updatePreview = typeof createDebouncedPreviewUpdater === 'function'
+                ? createDebouncedPreviewUpdater(function() {
+                    const previewTransformer = typeof expandCustomEmojiTokens === 'function'
+                        ? expandCustomEmojiTokens
+                        : null;
+                    if (typeof updateComposerPreviewBox === 'function') {
+                        updateComposerPreviewBox(contentInput.value, previewBox, previewContent, previewTransformer);
+                    }
+                }, 300)
+                : null;
+
             titleInput.addEventListener('input', function() {
                 const count = this.value.length;
                 charCount.textContent = `${count}/50`;
                 charCount.className = 'char-count' + (count >= 45 ? ' warning' : '');
+                syncNewPostDraft();
+                if (updatePreview) updatePreview();
+            });
+
+            contentInput.addEventListener('input', function() {
+                syncNewPostDraft();
+                if (updatePreview) updatePreview();
+            });
+
+            ['change', 'click', 'keyup', 'select'].forEach(function(eventName) {
+                contentInput.addEventListener(eventName, function() {
+                    if (updatePreview) updatePreview();
+                });
             });
 
             setupNewPostToolbar(contentInput);
             bindCustomEmojiPicker(form, contentInput);
-
-            previewBtn.addEventListener('click', function() {
-                const text = contentInput.value.trim();
-                if (!text) {
-                    previewBox.style.display = 'none';
-                    return;
-                }
-
-                const previewSource = typeof expandCustomEmojiTokens === 'function'
-                    ? expandCustomEmojiTokens(text)
-                    : text;
-                previewContent.innerHTML = renderComposerPreview(previewSource);
-                previewBox.style.display = 'block';
-            });
+            if (updatePreview) updatePreview();
 
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -494,6 +588,22 @@
 
                 if (!rawContent) {
                     alert('请输入内容');
+                    return;
+                }
+
+                const latestAccessInfo = await loadNewPostAccessInfo();
+                const latestConsumablePoints = latestAccessInfo.consumablePoints;
+                if (latestConsumablePoints == null) {
+                    alert('暂时无法读取积分，请稍后重试');
+                    return;
+                }
+
+                if (latestConsumablePoints <= 0) {
+                    alert('积分不足，当前积分需大于 0 才能发帖');
+                    return;
+                }
+
+                if (!window.confirm(`发帖会扣除 1 积分，当前可用积分：${formatConsumablePointsText(latestConsumablePoints)}，确认继续吗？`)) {
                     return;
                 }
 
@@ -523,6 +633,8 @@
                     }
 
                     if (discussionId) {
+                        newPostDraft.title = '';
+                        newPostDraft.content = '';
                         alert('发帖成功');
                         window.location.href = `post.html?id=${encodeURIComponent(discussionId)}`;
                         return;
@@ -545,6 +657,7 @@
         function setupNewPostToolbar(textarea) {
             const toolbar = document.querySelector('.toolbar');
             const imageUpload = document.getElementById('image-upload');
+            const uploadStatus = document.getElementById('new-post-upload-status');
 
             if (!toolbar || !imageUpload) return;
 
@@ -568,13 +681,8 @@
                     case 'strike':
                         wrapSelection(textarea, '~~', '~~');
                         break;
-                    case 'quote':
-                        wrapSelection(textarea, '> ', '', true);
-                        break;
-                    case 'code':
-                        wrapSelection(textarea, '`', '`');
-                        break;
                     case 'image':
+                        rememberTextareaSelection(textarea);
                         imageUpload.click();
                         break;
                 }
@@ -584,19 +692,20 @@
                 const file = e.target.files && e.target.files[0];
                 if (!file) return;
 
-                if (!file.type.startsWith('image/')) {
-                    alert('请选择图片文件');
+                if (!isAllowedUploadImage(file)) {
+                    setUploadStatus(uploadStatus, getUploadImageFormatHint(), 'error');
                     imageUpload.value = '';
                     return;
                 }
 
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('图片大小不能超过 2MB');
+                if (file.size > getUploadImageMaxSizeBytes()) {
+                    setUploadStatus(uploadStatus, getUploadImageSizeHint('图片'), 'error');
                     imageUpload.value = '';
                     return;
                 }
 
                 try {
+                    setUploadStatus(uploadStatus, `正在上传 ${file.name}...`, 'loading');
                     const formData = new FormData();
                     formData.append('files[]', file);
 
@@ -625,7 +734,11 @@
                         ? getUploadedContentForEditor(json, file.name)
                         : '';
                     if (contentToInsert) {
-                        insertAtCursor(textarea, contentToInsert);
+                        const liveTextarea = document.getElementById(textarea.id) || textarea;
+                        restoreTextareaSelection(liveTextarea);
+                        insertAtCursor(liveTextarea, contentToInsert);
+                        syncNewPostDraft();
+                        setUploadStatus(uploadStatus, `已插入图片：${file.name}`, 'success');
                     } else {
                         throw new Error('未返回可用的上传内容');
                     }
@@ -634,7 +747,7 @@
                     const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
                         ? getFriendlyErrorMessage(error, 'upload_image')
                         : '图片上传失败，请稍后再试。';
-                    alert(friendlyMessage);
+                    setUploadStatus(uploadStatus, friendlyMessage, 'error');
                 } finally {
                     imageUpload.value = '';
                 }
@@ -714,7 +827,6 @@
         document.addEventListener('DOMContentLoaded', renderNewPostPage);
         window.addEventListener('flarum-auth-changed', renderNewPostPage);
         window.addEventListener('pageshow', renderNewPostPage);
-        window.addEventListener('focus', renderNewPostPage);
         window.addEventListener('storage', function(e) {
             if (!e || e.key === null || e.key === 'flarumToken' || e.key === 'flarumUserId' || e.key === 'flarumUsername') {
                 renderNewPostPage();

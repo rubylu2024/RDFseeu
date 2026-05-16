@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全部帖子 - 红蜻蜓论坛</title>
+    <title>用户资料 - 红蜻蜓论坛</title>
     <link rel="icon" type="image/png" href="images/红蜻蜓.png">
     <link rel="stylesheet" href="styles.css?v=20260506-2">
     <style>
@@ -11,75 +11,114 @@
             width: 100%;
         }
 
-        .all-posts-card {
+        .public-user-card {
             background: #fff;
             border: 1px solid #ccc;
-            padding: 14px;
+            padding: 20px;
         }
 
-        .all-posts-head {
+        .public-user-header {
             display: flex;
-            flex-wrap: wrap;
+            gap: 16px;
             align-items: center;
-            gap: 10px 12px;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
+            padding-bottom: 16px;
             border-bottom: 1px solid #eee;
+            margin-bottom: 16px;
         }
 
-        .all-posts-title {
-            font-size: 16px;
+        .public-user-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            flex: 0 0 auto;
+        }
+
+        .public-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .public-user-name {
+            font-size: 20px;
             font-weight: bold;
             color: #333;
-            margin-right: auto;
+            margin-bottom: 6px;
         }
 
-        .all-posts-controls {
+        .public-user-meta {
             display: flex;
             flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .all-posts-controls label {
+            gap: 10px 16px;
             font-size: 13px;
             color: #666;
         }
 
-        .all-posts-controls select {
-            padding: 4px 6px;
-            border: 1px solid #bbb;
-            background: #fff;
-            font-size: 13px;
-        }
-
-        .all-posts-controls button {
-            padding: 5px 10px;
-            border: 1px solid #6F6F6F;
-            background: linear-gradient(to bottom, #DEDEDE, #C2C2C2);
-            cursor: pointer;
-            font-size: 13px;
+        .public-user-bio {
+            margin-top: 16px;
+            padding: 12px;
+            background: #fcfcfc;
+            border: 1px solid #eee;
+            line-height: 1.8;
             color: #333;
         }
 
-        .all-posts-controls button:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
+        .public-user-grid {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
         }
 
-        .all-posts-meta {
+        .public-user-panel {
+            border: 1px solid #eee;
+            background: #fff;
+        }
+
+        .public-user-panel h3 {
+            margin: 0;
+            padding: 10px 12px;
+            background: #eef5ff;
+            border-left: 5px solid #0066cc;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .public-user-list {
+            list-style: none;
+            margin: 0;
+            padding: 10px 12px;
+        }
+
+        .public-user-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .public-user-list li:last-child {
+            border-bottom: none;
+        }
+
+        .public-user-list a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .public-user-list a:hover {
+            text-decoration: underline;
+        }
+
+        .public-user-item-meta {
+            margin-top: 4px;
             font-size: 12px;
             color: #888;
-            margin-top: 6px;
-        }
-
-        .all-posts-error {
-            padding: 12px;
-            border: 1px dashed #cc0000;
-            background: #fff7f7;
-            color: #cc0000;
-            margin-top: 10px;
-            display: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
     </style>
 </head>
@@ -127,28 +166,8 @@
                     <div class="right-content-area page-shell">
                         <div class="content-wrapper">
                             <div class="main-content" style="width:100%; padding: 20px;">
-                                <div class="all-posts-card">
-                                    <div class="all-posts-head">
-                                        <div class="all-posts-title">&gt; 全部帖子</div>
-                                        <div class="all-posts-controls">
-                                            <label for="all-posts-sort-field">排序</label>
-                                            <select id="all-posts-sort-field">
-                                                <option value="createdAt">发布时间</option>
-                                                <option value="views">浏览量</option>
-                                            </select>
-                                            <select id="all-posts-sort-order">
-                                                <option value="desc">倒序</option>
-                                                <option value="asc">正序</option>
-                                            </select>
-                                            <button type="button" id="all-posts-prev">上一页</button>
-                                            <button type="button" id="all-posts-next">下一页</button>
-                                        </div>
-                                    </div>
-                                    <div class="all-posts-meta" id="all-posts-meta">每页最多 15 条</div>
-                                    <div class="all-posts-error" id="all-posts-error"></div>
-                                    <div id="all-posts-table-wrap">
-                                        <div style="padding: 20px; text-align: center;">加载中...</div>
-                                    </div>
+                                <div class="public-user-card" id="public-user-container">
+                                    <div style="padding: 20px; text-align: center;">加载中...</div>
                                 </div>
                             </div>
                         </div>
@@ -165,6 +184,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260515-1"></script>
+    <script src="script.js?v=20260509-1"></script>
 </body>
 </html>

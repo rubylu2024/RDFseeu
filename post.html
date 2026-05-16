@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>红蜻蜓论坛 - 帖子详情</title>
     <link rel="icon" type="image/png" href="images/红蜻蜓.png">
-    <link rel="stylesheet" href="styles.css?v=20260506-2">
+    <link rel="stylesheet" href="styles.css?v=20260515-2">
     <style>
         /* 论坛风格样式 */
         .forum-thread {
@@ -264,20 +264,6 @@
             background: #d63030;
         }
 
-        .reply-preview-btn {
-            padding: 10px 20px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .reply-preview-btn:hover {
-            background: #f5f5f5;
-        }
-
         .cancel-reply {
             color: #0066cc;
             text-decoration: none;
@@ -352,6 +338,8 @@
             margin: 5px 0 10px 0;
             font-size: 13px;
             color: #666;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* 第一层：蓝色主题 */
@@ -386,6 +374,12 @@
 
         .quote-box .quote-content {
             color: #888;
+            line-height: 1.6;
+            white-space: normal;
+        }
+
+        .quote-content-deleted {
+            color: #999;
         }
 
         .quote-box .quote-floor {
@@ -422,6 +416,36 @@
 
         .quick-reply-area.active {
             display: block;
+        }
+
+        .post > .quote-box:first-child {
+            margin-top: 0;
+        }
+
+        .post-content > :first-child {
+            margin-top: 0 !important;
+        }
+
+        .post-content > :last-child {
+            margin-bottom: 0 !important;
+        }
+
+        @media (max-width: 768px) {
+            .quote-box {
+                padding: 6px 8px;
+                margin: 4px 0 8px 0;
+                font-size: 12px;
+            }
+
+            .quote-level-1,
+            .quote-level-2 {
+                padding: 4px 6px;
+            }
+
+            .quote-box .quote-author,
+            .quote-box .quote-content {
+                line-height: 1.5;
+            }
         }
     </style>
 </head>
@@ -595,7 +619,7 @@
         </div>
     </div>
     
-    <script src="script.js?v=20260515-1"></script>
+    <script src="script.js?v=20260515-7"></script>
     
     <!-- 浮窗导航图标 -->
     <div class="floating-ad" onclick="window.open('https://www.dihai.wiki/','_blank','noopener')">

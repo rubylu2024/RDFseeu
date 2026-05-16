@@ -8,6 +8,8 @@ const PORT = process.env.PORT || 3000;
 
 // Flarum API base URL - update this to your actual Flarum URL
 const FLARUM_BASE_URL = process.env.FLARUM_BASE_URL || 'http://localhost';
+const MAX_UPLOAD_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_MULTIPART_PROXY_BYTES = 20 * 1024 * 1024;
 
 // Middleware
 app.use(express.json());
@@ -84,6 +86,142 @@ function parseAuthHeader(authHeader) {
     raw
   };
 }
+
+function getUploadImageMaxSizeLabel() {
+  return '2MB';
+}
+
+function getUploadCompressionSuggestion() {
+  return '建议先用 TinyPNG、Squoosh 等工具压缩后再上传。';
+}
+
+function getUploadLimitErrorDetail(label = '图片') {
+  return `${label}大小不能超过 ${getUploadImageMaxSizeLabel()}。${getUploadCompressionSuggestion()}`;
+}
+
+function sendJsonApiUploadError(res, status, code, detail, title = '上传失败') {
+  return res.status(status).json({
+    errors: [
+      {
+        status: String(status),
+        code,
+        title,
+        detail
+      }
+    ]
+  });
+}
+
+function getMultipartBoundary(contentType) {
+  const raw = typeof contentType === 'string' ? contentType : '';
+  const match = raw.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  return match ? String(match[1] || match[2] || '').trim() : '';
+}
+
+function parseMultipartFileParts(buffer, contentType) {
+  const boundary = getMultipartBoundary(contentType);
+  if (!boundary || !Buffer.isBuffer(buffer) || buffer.length === 0) return [];
+
+  const boundaryBuffer = Buffer.from(`--${boundary}`);
+  const headerSeparator = Buffer.from('\r\n\r\n');
+  const parts = [];
+  let cursor = 0;
+
+  while (cursor < buffer.length) {
+    const boundaryIndex = buffer.indexOf(boundaryBuffer, cursor);
+    if (boundaryIndex === -1) break;
+
+    let sectionStart = boundaryIndex + boundaryBuffer.length;
+    const nextTwo = buffer.slice(sectionStart, sectionStart + 2).toString('latin1');
+    if (nextTwo === '--') break;
+    if (nextTwo === '\r\n') sectionStart += 2;
+
+    const nextBoundaryIndex = buffer.indexOf(boundaryBuffer, sectionStart);
+    if (nextBoundaryIndex === -1) break;
+
+    let sectionEnd = nextBoundaryIndex;
+    if (buffer.slice(sectionEnd - 2, sectionEnd).toString('latin1') === '\r\n') {
+      sectionEnd -= 2;
+    }
+
+    const headerEnd = buffer.indexOf(headerSeparator, sectionStart);
+    if (headerEnd === -1 || headerEnd > sectionEnd) {
+      cursor = nextBoundaryIndex + boundaryBuffer.length;
+      continue;
+    }
+
+    const headerText = buffer.slice(sectionStart, headerEnd).toString('utf8');
+    const bodyStart = headerEnd + headerSeparator.length;
+    const bodyBuffer = buffer.slice(bodyStart, sectionEnd);
+    const dispositionMatch = headerText.match(/content-disposition:[^\r\n]*name="([^"]*)"(?:;[^\r\n]*filename="([^"]*)")?/i);
+    const fieldName = dispositionMatch ? String(dispositionMatch[1] || '') : '';
+    const fileName = dispositionMatch ? String(dispositionMatch[2] || '') : '';
+    const contentTypeMatch = headerText.match(/content-type:\s*([^\r\n]+)/i);
+    const partContentType = contentTypeMatch ? String(contentTypeMatch[1] || '').trim() : '';
+
+    if (fileName) {
+      parts.push({
+        fieldName,
+        fileName,
+        contentType: partContentType,
+        size: bodyBuffer.length
+      });
+    }
+
+    cursor = nextBoundaryIndex + boundaryBuffer.length;
+  }
+
+  return parts;
+}
+
+async function proxyValidatedMultipartUpload(req, res, targetPath, label = '图片') {
+  const contentType = String(req.headers['content-type'] || '');
+  if (!/^multipart\/form-data/i.test(contentType)) {
+    return sendJsonApiUploadError(res, 400, 'upload_invalid_content_type', '上传请求格式不正确，请重新选择图片后再试。');
+  }
+
+  const bodyBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+  const fileParts = parseMultipartFileParts(bodyBuffer, contentType);
+  if (fileParts.length === 0) {
+    return sendJsonApiUploadError(res, 400, 'upload_file_missing', '未检测到可上传的图片文件，请重新选择图片后再试。');
+  }
+
+  const oversizePart = fileParts.find((part) => Number(part?.size) > MAX_UPLOAD_IMAGE_BYTES);
+  if (oversizePart) {
+    return sendJsonApiUploadError(res, 400, 'upload_file_too_large', getUploadLimitErrorDetail(label), '文件过大');
+  }
+
+  try {
+    const upstream = await fetch(`${FLARUM_BASE_URL}${targetPath}`, {
+      method: req.method,
+      headers: {
+        Accept: req.headers.accept || 'application/vnd.api+json',
+        Authorization: req.headers.authorization || '',
+        'Content-Type': contentType,
+        'Content-Length': String(bodyBuffer.length)
+      },
+      body: bodyBuffer
+    });
+
+    const responseText = await upstream.text();
+    const responseType = upstream.headers.get('content-type');
+    if (responseType) {
+      res.set('content-type', responseType);
+    }
+    return res.status(upstream.status).send(responseText);
+  } catch (error) {
+    console.error('[upload-proxy] request failed:', {
+      path: targetPath,
+      message: String(error?.message || error)
+    });
+    return sendJsonApiUploadError(res, 500, 'upload_proxy_failed', '上传服务暂时不可用，请稍后重试。');
+  }
+}
+
+const uploadMultipartParser = express.raw({
+  type: (req) => /^multipart\/form-data/i.test(String(req.headers['content-type'] || '')),
+  limit: `${MAX_MULTIPART_PROXY_BYTES}b`
+});
 
 const actorCache = new Map();
 
@@ -613,9 +751,30 @@ app.post('/custom-notifications/:id/read', requireActor(async (req, res) => {
   }
 }));
 
+app.post('/api/fof/upload', uploadMultipartParser, async (req, res) => {
+  return await proxyValidatedMultipartUpload(req, res, '/api/fof/upload', '图片');
+});
+
+app.post('/api/users/:id/avatar', uploadMultipartParser, async (req, res) => {
+  return await proxyValidatedMultipartUpload(req, res, `/api/users/${encodeURIComponent(req.params.id)}/avatar`, '头像图片');
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.use((error, req, res, next) => {
+  if (error?.type === 'entity.too.large') {
+    const pathName = String(req?.path || '');
+    if (pathName === '/api/fof/upload') {
+      return sendJsonApiUploadError(res, 400, 'upload_file_too_large', getUploadLimitErrorDetail('图片'), '文件过大');
+    }
+    if (/^\/api\/users\/[^/]+\/avatar$/i.test(pathName)) {
+      return sendJsonApiUploadError(res, 400, 'upload_file_too_large', getUploadLimitErrorDetail('头像图片'), '文件过大');
+    }
+  }
+  return next(error);
 });
 
 // Custom register endpoint

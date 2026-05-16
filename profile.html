@@ -1166,7 +1166,7 @@
                                                         <div id="user-avatar" class="avatar-placeholder"></div>
                                                         <div class="avatar-upload-overlay">点击更换头像</div>
                                                     </div>
-                                                    <div class="profile-side-note">头像文件大小不能超过 2MB</div>
+                                                    <div class="profile-side-note">头像仅支持 2MB 以内图片，建议先用 TinyPNG、Squoosh 等工具压缩</div>
                                                 <input type="file" id="avatar-upload-input" accept="image/*">
                                             </div>
 
@@ -1206,6 +1206,10 @@
                                             <div class="stat-card">
                                                 <div class="stat-label">积分</div>
                                                 <div class="stat-number" id="stat-points">0</div>
+                                            </div>
+                                            <div class="stat-card">
+                                                <div class="stat-label">经验</div>
+                                                <div class="stat-number" id="stat-experience">0</div>
                                             </div>
                                         </div>
 
@@ -1351,7 +1355,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260509-1"></script>
+    <script src="script.js?v=20260515-6"></script>
     <script>
         const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
         const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
@@ -1404,7 +1408,9 @@
                     throw new Error('未获取到用户资料');
                 }
 
-                const context = buildProfileContext(userData);
+                const profileUserId = String(userData?.data?.id || targetUserId || '');
+                const userStats = await loadCustomUserStats(profileUserId);
+                const context = buildProfileContext(userData, userStats);
                 currentProfileContext = context;
                 activityState.isOwnerView = isOwner;
 
@@ -1443,7 +1449,7 @@
             }
         }
 
-        function buildProfileContext(userData) {
+        function buildProfileContext(userData, userStats) {
             const user = userData.data;
             const included = userData.included || [];
             const attributes = user?.attributes || {};
@@ -1455,7 +1461,14 @@
             const signature = typeof attributes.bio === 'string'
                 ? attributes.bio
                 : (typeof attributes.signature === 'string' ? attributes.signature : '');
-            const points = getProfilePoints(attributes);
+            const statsPoints = Number(userStats?.points);
+            const attributePoints = typeof getUserPoints === 'function' ? getUserPoints(attributes) : null;
+            const points = Number.isFinite(statsPoints) && statsPoints >= 0
+                ? statsPoints
+                : (attributePoints != null ? attributePoints : 0);
+            const experience = typeof getUserExperience === 'function'
+                ? getUserExperience(attributes, userStats)
+                : 0;
             const trustLevel = Number(attributes.trustLevel || 0);
             const email = attributes.email || '-';
             const isActivated = attributes.isEmailConfirmed !== false;
@@ -1486,6 +1499,7 @@
                 email,
                 signature,
                 points,
+                experience,
                 trustLevel,
                 trustTitle: PROFILE_TRUST_TITLES[trustLevel] || '新手上路',
                 title,
@@ -1646,25 +1660,7 @@
             document.getElementById('stat-posts').textContent = stats.posts || 0;
             document.getElementById('stat-comments').textContent = stats.comments || 0;
             document.getElementById('stat-points').textContent = (currentProfileContext && currentProfileContext.points != null) ? currentProfileContext.points : 0;
-        }
-
-        function getProfilePoints(attributes) {
-            // 私信积分回滚由服务器 SQL 处理，不在前端扣减。
-            const candidates = [
-                attributes?.points,
-                attributes?.money,
-                attributes?.moneyAmount,
-                attributes?.money_balance,
-                attributes?.balance
-            ];
-            for (const value of candidates) {
-                if (typeof value === 'number' && Number.isFinite(value)) return value;
-                if (typeof value === 'string' && value.trim()) {
-                    const parsed = Number(value);
-                    if (Number.isFinite(parsed)) return parsed;
-                }
-            }
-            return 0;
+            document.getElementById('stat-experience').textContent = (currentProfileContext && currentProfileContext.experience != null) ? currentProfileContext.experience : 0;
         }
 
         function renderActivitySection() {
@@ -2255,8 +2251,8 @@
                 return;
             }
 
-            if (file.size > 2 * 1024 * 1024) {
-                showPageMessage('头像图片大小不能超过 2MB。', 'error');
+            if (file.size > getUploadImageMaxSizeBytes()) {
+                showPageMessage(getUploadImageSizeHint('头像图片'), 'error');
                 input.value = '';
                 return;
             }

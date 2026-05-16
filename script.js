@@ -4,6 +4,17 @@
 const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
 const POST_PAGE_SIZE = 20;
+const MAX_UPLOAD_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_UPLOAD_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const ALLOWED_UPLOAD_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+const replyComposerDraft = {
+    content: '',
+    replyTarget: '',
+    title: '发表回复',
+    showCancel: false,
+    selectionStart: 0,
+    selectionEnd: 0
+};
 const CUSTOM_EMOJIS = Array.from({ length: 126 }, (_, i) => ({
     label: `表情${i + 1}`,
     file: `Forum${i + 1}.png`
@@ -121,8 +132,70 @@ function escapePreviewHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function createDebouncedPreviewUpdater(updateFn, delay = 300) {
+    let timer = null;
+    return function debouncedPreviewUpdate() {
+        if (timer) window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+            timer = null;
+            updateFn();
+        }, delay);
+    };
+}
+
+function updateComposerPreviewBox(source, previewBox, previewContent, transformSource) {
+    if (!previewBox || !previewContent) return;
+    const rawText = String(source || '').trim();
+
+    if (!rawText) {
+        previewContent.innerHTML = '';
+        previewBox.style.display = 'none';
+        return;
+    }
+
+    const previewSource = typeof transformSource === 'function'
+        ? transformSource(rawText)
+        : rawText;
+    previewContent.innerHTML = renderComposerPreview(previewSource);
+    previewBox.style.display = 'block';
+}
+
 function stripComposerReplyPrefix(source) {
     return String(source || '').replace(/^回复\s+(?:(?:.*?\()?\d+楼\)?|.+?\(\d+楼\))：\s*/u, '');
+}
+
+function getUploadImageAcceptValue() {
+    return '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp';
+}
+
+function getUploadImageMaxSizeBytes() {
+    return MAX_UPLOAD_IMAGE_BYTES;
+}
+
+function getUploadImageMaxSizeLabel() {
+    return '2MB';
+}
+
+function getUploadCompressionSuggestion() {
+    return '建议先用 TinyPNG、Squoosh 等工具压缩后再上传。';
+}
+
+function isAllowedUploadImage(file) {
+    if (!file) return false;
+    const type = String(file.type || '').toLowerCase();
+    if (ALLOWED_UPLOAD_IMAGE_MIME_TYPES.has(type)) return true;
+    const name = String(file.name || '');
+    const match = /\.([^.]+)$/.exec(name);
+    const ext = match ? String(match[1] || '').toLowerCase() : '';
+    return ALLOWED_UPLOAD_IMAGE_EXTENSIONS.has(ext);
+}
+
+function getUploadImageFormatHint() {
+    return `仅支持 JPEG、PNG、GIF、WEBP 图片，且单张大小不能超过 ${getUploadImageMaxSizeLabel()}。${getUploadCompressionSuggestion()}`;
+}
+
+function getUploadImageSizeHint(label = '图片') {
+    return `${label}大小不能超过 ${getUploadImageMaxSizeLabel()}。${getUploadCompressionSuggestion()}`;
 }
 
 function getUploadedContentForEditor(json, fileName) {
@@ -145,6 +218,83 @@ function getUploadedContentForEditor(json, fileName) {
     }
 
     return '';
+}
+
+function setUploadStatus(statusEl, message, kind) {
+    if (!statusEl) return;
+    const text = String(message || '').trim();
+    const nextKind = kind || 'info';
+    statusEl.textContent = text;
+    statusEl.className = text ? `upload-status upload-status-${nextKind}` : 'upload-status';
+    statusEl.style.display = text ? 'block' : 'none';
+}
+
+function syncReplyComposerDraft() {
+    const replyTargetInput = document.getElementById('reply-target');
+    const replyContent = document.getElementById('reply-content');
+    const replyBoxTitle = document.querySelector('.reply-box h4');
+    const cancelReply = document.getElementById('cancel-reply');
+    if (replyTargetInput) replyComposerDraft.replyTarget = replyTargetInput.value || '';
+    if (replyContent) {
+        replyComposerDraft.content = replyContent.value || '';
+        replyComposerDraft.selectionStart = Number.isFinite(replyContent.selectionStart) ? replyContent.selectionStart : replyComposerDraft.content.length;
+        replyComposerDraft.selectionEnd = Number.isFinite(replyContent.selectionEnd) ? replyContent.selectionEnd : replyComposerDraft.selectionStart;
+    }
+    if (replyBoxTitle) replyComposerDraft.title = replyBoxTitle.textContent || '发表回复';
+    replyComposerDraft.showCancel = !!(cancelReply && cancelReply.style.display !== 'none');
+}
+
+function restoreReplyComposerDraft() {
+    const replyTargetInput = document.getElementById('reply-target');
+    const replyContent = document.getElementById('reply-content');
+    const replyBoxTitle = document.querySelector('.reply-box h4');
+    const cancelReply = document.getElementById('cancel-reply');
+    if (replyTargetInput) replyTargetInput.value = replyComposerDraft.replyTarget || '';
+    if (replyContent) {
+        replyContent.value = replyComposerDraft.content || '';
+        replyContent.dataset.savedSelectionStart = String(Number.isFinite(replyComposerDraft.selectionStart) ? replyComposerDraft.selectionStart : 0);
+        replyContent.dataset.savedSelectionEnd = String(Number.isFinite(replyComposerDraft.selectionEnd) ? replyComposerDraft.selectionEnd : 0);
+    }
+    if (replyBoxTitle) replyBoxTitle.textContent = replyComposerDraft.title || '发表回复';
+    if (cancelReply) cancelReply.style.display = replyComposerDraft.showCancel ? 'inline' : 'none';
+}
+
+function clearReplyComposerDraft() {
+    replyComposerDraft.content = '';
+    replyComposerDraft.replyTarget = '';
+    replyComposerDraft.title = '发表回复';
+    replyComposerDraft.showCancel = false;
+    replyComposerDraft.selectionStart = 0;
+    replyComposerDraft.selectionEnd = 0;
+}
+
+function rememberTextareaSelection(textarea) {
+    if (!textarea) return;
+    const selectionStart = Number.isFinite(textarea.selectionStart) ? textarea.selectionStart : 0;
+    const selectionEnd = Number.isFinite(textarea.selectionEnd) ? textarea.selectionEnd : selectionStart;
+    textarea.dataset.savedSelectionStart = String(selectionStart);
+    textarea.dataset.savedSelectionEnd = String(selectionEnd);
+    if (textarea.id === 'reply-content') {
+        replyComposerDraft.content = textarea.value || '';
+        replyComposerDraft.selectionStart = selectionStart;
+        replyComposerDraft.selectionEnd = selectionEnd;
+    }
+}
+
+function restoreTextareaSelection(textarea) {
+    if (!textarea) return;
+    const rawStart = textarea.dataset.savedSelectionStart != null && textarea.dataset.savedSelectionStart !== ''
+        ? Number(textarea.dataset.savedSelectionStart)
+        : (textarea.id === 'reply-content' ? Number(replyComposerDraft.selectionStart) : Number.NaN);
+    const rawEnd = textarea.dataset.savedSelectionEnd != null && textarea.dataset.savedSelectionEnd !== ''
+        ? Number(textarea.dataset.savedSelectionEnd)
+        : (textarea.id === 'reply-content' ? Number(replyComposerDraft.selectionEnd) : Number.NaN);
+    const textLength = String(textarea.value || '').length;
+    const start = Number.isFinite(rawStart) ? Math.min(Math.max(rawStart, 0), textLength) : textLength;
+    const end = Number.isFinite(rawEnd) ? Math.min(Math.max(rawEnd, start), textLength) : start;
+    textarea.focus();
+    textarea.selectionStart = start;
+    textarea.selectionEnd = end;
 }
 
 function openInNewTab(url) {
@@ -485,11 +635,42 @@ function getUserPoints(userAttributes) {
     return null;
 }
 
+function getUserExperience(userAttributes, userStats) {
+    const candidates = [
+        userStats?.experience,
+        userAttributes?.experience,
+        userAttributes?.exp,
+        userAttributes?.totalExperience
+    ];
+
+    for (const value of candidates) {
+        const n = Number(value);
+        if (Number.isFinite(n) && n >= 0) return n;
+    }
+
+    return 0;
+}
+
+async function loadCustomUserStats(userId) {
+    if (!userId) return null;
+
+    try {
+        return await customRequest(`/custom-user-stats/${encodeURIComponent(userId)}`, {
+            method: 'GET',
+            auth: false
+        });
+    } catch (error) {
+        console.warn('加载用户积分/经验统计失败，使用 Flarum 用户属性兜底:', error);
+        return null;
+    }
+}
+
 function getFriendlyErrorMessage(error, context = 'generic') {
     const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
     const status = error?.httpStatus || parsed?.status || null;
     const code = parsed?.code || error?.code || '';
     const rawMessage = String(error?.message || '');
+    const detailMessage = String(parsed?.detail || error?.detail || '');
     const activationHint = '请确认账号已经激活，如仍有问题请联系网管。';
 
     if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
@@ -551,6 +732,18 @@ function getFriendlyErrorMessage(error, context = 'generic') {
 
     if (status === 429 || code === 'rate_limit_exceeded') {
         return '操作太频繁了，请稍后再试。';
+    }
+
+    if (
+        (status === 400 || code === 'upload_file_too_large') &&
+        (
+            code === 'upload_file_too_large' ||
+            /2\s*mb|too\s*large|文件过大|大小不能超过/i.test(`${detailMessage} ${rawMessage}`)
+        )
+    ) {
+        return context === 'upload_avatar'
+            ? getUploadImageSizeHint('头像图片')
+            : getUploadImageSizeHint('图片');
     }
 
     if (code === 'validation_error') {
@@ -918,6 +1111,174 @@ function normalizeLineBreaksInHtml(contentHtml) {
     }
 }
 
+function isMeaninglessHtmlNode(node) {
+    if (!node) return true;
+    if (node.nodeType === Node.TEXT_NODE) {
+        return !String(node.nodeValue || '').replace(/\u00a0/g, ' ').trim();
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return true;
+
+    const tagName = String(node.tagName || '').toUpperCase();
+    if (tagName === 'BR') return true;
+
+    const visibleSelector = 'img,video,audio,iframe,object,embed,svg,hr,table,ul,ol,pre,blockquote';
+    if (node.matches?.(visibleSelector) || node.querySelector?.(visibleSelector)) {
+        return false;
+    }
+
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll?.('br').forEach((br) => br.remove());
+    return !String(clone.textContent || '').replace(/\u00a0/g, ' ').trim();
+}
+
+function cleanupThreadedReplyHtml(contentHtml) {
+    const original = typeof contentHtml === 'string' ? contentHtml : '';
+    if (!original.trim()) return '';
+
+    try {
+        const doc = new DOMParser().parseFromString(original, 'text/html');
+        const body = doc.body;
+
+        body.querySelectorAll('p').forEach((paragraph) => {
+            while (paragraph.firstChild && isMeaninglessHtmlNode(paragraph.firstChild)) {
+                paragraph.removeChild(paragraph.firstChild);
+            }
+            while (paragraph.lastChild && isMeaninglessHtmlNode(paragraph.lastChild)) {
+                paragraph.removeChild(paragraph.lastChild);
+            }
+        });
+
+        Array.from(body.childNodes).forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE && isMeaninglessHtmlNode(node)) {
+                node.remove();
+            }
+        });
+
+        while (body.firstChild && isMeaninglessHtmlNode(body.firstChild)) {
+            body.removeChild(body.firstChild);
+        }
+        while (body.lastChild && isMeaninglessHtmlNode(body.lastChild)) {
+            body.removeChild(body.lastChild);
+        }
+
+        return normalizeLineBreaksInHtml(body.innerHTML).trim();
+    } catch {
+        return normalizeLineBreaksInHtml(original).trim();
+    }
+}
+
+function getPlainTextFromHtml(contentHtml) {
+    const original = typeof contentHtml === 'string' ? contentHtml : '';
+    if (!original) return '';
+
+    try {
+        const doc = new DOMParser().parseFromString(original, 'text/html');
+        return String(doc.body.textContent || '')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n[ \t]+/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    } catch {
+        return original
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+}
+
+function buildQuotePreviewText(contentHtml, maxLength = 100) {
+    const plainText = getPlainTextFromHtml(contentHtml)
+        .replace(/\s*\n+\s*/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+    if (!plainText) return '';
+    if (plainText.length <= maxLength) return plainText;
+    return `${plainText.slice(0, maxLength)}...`;
+}
+
+function buildQuoteFloorLabelHtml(targetFloor, options = {}) {
+    const floor = Number(targetFloor);
+    if (!Number.isFinite(floor) || floor <= 0) {
+        return '<span style="color: #999; cursor: default;">未知楼层</span>';
+    }
+
+    const visibleFloors = Array.isArray(options.visibleFloors) ? options.visibleFloors : [];
+    const discussionId = options.discussionId != null ? String(options.discussionId) : '';
+    const pageSize = Number.isFinite(Number(options.pageSize)) && Number(options.pageSize) > 0
+        ? Math.floor(Number(options.pageSize))
+        : POST_PAGE_SIZE;
+    const isOnCurrentPage = visibleFloors.includes(floor);
+    const href = discussionId && !isOnCurrentPage
+        ? `?id=${encodeURIComponent(discussionId)}&page=${Math.ceil(floor / pageSize)}#post-${floor}`
+        : `#post-${floor}`;
+
+    return `<a href="${href}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${floor}楼</a>`;
+}
+
+function buildThreadedQuoteHtml(replyToFloor, allPosts, options = {}, depth = 0) {
+    if (!replyToFloor || depth >= 3) return '';
+    const target = Array.isArray(allPosts) ? allPosts.find((post) => post.floor === replyToFloor) : null;
+    if (!target) return '';
+
+    const deletedInfo = parseDeletedContent(String(target.content || ''));
+    const parentQuote = buildThreadedQuoteHtml(target.replyTo, allPosts, options, depth + 1);
+    const floorLabelHtml = deletedInfo
+        ? `<span style="color: #999; cursor: default;">${target.floor}楼</span>`
+        : buildQuoteFloorLabelHtml(target.floor, options);
+    const quoteText = deletedInfo ? '该楼层已被删除' : buildQuotePreviewText(target.content, 100);
+
+    return `
+        <div class="quote-box quote-level-${depth}">
+            ${parentQuote}
+            <div class="quote-author">引用 ${escapeHtml(target.author || '匿名用户')}(${floorLabelHtml}) 的发言：</div>
+            <div class="quote-content${deletedInfo ? ' quote-content-deleted' : ''}">${escapeHtml(quoteText)}</div>
+        </div>
+    `;
+}
+
+function buildForumPostHtml(post, allPosts, postData, options = {}) {
+    const quoteHTML = buildThreadedQuoteHtml(post.replyTo, allPosts, {
+        discussionId: postData.id,
+        visibleFloors: options.visibleFloors || [],
+        pageSize: options.pageSize || POST_PAGE_SIZE
+    });
+    const previewText = buildQuotePreviewText(post.content, 50);
+    const authorHtml = buildUserLinkHtml(post.userId, post.author);
+
+    return `
+        <div class="post" id="post-${post.floor}" data-post-id="${post.id}">
+            ${quoteHTML}
+            <div class="post-header">
+                <div class="poster-info">
+                    <div class="avatar">
+                        ${post.authorAvatar && post.authorAvatar.length === 1
+                            ? `<span style="font-size: 24px; color: #666; font-weight: bold;">${post.authorAvatar}</span>`
+                            : `<img src="${post.authorAvatar || 'images/用户头像.png'}" alt="avatar" style="width:100%; height:100%; border-radius:3px; object-fit:cover;">`
+                        }
+                    </div>
+                    <div>
+                        <div class="poster-name ${post.isOp ? 'op' : ''}">${authorHtml}${post.isOp ? '<span class="op-badge">[楼主]</span>' : ''}</div>
+                        <div style="font-size: 11px; color: #999;">${post.authorLevel}${post.authorPoints != null ? ` · 积分 ${post.authorPoints}` : ''}</div>
+                    </div>
+                </div>
+                <div class="post-time">${post.time}</div>
+            </div>
+            <div class="post-content">${post.content}</div>
+            <div class="floor-info" style="display: flex; justify-content: flex-end; align-items: center;">
+                <span class="floor-number" style="margin-right: auto;">${post.floor}楼</span>
+                ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${escapeHtml(post.author || '')}" data-content="${escapeHtml(previewText || '')}">回复</a>` : ''}
+                <span style="margin: 0 5px; color: #ccc; display: none;" class="reply-divider">|</span>
+                <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">删除</a>
+            </div>
+        </div>
+    `;
+}
+
 function buildUserProfileHref(userId) {
     const id = userId == null ? '' : String(userId);
     if (!id) return '#';
@@ -1008,8 +1369,40 @@ function storeFlarumReplyToFloor(discussionId, postId, replyToFloor) {
     localStorage.setItem(getFlarumReplyStorageKey(discussionId, postId), String(n));
 }
 
+function stripReplyPrefixFromHtml(contentHtml, replyPrefixPattern) {
+    const original = typeof contentHtml === 'string' ? contentHtml : '';
+    if (!original.trim()) return '';
+
+    try {
+        const doc = new DOMParser().parseFromString(original, 'text/html');
+        const first = doc.body.firstElementChild;
+
+        if (first && first.tagName === 'P') {
+            const nextText = String(first.textContent || '').trim().replace(replyPrefixPattern, '').trim();
+            if (nextText !== String(first.textContent || '').trim()) {
+                if (nextText) {
+                    first.textContent = nextText;
+                } else {
+                    first.remove();
+                }
+                return cleanupThreadedReplyHtml(doc.body.innerHTML
+                    .replace(/\\n\\n/g, '')
+                    .replace(/\n\n/g, '')
+                );
+            }
+        }
+    } catch (_) {}
+
+    return cleanupThreadedReplyHtml(original
+        .replace(replyPrefixPattern, '')
+        .replace(/\\n\\n/g, '')
+        .replace(/\n\n/g, '')
+    );
+}
+
 function extractReplyMetaFromContentHtml(contentHtml) {
     const original = typeof contentHtml === 'string' ? contentHtml : '';
+    const replyPrefixPattern = /^回复\s+(?:.*?\()?\s*(\d+)\s*楼\)?\s*：(?:\\n\\n|\n\n|\s*)?/u;
 
     try {
         const doc = new DOMParser().parseFromString(original, 'text/html');
@@ -1022,12 +1415,12 @@ function extractReplyMetaFromContentHtml(contentHtml) {
             // 回复 3楼：
             // 回复 张三(3楼)：
             // 回复 张三(3楼)：\n\n正文
-            const m = text.match(/^回复\s+(?:.*?\()?(\d+)楼\)?：(?:\\n\\n|\n\n|\s*)?/);
+            const m = text.match(replyPrefixPattern);
 
             if (m) {
                 const replyToFloor = Number(m[1]);
 
-                text = text.replace(/^回复\s+(?:.*?\()?(\d+)楼\)?：(?:\\n\\n|\n\n|\s*)?/, '').trim();
+                text = text.replace(replyPrefixPattern, '').trim();
 
                 if (text) {
                     first.textContent = text;
@@ -1037,7 +1430,7 @@ function extractReplyMetaFromContentHtml(contentHtml) {
 
                 return {
                     replyToFloor,
-                    cleanedHtml: normalizeLineBreaksInHtml(doc.body.innerHTML
+                    cleanedHtml: cleanupThreadedReplyHtml(doc.body.innerHTML
                         .replace(/\\n\\n/g, '')
                         .replace(/\n\n/g, '')
                     )
@@ -1045,9 +1438,18 @@ function extractReplyMetaFromContentHtml(contentHtml) {
             }
         }
 
+        const firstLineText = (doc.body.textContent || '').trim().split(/\r?\n/).find((line) => String(line || '').trim()) || '';
+        const fallbackMatch = firstLineText.match(replyPrefixPattern);
+        if (fallbackMatch) {
+            return {
+                replyToFloor: Number(fallbackMatch[1]),
+                cleanedHtml: stripReplyPrefixFromHtml(original, replyPrefixPattern)
+            };
+        }
+
         return {
             replyToFloor: null,
-            cleanedHtml: normalizeLineBreaksInHtml(original
+            cleanedHtml: cleanupThreadedReplyHtml(original
                 .replace(/\\n\\n/g, '')
                 .replace(/\n\n/g, '')
             )
@@ -1055,7 +1457,7 @@ function extractReplyMetaFromContentHtml(contentHtml) {
     } catch {
         return {
             replyToFloor: null,
-            cleanedHtml: normalizeLineBreaksInHtml(original
+            cleanedHtml: cleanupThreadedReplyHtml(original
                 .replace(/\\n\\n/g, '')
                 .replace(/\n\n/g, '')
             )
@@ -1123,6 +1525,9 @@ function flarumDiscussionToPostData(apiJson) {
                 const extracted = extractReplyMetaFromContentHtml(html);
                 const stored = getStoredFlarumReplyToFloor(discussion.id, p.id);
                 const replyTo = extracted.replyToFloor || stored || null;
+                const cleanedHtml = replyTo && !extracted.replyToFloor
+                    ? stripReplyPrefixFromHtml(extracted.cleanedHtml, /^回复\s+(?:.*?\()?\s*\d+\s*楼\)?\s*：(?:\\n\\n|\n\n|\s*)?/u)
+                    : cleanupThreadedReplyHtml(extracted.cleanedHtml);
 
                 return {
                     id: Number(p.id),
@@ -1133,7 +1538,7 @@ function flarumDiscussionToPostData(apiJson) {
                     authorAvatar: getUserAvatarUrl(user),
                     time: formatFlarumTime(p.attributes?.createdAt),
                     floor: typeof number === 'number' ? number : 0,
-                    content: extracted.cleanedHtml,
+                    content: cleanedHtml,
                     replyTo
                 };
             })
@@ -1193,9 +1598,19 @@ async function flarumLoadDiscussion(postId) {
 
 async function flarumLoadDiscussionList() {
     try {
+        let json = null;
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
-        const json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`, { auth: false });
-        const discussions = (Array.isArray(json?.data) ? json.data : []).filter((d) => d && d.type === 'discussions' && d.attributes?.isPrivateDiscussion !== true);
+
+        try {
+            json = await flarumRequest(`/discussions?sort=-createdAt&page[limit]=20&include=user&filter[q]=${filterQ}`, { auth: false });
+        } catch (_) {}
+
+        let discussions = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
+        if (discussions.length === 0) {
+            json = await flarumRequest('/discussions?sort=-createdAt&page[limit]=20&include=user', { auth: false });
+            discussions = filterPublicDiscussions(Array.isArray(json?.data) ? json.data : []);
+        }
+
         const included = json?.included || [];
 
         return discussions.map((d) => {
@@ -1274,14 +1689,13 @@ async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limi
     };
 
     const baseQuery = `page[limit]=${safeLimit}&page[offset]=${safeOffset}&include=user`;
-    const filterQSafe = buildPublicDiscussionFilterQuery(typeof filterQ === 'string' ? filterQ.trim() : '');
+    const filterQSafe = typeof filterQ === 'string' ? filterQ.trim() : '';
     const filterPart = filterQSafe ? `&filter[q]=${encodeURIComponent(filterQSafe)}` : '';
-
-    const readWithAuth = !!getFlarumToken();
     let lastError = null;
     for (const sort of buildSortCandidates()) {
         try {
-            const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&${baseQuery}${filterPart}`, { auth: readWithAuth });
+            // 全部帖子页只展示公开主题；这里统一按公开读取，避免登录态把私密讨论混入分页结果后又被前端过滤空。
+            const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(sort)}&${baseQuery}${filterPart}`, { auth: false });
             return { json, usedSort: sort, usedFallbackSort: false };
         } catch (error) {
             lastError = error;
@@ -1289,7 +1703,7 @@ async function flarumLoadAllDiscussionsPage({ sortField, sortOrder, offset, limi
     }
 
     const fallbackSort = order === 'desc' ? '-createdAt' : 'createdAt';
-    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(fallbackSort)}&${baseQuery}${filterPart}`, { auth: readWithAuth });
+    const json = await flarumRequest(`/discussions?sort=${encodeURIComponent(fallbackSort)}&${baseQuery}${filterPart}`, { auth: false });
     return { json, usedSort: fallbackSort, usedFallbackSort: field === 'views', fallbackError: lastError };
 }
 
@@ -1670,9 +2084,38 @@ async function renderAllPostsPage() {
     const nextBtn = document.getElementById('all-posts-next');
 
     if (!wrap || !sortFieldEl || !sortOrderEl || !prevBtn || !nextBtn) return;
+    let keepControlsDisabled = false;
 
     if (!isFlarumConfigured()) {
         wrap.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">论坛后端未配置</div>';
+        return;
+    }
+
+    const showAllPostsAccessState = (message, actionLabel) => {
+        keepControlsDisabled = true;
+        const safeMessage = escapeHtml(String(message || ''));
+        const safeActionLabel = escapeHtml(String(actionLabel || '立即登录'));
+        wrap.innerHTML = `
+            <div style="padding: 24px; text-align: center; color: #666;">
+                <div style="margin-bottom: 12px;">${safeMessage}</div>
+                <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">${safeActionLabel}</a>
+            </div>
+        `;
+        if (meta) meta.textContent = '全部帖子页仅对已登录用户开放';
+        if (errorBox) {
+            errorBox.style.display = 'none';
+            errorBox.textContent = '';
+        }
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        sortFieldEl.disabled = true;
+        sortOrderEl.disabled = true;
+    };
+
+    const currentToken = getFlarumToken();
+    const currentUserId = localStorage.getItem('flarumUserId');
+    if (!currentToken || !currentUserId) {
+        showAllPostsAccessState('请先登录后查看全部帖子', '立即登录');
         return;
     }
 
@@ -1705,6 +2148,9 @@ async function renderAllPostsPage() {
     if (meta) meta.textContent = '每页最多 15 条';
 
     try {
+        // 先验证当前登录态有效，避免本地残留 token 导致权限状态倒置。
+        await flarumRequest(`/users/${encodeURIComponent(String(currentUserId))}`, { auth: true });
+
         const { json, usedFallbackSort } = await flarumLoadAllDiscussionsPage({
             sortField: state.sortField,
             sortOrder: state.sortOrder,
@@ -1787,6 +2233,11 @@ async function renderAllPostsPage() {
             renderAllPostsPage();
         };
     } catch (error) {
+        if (error && (error.httpStatus === 401 || error.httpStatus === 403)) {
+            clearFlarumToken();
+            showAllPostsAccessState('当前登录状态已失效或没有查看全部帖子的权限，请重新登录后再试', '重新登录');
+            return;
+        }
         const friendlyMessage = getFriendlyErrorMessage(error, '加载全部帖子');
         if (errorBox) {
             errorBox.textContent = friendlyMessage || '加载失败，请稍后再试。';
@@ -1794,7 +2245,9 @@ async function renderAllPostsPage() {
         }
         wrap.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">加载失败</div>';
     } finally {
-        disableControls(false);
+        if (!keepControlsDisabled) {
+            disableControls(false);
+        }
     }
 }
 
@@ -2908,7 +3361,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
         if (target && target.closest('.top-links') && String(target.textContent || '').trim() === '博客') {
             e.preventDefault();
-            window.location.href = 'blog-entry.html';
+            window.location.href = 'blog-xiaoyu.html';
             return;
         }
 
@@ -3496,6 +3949,13 @@ async function renderMessagePage() {
         composePrivateBtn.classList.toggle('primary', !!active);
     };
 
+    const isReplyMessageItem = (item) => item?.kind === 'notification' && (item?.notifyType === 'reply' || item?.notifyType === 'quote');
+    const isPrivateMessageItem = (item) => item?.kind === 'private';
+    const isDisabledMessageFeatureItem = (item) => isReplyMessageItem(item) || isPrivateMessageItem(item);
+    const showMessageFeatureDebuggingNotice = () => {
+        alert('功能调试中');
+    };
+
     const formatNotificationKindLabel = (t) => {
         const type = String(t || '').toLowerCase();
         if (type === 'reply') return '帖子回复';
@@ -3981,6 +4441,11 @@ async function renderMessagePage() {
                 const id = el.getAttribute('data-id');
                 const kind = el.getAttribute('data-kind');
                 if (!id || !kind) return;
+                const targetItem = (Array.isArray(state.items) ? state.items : []).find((item) => item.kind === kind && String(item.id) === String(id));
+                if (isDisabledMessageFeatureItem(targetItem)) {
+                    showMessageFeatureDebuggingNotice();
+                    return;
+                }
                 state.selected = { kind, id };
                 await renderDetail({ kind, id });
             });
@@ -4303,14 +4768,20 @@ async function renderMessagePage() {
 
     filterAll.onchange = () => { if (filterAll.checked) setFilter(filterAll.value || 'all').catch(() => {}); };
     filterSystem.onchange = () => { if (filterSystem.checked) setFilter(filterSystem.value || 'system').catch(() => {}); };
-    filterReply.onchange = () => { if (filterReply.checked) setFilter(filterReply.value || 'reply').catch(() => {}); };
-    filterPrivate.onchange = () => { if (filterPrivate.checked) setFilter(filterPrivate.value || 'private').catch(() => {}); };
+    filterReply.onchange = () => {
+        if (!filterReply.checked) return;
+        syncFilterControls();
+        showMessageFeatureDebuggingNotice();
+    };
+    filterPrivate.onchange = () => {
+        if (!filterPrivate.checked) return;
+        syncFilterControls();
+        showMessageFeatureDebuggingNotice();
+    };
     filterUnread.onchange = () => { if (filterUnread.checked) setFilter(filterUnread.value || 'unread').catch(() => {}); };
 
     composePrivateBtn.onclick = () => {
-        const params = new URLSearchParams(window.location.search);
-        const to = params.get('to');
-        renderComposePrivate({ toUserId: to });
+        showMessageFeatureDebuggingNotice();
     };
 
     composePublicBtn.onclick = () => {
@@ -4331,8 +4802,12 @@ async function renderMessagePage() {
         return;
     }
     if (to) {
-        await renderComposePrivate({ toUserId: to });
+        showMessageFeatureDebuggingNotice();
+        await setFilter('all');
         return;
+    }
+    if (state.filter === 'reply' || state.filter === 'private') {
+        state.filter = 'all';
     }
     await setFilter(state.filter);
 }
@@ -4452,13 +4927,6 @@ function renderForumThread(postData) {
                                     <s>S</s>
                                 </button>
                                 <span class="toolbar-divider"></span>
-                                <button type="button" class="toolbar-btn" data-action="quote" title="引用">
-                                    "
-                                </button>
-                                <button type="button" class="toolbar-btn" data-action="code" title="代码">
-                                    &lt;/&gt;
-                                </button>
-                                <span class="toolbar-divider"></span>
                                 <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
                                     <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
                                 </button>
@@ -4466,7 +4934,8 @@ function renderForumThread(postData) {
                                     图
                                 </button>
                             </div>
-                            <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                            <input type="file" id="image-upload" accept="${getUploadImageAcceptValue()}" style="display: none;">
+                            <div class="upload-status" id="reply-upload-status" aria-live="polite" style="display: none;"></div>
                             ${buildCustomEmojiPickerHtml()}
                             <textarea id="reply-content" class="reply-content-area" placeholder="分享你的看法..."></textarea>
                             <input type="hidden" id="reply-target" name="reply-target" value="">
@@ -4476,7 +4945,6 @@ function renderForumThread(postData) {
                             </div>
                             <div class="reply-actions">
                                 <button type="submit" class="reply-submit-btn">发表回复</button>
-                                <button type="button" class="reply-preview-btn" id="reply-preview-btn">预览</button>
                                 <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
                             </div>
                         </form>
@@ -4548,38 +5016,6 @@ function renderForumThread(postData) {
     // 获取当前页可见的楼层范围（用于楼中楼跳转判断）
     const visibleFloors = currentPagePosts.map(p => p.floor);
 
-    // 递归生成引用 HTML
-    function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
-        if (!replyToFloor || depth >= 3) return '';
-        const target = allPosts.find(p => p.floor === replyToFloor);
-        if (!target) return '';
-
-        // 检查目标楼层是否被删除
-        const deletedInfo = parseDeletedContent(target.content);
-        if (deletedInfo) {
-            return `
-                <div class="quote-box quote-level-${depth}">
-                    <div class="quote-author">引用 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}楼</span>) 的发言：</div>
-                    <div class="quote-content" style="color: #999;">该楼层已被删除</div>
-                </div>
-            `;
-        }
-
-        const parentQuote = generateQuoteHTML(target.replyTo, allPosts, depth + 1);
-        const plainContent = target.content.replace(/<[^>]*>/g, '').substring(0, 100);
-        
-        // 判断目标楼层是否在当前页
-        const isOnCurrentPage = visibleFloors.includes(target.floor);
-        
-        return `
-            <div class="quote-box quote-level-${depth}">
-                ${parentQuote}
-                <div class="quote-author">引用 ${target.author}(<a href="${isOnCurrentPage ? `#post-${target.floor}` : `?id=${postData.id}&page=${Math.ceil(target.floor / PAGE_SIZE)}#post-${target.floor}`}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}楼</a>) 的发言：</div>
-                <div class="quote-content">${plainContent}${target.content.replace(/<[^>]*>/g, '').length > 100 ? '...' : ''}</div>
-            </div>
-        `;
-    }
-
     // 生成分页导航HTML
     function generatePaginationHTML() {
         if (totalPages <= 1) return '';
@@ -4636,38 +5072,11 @@ function renderForumThread(postData) {
                     </div>
                 `;
             }
-            
-            const quoteHTML = generateQuoteHTML(post.replyTo, allPosts);
-            const plainContent = post.content.replace(/<[^>]*>/g, '').substring(0, 50) + (post.content.replace(/<[^>]*>/g, '').length > 50 ? '...' : '');
-            const authorHtml = buildUserLinkHtml(post.userId, post.author);
-            
-            return `
-                <div class="post" id="post-${post.floor}" data-post-id="${post.id}">
-                    ${quoteHTML}
-                    <div class="post-header">
-                        <div class="poster-info">
-                            <div class="avatar">
-                                ${post.authorAvatar && post.authorAvatar.length === 1 
-                                    ? `<span style="font-size: 24px; color: #666; font-weight: bold;">${post.authorAvatar}</span>` 
-                                    : `<img src="${post.authorAvatar || 'images/用户头像.png'}" alt="avatar" style="width:100%; height:100%; border-radius:3px; object-fit:cover;">`
-                                }
-                            </div>
-                            <div>
-                                <div class="poster-name ${post.isOp ? 'op' : ''}">${authorHtml}${post.isOp ? '<span class="op-badge">[楼主]</span>' : ''}</div>
-                                <div style="font-size: 11px; color: #999;">${post.authorLevel}${post.authorPoints != null ? ` · 积分 ${post.authorPoints}` : ''}</div>
-                            </div>
-                        </div>
-                        <div class="post-time">${post.time}</div>
-                    </div>
-                    <div class="post-content">${post.content}</div>
-                    <div class="floor-info" style="display: flex; justify-content: flex-end; align-items: center;">
-                        <span class="floor-number" style="margin-right: auto;">${post.floor}楼</span>
-                        ${postData.allowComments !== false ? `<a href="#" class="reply-link" data-floor="${post.floor}" data-author="${escapeHtml(post.author || '')}" data-content="${escapeHtml(plainContent || '')}">回复</a>` : ''}
-                        <span style="margin: 0 5px; color: #ccc; display: none;" class="reply-divider">|</span>
-                        <a href="#" class="delete-link" data-post-id="${post.id}" data-floor="${post.floor}" style="display: none; color: #cc0000;">删除</a>
-                    </div>
-                </div>
-            `;
+
+            return buildForumPostHtml(post, allPosts, postData, {
+                visibleFloors,
+                pageSize: PAGE_SIZE
+            });
         }).join('')}
         
         ${generatePaginationHTML()}
@@ -4720,6 +5129,8 @@ function setupReplyButtons(postData) {
             replyContent.value = `回复 ${author}(${floor}楼)：`;
             replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
             cancelReply.style.display = 'inline';
+            replyContent.dispatchEvent(new Event('input', { bubbles: true }));
+            syncReplyComposerDraft();
             replyContent.focus();
         });
     });
@@ -4923,6 +5334,17 @@ async function updateReplyFormForLoginStatus() {
     const replyBox = document.getElementById('reply-box');
     
     if (!replyBox) return;
+    syncReplyComposerDraft();
+    const nextAuthState = isLoggedIn ? 'logged-in' : 'logged-out';
+    if (replyBox.dataset.authState === nextAuthState) {
+        const hasExpectedContent = isLoggedIn
+            ? !!replyBox.querySelector('#reply-form')
+            : !replyBox.querySelector('#reply-form');
+        if (hasExpectedContent) {
+            if (isLoggedIn) restoreReplyComposerDraft();
+            return;
+        }
+    }
     
     if (isLoggedIn) {
         // 已登录：显示用户信息和回复表单
@@ -4961,13 +5383,6 @@ async function updateReplyFormForLoginStatus() {
                         <s>S</s>
                     </button>
                     <span class="toolbar-divider"></span>
-                    <button type="button" class="toolbar-btn" data-action="quote" title="引用">
-                        "
-                    </button>
-                    <button type="button" class="toolbar-btn" data-action="code" title="代码">
-                        &lt;/&gt;
-                    </button>
-                    <span class="toolbar-divider"></span>
                     <button type="button" class="toolbar-btn custom-emote-toggle" data-action="custom-emoji" title="插入表情" aria-label="插入表情">
                         <img src="${getCustomEmojiUrl('Forum48.png')}" alt="表情" class="custom-emote-toggle-icon">
                     </button>
@@ -4975,7 +5390,8 @@ async function updateReplyFormForLoginStatus() {
                         图
                     </button>
                 </div>
-                <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                <input type="file" id="image-upload" accept="${getUploadImageAcceptValue()}" style="display: none;">
+                <div class="upload-status" id="reply-upload-status" aria-live="polite" style="display: none;"></div>
                 ${buildCustomEmojiPickerHtml()}
                 <textarea id="reply-content" class="reply-content-area" placeholder="分享你的看法..."></textarea>
                 <input type="hidden" id="reply-target" name="reply-target" value="">
@@ -4985,13 +5401,14 @@ async function updateReplyFormForLoginStatus() {
                 </div>
                 <div class="reply-actions">
                     <button type="submit" class="reply-submit-btn">发表回复</button>
-                    <button type="button" class="reply-preview-btn" id="reply-preview-btn">预览</button>
                     <a href="#" class="cancel-reply" id="cancel-reply" style="display: none;">取消回复</a>
                 </div>
             </form>
         `;
+        replyBox.dataset.authState = nextAuthState;
         // 重新绑定表单事件
         setupReplyForm();
+        restoreReplyComposerDraft();
     } else {
         // 未登录：直接显示登录提示，替换整个回复区域
         replyBox.innerHTML = `
@@ -5001,6 +5418,7 @@ async function updateReplyFormForLoginStatus() {
                 <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" style="color: #0066cc; text-decoration: none;">点击登录</a>
             </div>
         `;
+        replyBox.dataset.authState = nextAuthState;
     }
 }
 
@@ -5012,7 +5430,6 @@ function setupReplyForm() {
     const replyBoxTitle = document.querySelector('.reply-box h4');
     const replyForm = document.getElementById('reply-form');
     const replyNameInput = document.getElementById('reply-name');
-    const previewBtn = document.getElementById('reply-preview-btn');
     const previewBox = document.getElementById('reply-preview-box');
     const previewContent = document.getElementById('reply-preview-content');
 
@@ -5021,9 +5438,37 @@ function setupReplyForm() {
     // 初始化工具栏
     initToolbar();
     bindCustomEmojiPicker(replyForm, replyContent);
+    restoreReplyComposerDraft();
 
     // 检查用户权限，显示/隐藏图片按钮
     checkImagePermission();
+
+    if (replyContent.dataset.boundReplyDraft !== '1') {
+        replyContent.dataset.boundReplyDraft = '1';
+        ['input', 'click', 'keyup', 'select'].forEach((eventName) => {
+            replyContent.addEventListener(eventName, () => {
+                syncReplyComposerDraft();
+            });
+        });
+    }
+
+    if (replyContent.dataset.boundReplyAutoPreview !== '1') {
+        replyContent.dataset.boundReplyAutoPreview = '1';
+        const updateReplyPreview = createDebouncedPreviewUpdater(() => {
+            updateComposerPreviewBox(replyContent.value, previewBox, previewContent, expandCustomEmojiTokens);
+        }, 300);
+        ['input', 'click', 'keyup', 'select', 'change'].forEach((eventName) => {
+            replyContent.addEventListener(eventName, updateReplyPreview);
+        });
+        updateReplyPreview();
+    }
+
+    if (replyTargetInput.dataset.boundReplyDraft !== '1') {
+        replyTargetInput.dataset.boundReplyDraft = '1';
+        replyTargetInput.addEventListener('change', () => {
+            syncReplyComposerDraft();
+        });
+    }
 
     // 取消回复按钮（避免重复绑定）
     if (cancelReply && cancelReply.dataset.boundReplyCancel !== '1') {
@@ -5035,23 +5480,8 @@ function setupReplyForm() {
             replyBoxTitle.textContent = '发表回复';
             cancelReply.style.display = 'none';
             if (previewBox) previewBox.style.display = 'none';
-        });
-    }
-
-    if (previewBtn && previewBtn.dataset.boundReplyPreview !== '1') {
-        previewBtn.dataset.boundReplyPreview = '1';
-        previewBtn.addEventListener('click', () => {
-            const rawText = replyContent.value.trim();
-            if (!previewBox || !previewContent) return;
-
-            if (!rawText) {
-                previewBox.style.display = 'none';
-                return;
-            }
-
-            const previewSource = expandCustomEmojiTokens(rawText);
-            previewContent.innerHTML = renderComposerPreview(previewSource);
-            previewBox.style.display = 'block';
+            setUploadStatus(document.getElementById('reply-upload-status'), '', 'info');
+            clearReplyComposerDraft();
         });
     }
 
@@ -5119,11 +5549,18 @@ function setupReplyForm() {
                 });
 
                 if (response) {
+                    const createdPostId = response?.data?.id != null ? String(response.data.id) : '';
+                    const replyToFloor = Number(replyTo);
+                    if (createdPostId && Number.isFinite(replyToFloor) && replyToFloor > 0) {
+                        storeFlarumReplyToFloor(postId, createdPostId, replyToFloor);
+                    }
                     replyContent.value = '';
                     replyTargetInput.value = '';
                     if (cancelReply) cancelReply.style.display = 'none';
                     replyBoxTitle.textContent = '发表回复';
                     if (previewBox) previewBox.style.display = 'none';
+                    setUploadStatus(document.getElementById('reply-upload-status'), '', 'info');
+                    clearReplyComposerDraft();
 
                     // 重新加载帖子数据并更新UI
                     const newPostData = await loadPostData(postId);
@@ -5155,6 +5592,7 @@ function initToolbar() {
     const toolbar = document.querySelector('.reply-form .toolbar');
     const imageUpload = document.getElementById('image-upload');
     const replyContent = document.getElementById('reply-content');
+    const uploadStatus = document.getElementById('reply-upload-status');
 
     if (!toolbar) return;
 
@@ -5169,23 +5607,23 @@ function initToolbar() {
         switch (action) {
             case 'bold':
                 wrapSelection(replyContent, '**', '**');
+                syncReplyComposerDraft();
                 break;
             case 'italic':
                 wrapSelection(replyContent, '*', '*');
+                syncReplyComposerDraft();
                 break;
             case 'underline':
                 wrapSelection(replyContent, '__', '__');
+                syncReplyComposerDraft();
                 break;
             case 'strike':
                 wrapSelection(replyContent, '~~', '~~');
-                break;
-            case 'quote':
-                wrapSelection(replyContent, '> ', '', true);
-                break;
-            case 'code':
-                wrapSelection(replyContent, '`', '`');
+                syncReplyComposerDraft();
                 break;
             case 'image':
+                rememberTextareaSelection(replyContent);
+                syncReplyComposerDraft();
                 imageUpload.click();
                 break;
         }
@@ -5195,20 +5633,23 @@ function initToolbar() {
     imageUpload?.addEventListener('change', async function(e) {
         const file = e.target.files?.[0];
         if (!file) return;
+        const getLiveUploadStatus = () => document.getElementById('reply-upload-status') || uploadStatus;
 
-        // 文件验证
-        if (!file.type.startsWith('image/')) {
-            alert('请选择图片文件');
+        if (!isAllowedUploadImage(file)) {
+            setUploadStatus(getLiveUploadStatus(), getUploadImageFormatHint(), 'error');
+            imageUpload.value = '';
             return;
         }
         
-        if (file.size > 2 * 1024 * 1024) {
-            alert('图片大小不能超过2MB');
+        if (file.size > getUploadImageMaxSizeBytes()) {
+            setUploadStatus(getLiveUploadStatus(), getUploadImageSizeHint('图片'), 'error');
+            imageUpload.value = '';
             return;
         }
 
-        // 上传图片
         try {
+            syncReplyComposerDraft();
+            setUploadStatus(getLiveUploadStatus(), `正在上传 ${file.name}...`, 'loading');
             const formData = new FormData();
             formData.append('files[]', file);
 
@@ -5246,17 +5687,20 @@ function initToolbar() {
             const json = await response.json();
             const contentToInsert = getUploadedContentForEditor(json, file.name);
             if (contentToInsert) {
-                insertAtCursor(replyContent, contentToInsert);
+                const liveTextarea = document.getElementById(replyContent.id) || replyContent;
+                restoreTextareaSelection(liveTextarea);
+                insertAtCursor(liveTextarea, contentToInsert);
+                syncReplyComposerDraft();
+                setUploadStatus(getLiveUploadStatus(), `已插入图片：${file.name}`, 'success');
             } else {
                 throw new Error('未返回可用的上传内容');
             }
         } catch (error) {
             console.error('图片上传失败:', error);
-            alert(getFriendlyErrorMessage(error, 'upload_image'));
+            setUploadStatus(getLiveUploadStatus(), getFriendlyErrorMessage(error, 'upload_image'), 'error');
+        } finally {
+            imageUpload.value = '';
         }
-
-        // 清空文件选择
-        imageUpload.value = '';
     });
 
     // 快捷键支持
@@ -5291,6 +5735,7 @@ function insertAtCursor(textarea, text) {
     // 设置光标位置
     textarea.selectionStart = textarea.selectionEnd = start + text.length;
     textarea.focus();
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // 包裹选中的文本
@@ -5319,6 +5764,7 @@ function wrapSelection(textarea, before, after, newLine = false) {
     }
     
     textarea.focus();
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // 检查用户是否有图片上传权限
@@ -5378,65 +5824,15 @@ function insertNewCommentToPage(comment, postData) {
         ...item,
         isOp: isOriginalPosterReply(item, postData)
     }))];
-    
-    // 递归生成引用 HTML
-    function generateQuoteHTML(replyToFloor, allPosts, depth = 0) {
-        if (!replyToFloor || depth >= 3) return '';
-        const target = allPosts.find(p => p.floor === replyToFloor);
-        if (!target) return '';
-
-        // 检查目标楼层是否被删除
-        const deletedInfo = parseDeletedContent(target.content);
-        if (deletedInfo) {
-            return `
-                <div class="quote-box quote-level-${depth}">
-                    <div class="quote-author">引用 ${target.author}(<span style="color: #999; cursor: default;">${target.floor}楼</span>) 的发言：</div>
-                    <div class="quote-content" style="color: #999;">该楼层已被删除</div>
-                </div>
-            `;
-        }
-
-        const parentQuote = generateQuoteHTML(target.replyTo, allPosts, depth + 1);
-        const plainContent = target.content.replace(/<[^>]*>/g, '').substring(0, 100);
-        
-        return `
-            <div class="quote-box quote-level-${depth}">
-                ${parentQuote}
-                <div class="quote-author">引用 ${target.author}(<a href="#post-${target.floor}" class="quote-floor-link" style="color: #0066cc; cursor: pointer; text-decoration: underline;">${target.floor}楼</a>) 的发言：</div>
-                <div class="quote-content">${plainContent}${target.content.replace(/<[^>]*>/g, '').length > 100 ? '...' : ''}</div>
-            </div>
-        `;
-    }
-    
-    const quoteHTML = generateQuoteHTML(comment.replyTo, allPosts);
-    
-    const isOpReply = isOriginalPosterReply(comment, postData);
-    const authorHtml = buildUserLinkHtml(comment.userId, comment.author);
-
-    const commentHTML = `
-        <div class="post" id="post-${comment.floor}">
-            <div class="post-header">
-                <div class="post-author">
-                    <img src="${comment.authorAvatar}" alt="头像" class="author-avatar">
-                    <div class="author-info">
-                        <div class="author-name">${authorHtml}${isOpReply ? '<span class="op-badge">[楼主]</span>' : ''}</div>
-                        <div class="author-level">${comment.authorLevel}${comment.authorPoints != null ? ` · 积分 ${comment.authorPoints}` : ''}</div>
-                    </div>
-                </div>
-                <div class="post-meta">
-                    <span class="post-time">${comment.time}</span>
-                    <span class="post-floor">${comment.floor}楼</span>
-                </div>
-            </div>
-            <div class="post-content">
-                ${quoteHTML}
-                ${comment.content}
-            </div>
-            <div class="post-actions">
-                <a href="#" class="reply-link" data-floor="${comment.floor}" data-author="${escapeHtml(comment.author || '')}" data-content="${escapeHtml(comment.content || '')}">回复</a>
-            </div>
-        </div>
-    `;
+    const normalizedComment = {
+        ...comment,
+        content: cleanupThreadedReplyHtml(comment.content),
+        isOp: isOriginalPosterReply(comment, postData)
+    };
+    const commentHTML = buildForumPostHtml(normalizedComment, [...allPosts, normalizedComment], postData, {
+        visibleFloors: [...allPosts, normalizedComment].map((item) => item.floor),
+        pageSize: POST_PAGE_SIZE
+    });
     
     // 插入到帖子列表末尾
     threadContainer.insertAdjacentHTML('beforeend', commentHTML);
@@ -5458,6 +5854,8 @@ function insertNewCommentToPage(comment, postData) {
                 replyContent.value = `回复 ${author}(${floor}楼)：`;
                 replyBoxTitle.textContent = `回复 ${author}(${floor}楼)`;
                 document.getElementById('cancel-reply').style.display = 'inline';
+                replyContent.dispatchEvent(new Event('input', { bubbles: true }));
+                syncReplyComposerDraft();
                 replyContent.focus();
             }
         });
