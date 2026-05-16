@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发帖回帖错误处理测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        .card {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 24px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .summary {
+            margin: 16px 0;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .summary.pass {
+            background: #edf9ed;
+            color: #176b17;
+            border: 1px solid #9fd19f;
+        }
+
+        .summary.fail {
+            background: #fff0f0;
+            color: #b00020;
+            border: 1px solid #ebb1b1;
+        }
+
+        .result-list {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .result-pass {
+            color: #176b17;
+        }
+
+        .result-fail {
+            color: #b00020;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>发帖/回帖失败处理测试</h1>
+        <div id="summary" class="summary">测试准备中...</div>
+        <ol id="result-list" class="result-list"></ol>
+        <h2>调试输出</h2>
+        <pre id="debug-output">等待执行...</pre>
+    </div>
+
+    <script>
+        function extractFunction(source, functionName) {
+            const candidates = [
+                `function ${functionName}(`,
+                `async function ${functionName}(`
+            ];
+            const start = candidates
+                .map((marker) => source.indexOf(marker))
+                .find((index) => index >= 0);
+
+            if (start == null || start < 0) {
+                throw new Error(`未找到函数: ${functionName}`);
+            }
+
+            const braceStart = source.indexOf('{', start);
+            if (braceStart < 0) {
+                throw new Error(`未找到函数体: ${functionName}`);
+            }
+
+            let i = braceStart;
+            let depth = 0;
+            let mode = 'normal';
+            let templateExprDepth = 0;
+
+            while (i < source.length) {
+                const char = source[i];
+                const next = source[i + 1];
+
+                if (mode === 'normal') {
+                    if (char === "'" || char === '"') {
+                        mode = char;
+                    } else if (char === '`') {
+                        mode = 'template';
+                    } else if (char === '/' && next === '/') {
+                        mode = 'line_comment';
+                        i += 1;
+                    } else if (char === '/' && next === '*') {
+                        mode = 'block_comment';
+                        i += 1;
+                    } else if (char === '{') {
+                        depth += 1;
+                    } else if (char === '}') {
+                        depth -= 1;
+                        if (depth === 0) {
+                            return source.slice(start, i + 1);
+                        }
+                    }
+                } else if (mode === "'" || mode === '"') {
+                    if (char === '\\') {
+                        i += 1;
+                    } else if (char === mode) {
+                        mode = 'normal';
+                    }
+                } else if (mode === 'line_comment') {
+                    if (char === '\n') {
+                        mode = 'normal';
+                    }
+                } else if (mode === 'block_comment') {
+                    if (char === '*' && next === '/') {
+                        mode = 'normal';
+                        i += 1;
+                    }
+                } else if (mode === 'template') {
+                    if (char === '\\') {
+                        i += 1;
+                    } else if (char === '`') {
+                        mode = 'normal';
+                    } else if (char === '$' && next === '{') {
+                        mode = 'template_expr';
+                        templateExprDepth = 1;
+                        depth += 1;
+                        i += 1;
+                    }
+                } else if (mode === 'template_expr') {
+                    if (char === "'" || char === '"') {
+                        mode = `template_expr_${char}`;
+                    } else if (char === '`') {
+                        mode = 'template_expr_template';
+                    } else if (char === '/' && next === '/') {
+                        mode = 'template_expr_line_comment';
+                        i += 1;
+                    } else if (char === '/' && next === '*') {
+                        mode = 'template_expr_block_comment';
+                        i += 1;
+                    } else if (char === '{') {
+                        depth += 1;
+                        templateExprDepth += 1;
+                    } else if (char === '}') {
+                        depth -= 1;
+                        templateExprDepth -= 1;
+                        if (templateExprDepth === 0) {
+                            mode = 'template';
+                        }
+                    }
+                } else if (mode === "template_expr_'" || mode === 'template_expr_"') {
+                    const quote = mode.endsWith("'") ? "'" : '"';
+                    if (char === '\\') {
+                        i += 1;
+                    } else if (char === quote) {
+                        mode = 'template_expr';
+                    }
+                } else if (mode === 'template_expr_template') {
+                    if (char === '\\') {
+                        i += 1;
+                    } else if (char === '`') {
+                        mode = 'template_expr';
+                    }
+                } else if (mode === 'template_expr_line_comment') {
+                    if (char === '\n') {
+                        mode = 'template_expr';
+                    }
+                } else if (mode === 'template_expr_block_comment') {
+                    if (char === '*' && next === '/') {
+                        mode = 'template_expr';
+                        i += 1;
+                    }
+                }
+
+                i += 1;
+            }
+
+            throw new Error(`函数提取失败: ${functionName}`);
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function addResult(message, passed) {
+            const list = document.getElementById('result-list');
+            const item = document.createElement('li');
+            item.className = passed ? 'result-pass' : 'result-fail';
+            item.textContent = `${passed ? '通过' : '失败'}: ${message}`;
+            list.appendChild(item);
+        }
+
+        function setSummary(message, passed) {
+            const summary = document.getElementById('summary');
+            summary.textContent = message;
+            summary.className = `summary ${passed ? 'pass' : 'fail'}`;
+        }
+
+        function setDebugOutput(text) {
+            document.getElementById('debug-output').textContent = text;
+        }
+
+        function cloneDebugValue(value) {
+            if (value == null) return value;
+            if (typeof value === 'string') {
+                return value.length > 5000 ? `${value.slice(0, 5000)}...(truncated)` : value;
+            }
+
+            try {
+                return JSON.parse(JSON.stringify(value));
+            } catch {
+                return String(value);
+            }
+        }
+
+        function maskDebugHeaderValue(name, value) {
+            const headerName = String(name || '').toLowerCase();
+            if (headerName === 'authorization') {
+                return typeof value === 'string' && value ? '***masked***' : value;
+            }
+            return value;
+        }
+
+        function getLoggableRequestHeaders(headers) {
+            const result = {};
+            if (!headers || typeof headers !== 'object') return result;
+
+            Object.keys(headers).forEach((key) => {
+                result[key] = maskDebugHeaderValue(key, headers[key]);
+            });
+            return result;
+        }
+
+        function getResponseHeadersForDebug(headers) {
+            const result = {};
+            if (!headers || typeof headers.forEach !== 'function') return result;
+
+            headers.forEach((value, key) => {
+                result[key] = value;
+            });
+            return result;
+        }
+
+        function parseApiErrorDetail(detail) {
+            if (!detail || typeof detail !== 'string') return null;
+
+            try {
+                const parsed = JSON.parse(detail);
+                const firstError = Array.isArray(parsed?.errors) ? parsed.errors[0] : null;
+                return {
+                    raw: parsed,
+                    status: firstError?.status ? Number(firstError.status) : null,
+                    code: firstError?.code || '',
+                    title: firstError?.title || '',
+                    detail: firstError?.detail || ''
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        function getComposerFieldLabel(field) {
+            switch (String(field || '')) {
+                case 'title':
+                    return '标题';
+                case 'content':
+                    return '内容';
+                case 'discussionId':
+                    return '帖子编号';
+                case 'consumablePoints':
+                    return '积分';
+                case 'auth':
+                    return '登录状态';
+                default:
+                    return field ? String(field) : '未知字段';
+            }
+        }
+
+        function createComposerValidationError(message, issues = []) {
+            const error = new Error(message || '提交参数校验失败');
+            error.code = 'local_validation_error';
+            error.errorCategory = 'validation';
+            error.validationIssues = Array.isArray(issues)
+                ? issues.map((issue) => ({
+                    field: issue?.field ? String(issue.field) : '',
+                    label: getComposerFieldLabel(issue?.field),
+                    reason: issue?.reason ? String(issue.reason) : '参数不符合要求',
+                    value: cloneDebugValue(issue?.value)
+                }))
+                : [];
+            return error;
+        }
+
+        function isComposerValidationError(error) {
+            return !!(error?.errorCategory === 'validation' || Array.isArray(error?.validationIssues));
+        }
+
+        function parseApiErrorList(detail) {
+            if (!detail || typeof detail !== 'string') return [];
+
+            try {
+                const parsed = JSON.parse(detail);
+                return Array.isArray(parsed?.errors) ? parsed.errors : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function getApiValidationIssues(error) {
+            return parseApiErrorList(error?.detail).map((item) => {
+                const pointer = String(item?.source?.pointer || item?.source?.parameter || '');
+                const pointerSegments = pointer.split('/').filter(Boolean);
+                const field = pointerSegments[pointerSegments.length - 1] || '';
+                return {
+                    field,
+                    label: getComposerFieldLabel(field),
+                    reason: String(item?.detail || item?.title || '参数不符合要求')
+                };
+            }).filter((item) => item.reason);
+        }
+
+        function getComposerValidationIssues(error) {
+            if (Array.isArray(error?.validationIssues) && error.validationIssues.length > 0) {
+                return error.validationIssues;
+            }
+            return getApiValidationIssues(error);
+        }
+
+        function formatComposerValidationSummary(issues, fallbackMessage) {
+            if (!Array.isArray(issues) || issues.length === 0) {
+                return fallbackMessage;
+            }
+
+            return issues.slice(0, 3).map((issue) => {
+                const label = issue?.label || getComposerFieldLabel(issue?.field);
+                const reason = issue?.reason || '参数不符合要求';
+                return `${label}：${reason}`;
+            }).join('\n');
+        }
+
+        function getFriendlyErrorMessage(error, context = 'generic') {
+            const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+            const status = error?.httpStatus || parsed?.status || null;
+            const code = parsed?.code || error?.code || '';
+            const rawMessage = String(error?.message || '');
+            const detailMessage = String(parsed?.detail || error?.detail || '');
+            const activationHint = '请确认账号已经激活，如仍有问题请联系网管。';
+
+            if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
+                return '网络连接异常，暂时无法连接论坛，请检查网络后重试。';
+            }
+
+            if (status === 401 || code === 'not_authenticated') {
+                switch (context) {
+                    case 'login':
+                        return '登录失败，请检查账号和密码是否正确。';
+                    case 'create_discussion':
+                    case 'create_post':
+                    case 'delete_post':
+                    case 'delete_discussion':
+                    case 'profile':
+                    case 'upload_image':
+                    case 'upload_avatar':
+                        return '登录状态已失效，请重新登录后再试。';
+                    default:
+                        return '当前登录状态已失效，请重新登录后再试。';
+                }
+            }
+
+            if (status === 403 || code === 'permission_denied') {
+                switch (context) {
+                    case 'create_discussion':
+                        return `当前账号没有发帖权限。${activationHint}`;
+                    case 'create_post':
+                        return `当前账号没有回帖权限。${activationHint}`;
+                    case 'delete_post':
+                        return `当前账号没有删除这条回复的权限，只能删除自己的内容。${activationHint}`;
+                    case 'delete_discussion':
+                        return `当前账号没有删除这个帖子的权限，只能删除自己的内容。${activationHint}`;
+                    case 'upload_image':
+                        return `当前账号没有上传图片的权限。${activationHint}`;
+                    case 'upload_avatar':
+                        return `当前账号没有修改头像的权限。${activationHint}`;
+                    case 'profile':
+                        return `当前账号没有查看该页面内容的权限。${activationHint}`;
+                    case 'load_discussion':
+                        return `当前账号暂时没有查看该内容的权限。${activationHint}`;
+                    case 'register':
+                        return '当前论坛暂不允许普通用户注册。';
+                    default:
+                        return `当前账号没有执行此操作的权限。${activationHint}`;
+                }
+            }
+
+            if (status === 404 || code === 'not_found') {
+                switch (context) {
+                    case 'load_discussion':
+                        return '这篇帖子不存在，或已经被删除。';
+                    case 'profile':
+                        return '未找到对应的用户资料。';
+                    default:
+                        return '你访问的内容不存在，或已经被删除。';
+                }
+            }
+
+            if (status === 429 || code === 'rate_limit_exceeded') {
+                return '操作太频繁了，请稍后再试。';
+            }
+
+            if (
+                (status === 400 || code === 'upload_file_too_large') &&
+                (
+                    code === 'upload_file_too_large' ||
+                    /2\s*mb|too\s*large|文件过大|大小不能超过/i.test(`${detailMessage} ${rawMessage}`)
+                )
+            ) {
+                return '图片上传失败，请稍后再试。';
+            }
+
+            if (code === 'validation_error') {
+                switch (context) {
+                    case 'register':
+                        return '注册信息填写不完整，或格式不正确，请检查后重试。';
+                    case 'create_discussion':
+                        return '帖子内容不符合要求，请检查标题和正文后重试。';
+                    case 'create_post':
+                        return '回复内容不符合要求，请修改后再试。';
+                    default:
+                        return '提交的信息不符合要求，请检查后重试。';
+                }
+            }
+
+            if (status && status >= 500) {
+                return '论坛服务器暂时繁忙，请稍后再试。';
+            }
+
+            switch (context) {
+                case 'login':
+                    return '登录失败，请检查账号和密码后重试。';
+                case 'register':
+                    return '注册失败，请稍后再试。';
+                case 'create_discussion':
+                    return '发帖失败，请稍后再试。';
+                case 'create_post':
+                    return '回复失败，请稍后再试。';
+                case 'delete_post':
+                case 'delete_discussion':
+                    return '删除失败，请稍后再试。';
+                case 'load_discussion':
+                    return '帖子暂时无法加载，请刷新页面后重试。';
+                case 'profile':
+                    return '个人资料暂时无法加载，请稍后再试。';
+                case 'upload_image':
+                    return '图片上传失败，请稍后再试。';
+                case 'upload_avatar':
+                    return '头像上传失败，请稍后再试。';
+                default:
+                    return '操作失败，请稍后再试。';
+            }
+        }
+
+        function classifyComposerSubmissionError(error) {
+            if (isComposerValidationError(error)) return 'validation';
+
+            const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+            const status = error?.httpStatus || parsed?.status || error?.response?.status || null;
+            const rawMessage = String(error?.message || '');
+
+            if (error?.isNetworkError || error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
+                return 'network';
+            }
+
+            if (status || parsed || error?.response?.detail) {
+                return 'server';
+            }
+
+            return 'unknown';
+        }
+
+        function buildComposerUserErrorMessage(error, context = 'generic') {
+            const category = classifyComposerSubmissionError(error);
+            const fallbackMessage = getFriendlyErrorMessage(error, context);
+
+            if (category === 'network') {
+                return '当前网络连接不稳定，请检查网络后重试。';
+            }
+
+            if (category === 'validation') {
+                return formatComposerValidationSummary(getComposerValidationIssues(error), fallbackMessage);
+            }
+
+            if (category === 'server') {
+                const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+                const validationMessage = formatComposerValidationSummary(getApiValidationIssues(error), '');
+                const serverMessage = String(parsed?.detail || parsed?.title || '').trim();
+
+                if (validationMessage) return validationMessage;
+                if (serverMessage && !fallbackMessage.includes(serverMessage)) {
+                    return `${fallbackMessage}\n服务器提示：${serverMessage}`;
+                }
+            }
+
+            return fallbackMessage;
+        }
+
+        function buildComposerErrorDebugInfo(error, context = 'generic', meta = {}) {
+            const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+            const requestInfo = error?.request || {};
+            const responseInfo = error?.response || {};
+
+            return {
+                context,
+                category: classifyComposerSubmissionError(error),
+                operationLabel: meta?.operationLabel || '',
+                userMessage: buildComposerUserErrorMessage(error, context),
+                errorCode: parsed?.code || error?.code || (error?.isNetworkError ? 'NETWORK_REQUEST_FAILED' : ''),
+                httpStatus: error?.httpStatus || parsed?.status || responseInfo?.status || null,
+                requestTime: requestInfo?.requestTime || meta?.requestTime || '',
+                requestUrl: requestInfo?.url || meta?.requestUrl || '',
+                requestMethod: requestInfo?.method || meta?.requestMethod || '',
+                requestHeaders: requestInfo?.headers || meta?.requestHeaders || null,
+                requestParams: requestInfo?.params !== undefined ? requestInfo.params : meta?.requestParams,
+                responseStatus: responseInfo?.status || error?.httpStatus || null,
+                responseStatusText: responseInfo?.statusText || '',
+                responseHeaders: responseInfo?.headers || null,
+                responseDetail: responseInfo?.detail !== undefined ? responseInfo.detail : error?.detail,
+                validationIssues: getComposerValidationIssues(error),
+                rawMessage: String(error?.message || ''),
+                rawError: error
+            };
+        }
+
+        function logComposerSubmissionError(error, context = 'generic', meta = {}) {
+            const debugInfo = buildComposerErrorDebugInfo(error, context, meta);
+            const operationLabel = meta?.operationLabel || context || '提交';
+            const title = `[${operationLabel}失败][${debugInfo.category}] ${debugInfo.userMessage.split('\n')[0]}`;
+
+            console.groupCollapsed(title);
+            console.error('用户提示:', debugInfo.userMessage);
+
+            if (debugInfo.category === 'network') {
+                console.error('网络错误码:', debugInfo.errorCode || 'UNKNOWN_NETWORK_ERROR');
+                console.error('请求时间:', debugInfo.requestTime || '');
+                console.error('请求 URL:', debugInfo.requestUrl || '');
+                console.error('请求头:', debugInfo.requestHeaders);
+                console.error('请求参数:', debugInfo.requestParams);
+            } else if (debugInfo.category === 'server') {
+                console.error('服务器返回详情:', debugInfo.responseDetail);
+                console.error('请求 URL:', debugInfo.requestUrl || '');
+                console.error('请求头:', debugInfo.requestHeaders);
+                console.error('请求参数:', debugInfo.requestParams);
+                console.error('响应状态码:', debugInfo.responseStatus || debugInfo.httpStatus || '');
+                if (debugInfo.responseStatusText) {
+                    console.error('响应状态文本:', debugInfo.responseStatusText);
+                }
+                if (debugInfo.responseHeaders) {
+                    console.error('响应头:', debugInfo.responseHeaders);
+                }
+            } else if (debugInfo.category === 'validation') {
+                console.error('参数校验失败字段:', debugInfo.validationIssues);
+                console.error('校验失败原因:', formatComposerValidationSummary(debugInfo.validationIssues, debugInfo.rawMessage));
+                console.error('提交参数:', debugInfo.requestParams);
+            } else {
+                console.error('请求 URL:', debugInfo.requestUrl || '');
+                console.error('请求头:', debugInfo.requestHeaders);
+                console.error('请求参数:', debugInfo.requestParams);
+                console.error('响应详情:', debugInfo.responseDetail);
+            }
+
+            console.error('原始错误对象:', debugInfo.rawError);
+            console.groupEnd();
+            return debugInfo;
+        }
+
+        function presentComposerSubmissionError(error, options = {}) {
+            const context = options?.context || 'generic';
+            const debugInfo = logComposerSubmissionError(error, context, options);
+            const canRetry = typeof options?.onRetry === 'function' && debugInfo.category !== 'validation';
+            const userMessage = canRetry
+                ? `${debugInfo.userMessage}\n如为临时故障，可点击“重试”再次提交。`
+                : debugInfo.userMessage;
+
+            if (typeof window.showUiToast === 'function') {
+                let toastController = null;
+                toastController = window.showUiToast({
+                    type: 'error',
+                    message: userMessage,
+                    actionText: canRetry ? (options?.retryText || '重试') : '',
+                    onAction: () => {
+                        if (toastController && typeof toastController.close === 'function') {
+                            toastController.close();
+                        }
+                        if (canRetry) {
+                            try {
+                                options.onRetry();
+                            } catch (retryError) {
+                                console.error(`${options?.operationLabel || '操作'}重试入口触发失败:`, retryError);
+                            }
+                        }
+                    }
+                });
+                return debugInfo;
+            }
+
+            window.alert(userMessage);
+            return debugInfo;
+        }
+
+        function createServerError(parseApiErrorDetail) {
+            const detail = JSON.stringify({
+                errors: [
+                    {
+                        status: '422',
+                        code: 'validation_error',
+                        title: '验证失败',
+                        detail: '标题不能为空',
+                        source: {
+                            pointer: '/data/attributes/title'
+                        }
+                    }
+                ]
+            });
+
+            const error = new Error('Flarum API 请求失败: 422 Unprocessable Content');
+            error.httpStatus = 422;
+            error.detail = detail;
+            error.apiError = parseApiErrorDetail(detail);
+            error.request = {
+                requestTime: '2026-05-17T10:00:00.000Z',
+                url: 'https://forum.example.test/api/discussions',
+                method: 'POST',
+                headers: {
+                    Accept: 'application/vnd.api+json',
+                    Authorization: '***masked***'
+                },
+                params: {
+                    data: {
+                        type: 'discussions',
+                        attributes: {
+                            title: '',
+                            content: '测试正文'
+                        }
+                    }
+                }
+            };
+            error.response = {
+                status: 422,
+                statusText: 'Unprocessable Content',
+                headers: {
+                    'content-type': 'application/vnd.api+json'
+                },
+                detail
+            };
+            return error;
+        }
+
+        function createNetworkError() {
+            const error = new Error('Failed to fetch');
+            error.isNetworkError = true;
+            error.code = 'ECONNRESET';
+            error.request = {
+                requestTime: '2026-05-17T09:59:00.000Z',
+                url: 'https://forum.example.test/api/posts',
+                method: 'POST',
+                headers: {
+                    Accept: 'application/vnd.api+json',
+                    Authorization: '***masked***'
+                },
+                params: {
+                    data: {
+                        type: 'posts',
+                        attributes: {
+                            content: '回复内容'
+                        }
+                    }
+                }
+            };
+            return error;
+        }
+
+        async function runTests() {
+            const consoleEntries = [];
+            const toastCalls = [];
+            const alertCalls = [];
+            const originalConsole = {
+                error: console.error,
+                groupCollapsed: console.groupCollapsed,
+                groupEnd: console.groupEnd
+            };
+            const originalShowUiToast = window.showUiToast;
+            const originalAlert = window.alert;
+
+            console.error = function(...args) {
+                consoleEntries.push(['error', ...args]);
+                return originalConsole.error.apply(console, args);
+            };
+            console.groupCollapsed = function(...args) {
+                consoleEntries.push(['groupCollapsed', ...args]);
+                return originalConsole.groupCollapsed.apply(console, args);
+            };
+            console.groupEnd = function(...args) {
+                consoleEntries.push(['groupEnd', ...args]);
+                return originalConsole.groupEnd.apply(console, args);
+            };
+            window.showUiToast = function(options) {
+                const call = { ...options, closed: false };
+                toastCalls.push(call);
+                return {
+                    close() {
+                        call.closed = true;
+                    }
+                };
+            };
+            window.alert = function(message) {
+                alertCalls.push(message);
+            };
+
+            try {
+                const maskedHeaders = getLoggableRequestHeaders({
+                    Accept: 'application/json',
+                    Authorization: 'Token abc123'
+                });
+                assert(maskedHeaders.Authorization === '***masked***', '请求头脱敏失败');
+                addResult('请求头日志自动脱敏', true);
+
+                const networkError = createNetworkError();
+                assert(classifyComposerSubmissionError(networkError) === 'network', '网络错误分类失败');
+                assert(buildComposerUserErrorMessage(networkError, 'create_post').includes('当前网络连接不稳定，请检查网络后重试'), '网络错误提示文案不正确');
+                logComposerSubmissionError(networkError, 'create_post', { operationLabel: '回帖' });
+                const networkLogs = consoleEntries.map((entry) => entry.join(' ')).join('\n');
+                assert(networkLogs.includes('网络错误码:'), '网络日志缺少错误码');
+                assert(networkLogs.includes('请求时间:'), '网络日志缺少请求时间');
+                assert(networkLogs.includes('请求参数:'), '网络日志缺少请求参数');
+                addResult('网络异常分类、文案和日志字段完整', true);
+
+                const serverError = createServerError(parseApiErrorDetail);
+                assert(classifyComposerSubmissionError(serverError) === 'server', '服务器错误分类失败');
+                assert(buildComposerUserErrorMessage(serverError, 'create_discussion').includes('标题：标题不能为空'), '服务器错误解析文案不正确');
+                logComposerSubmissionError(serverError, 'create_discussion', { operationLabel: '发帖' });
+                const serverLogs = consoleEntries.map((entry) => entry.join(' ')).join('\n');
+                assert(serverLogs.includes('服务器返回详情:'), '服务器日志缺少完整返回详情');
+                assert(serverLogs.includes('请求 URL:'), '服务器日志缺少请求 URL');
+                assert(serverLogs.includes('响应状态码:'), '服务器日志缺少响应状态码');
+                addResult('服务器响应错误可解析并输出完整调试信息', true);
+
+                const validationError = createComposerValidationError('请输入内容', [
+                    { field: 'content', reason: '回复内容不能为空', value: '' }
+                ]);
+                assert(classifyComposerSubmissionError(validationError) === 'validation', '本地校验错误分类失败');
+                assert(buildComposerUserErrorMessage(validationError, 'create_post').includes('内容：回复内容不能为空'), '本地校验提示不正确');
+                logComposerSubmissionError(validationError, 'create_post', {
+                    operationLabel: '回帖',
+                    requestParams: { discussionId: '1001', contentLength: 0 }
+                });
+                const validationLogs = consoleEntries.map((entry) => entry.join(' ')).join('\n');
+                assert(validationLogs.includes('参数校验失败字段:'), '参数校验日志缺少字段信息');
+                assert(validationLogs.includes('校验失败原因:'), '参数校验日志缺少原因信息');
+                addResult('本地参数校验失败可输出字段和原因', true);
+
+                let retried = false;
+                presentComposerSubmissionError(networkError, {
+                    context: 'create_post',
+                    operationLabel: '回帖',
+                    onRetry: () => {
+                        retried = true;
+                    }
+                });
+                const retryToast = toastCalls[toastCalls.length - 1];
+                assert(retryToast.actionText === '重试', '网络错误未提供重试入口');
+                assert(retryToast.message.includes('可点击“重试”再次提交'), '重试提示文案缺失');
+                retryToast.onAction();
+                assert(retried === true, '重试入口未触发');
+                assert(retryToast.closed === true, '重试后提示未关闭');
+                addResult('临时故障场景可展示重试入口并触发回调', true);
+
+                presentComposerSubmissionError(validationError, {
+                    context: 'create_post',
+                    operationLabel: '回帖'
+                });
+                const validationToast = toastCalls[toastCalls.length - 1];
+                assert(validationToast.actionText === '', '本地校验失败不应展示重试按钮');
+                addResult('本地校验失败不误显示重试按钮', true);
+
+                setSummary('全部测试通过', true);
+                setDebugOutput(JSON.stringify({
+                    consoleEntries,
+                    toastCalls,
+                    alertCalls
+                }, null, 2));
+            } finally {
+                console.error = originalConsole.error;
+                console.groupCollapsed = originalConsole.groupCollapsed;
+                console.groupEnd = originalConsole.groupEnd;
+                window.showUiToast = originalShowUiToast;
+                window.alert = originalAlert;
+            }
+        }
+
+        runTests().catch((error) => {
+            addResult(error.message || '未知错误', false);
+            setSummary('测试失败', false);
+            setDebugOutput(String(error && error.stack ? error.stack : error));
+            console.error(error);
+        });
+    </script>
+</body>
+</html>

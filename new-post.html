@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -551,82 +551,110 @@
             bindCustomEmojiPicker(form, contentInput);
             if (updatePreview) updatePreview();
 
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
+            const submitDiscussion = async function() {
+                if (form.dataset.postSubmitting === '1') return;
 
                 const title = titleInput.value.trim();
                 const rawContent = contentInput.value.trim();
+                const requestParams = {
+                    title,
+                    titleLength: title.length,
+                    contentLength: rawContent.length
+                };
 
-                if (!title) {
-                    alert('请输入标题');
-                    return;
-                }
-
-                if (!rawContent) {
-                    alert('请输入内容');
-                    return;
-                }
-
-                const latestAccessInfo = await loadNewPostAccessInfo();
-                const latestConsumablePoints = latestAccessInfo.consumablePoints;
-                if (latestConsumablePoints == null) {
-                    alert('暂时无法读取积分，请稍后重试');
-                    return;
-                }
-
-                if (latestConsumablePoints <= 0) {
-                    alert('积分不足，当前积分需大于 0 才能发帖');
-                    return;
-                }
-
-                if (!window.confirm(`发帖会扣除 1 积分，当前可用积分：${formatConsumablePointsText(latestConsumablePoints)}，确认继续吗？`)) {
-                    return;
-                }
-
-                const content = typeof expandCustomEmojiTokens === 'function'
-                    ? expandCustomEmojiTokens(rawContent)
-                    : rawContent;
-
+                form.dataset.postSubmitting = '1';
                 submitBtn.textContent = '发布中...';
                 submitBtn.disabled = true;
 
                 try {
+                    if (!title) {
+                        throw createComposerValidationError('请输入标题', [
+                            { field: 'title', reason: '帖子标题不能为空', value: title }
+                        ]);
+                    }
+
+                    if (title.length > 50) {
+                        throw createComposerValidationError('标题长度不能超过 50 个字符', [
+                            { field: 'title', reason: '帖子标题超过 50 个字符限制', value: title }
+                        ]);
+                    }
+
+                    if (!rawContent) {
+                        throw createComposerValidationError('请输入内容', [
+                            { field: 'content', reason: '帖子内容不能为空', value: rawContent }
+                        ]);
+                    }
+
+                    const latestAccessInfo = await loadNewPostAccessInfo();
+                    const latestConsumablePoints = latestAccessInfo.consumablePoints;
+                    requestParams.consumablePoints = latestConsumablePoints;
+                    if (latestConsumablePoints == null) {
+                        throw createComposerValidationError('暂时无法读取积分，请稍后重试。', [
+                            { field: 'consumablePoints', reason: '未能读取当前账户可用积分', value: latestConsumablePoints }
+                        ]);
+                    }
+
+                    if (latestConsumablePoints <= 0) {
+                        throw createComposerValidationError('积分不足，当前积分需大于 0 才能发帖。', [
+                            { field: 'consumablePoints', reason: '当前可用积分不足以发帖', value: latestConsumablePoints }
+                        ]);
+                    }
+
+                    if (!window.confirm(`发帖会扣除 1 积分，当前可用积分：${formatConsumablePointsText(latestConsumablePoints)}，确认继续吗？`)) {
+                        return;
+                    }
+
+                    const content = typeof expandCustomEmojiTokens === 'function'
+                        ? expandCustomEmojiTokens(rawContent)
+                        : rawContent;
+
                     let discussionId = null;
                     if (typeof flarumCreateDiscussion === 'function') {
                         discussionId = await flarumCreateDiscussion({ title, content });
                     } else {
+                        const requestBody = {
+                            data: {
+                                type: 'discussions',
+                                attributes: { title, content }
+                            }
+                        };
                         const response = await flarumRequest('/discussions', {
                             method: 'POST',
                             auth: true,
-                            json: {
-                                data: {
-                                    type: 'discussions',
-                                    attributes: { title, content }
-                                }
-                            }
+                            json: requestBody
                         });
                         discussionId = response && response.data && response.data.id ? String(response.data.id) : null;
                     }
 
-                    if (discussionId) {
-                        newPostDraft.title = '';
-                        newPostDraft.content = '';
-                        alert('发帖成功');
-                        window.location.href = `post.html?id=${encodeURIComponent(discussionId)}`;
-                        return;
+                    if (!discussionId) {
+                        const missingDiscussionIdError = new Error('发帖接口未返回帖子编号');
+                        missingDiscussionIdError.code = 'missing_discussion_id';
+                        throw missingDiscussionIdError;
                     }
 
-                    alert('发帖失败，请重试');
+                    newPostDraft.title = '';
+                    newPostDraft.content = '';
+                    alert('发帖成功');
+                    window.location.href = `post.html?id=${encodeURIComponent(discussionId)}`;
                 } catch (error) {
-                    console.error('发帖失败:', error);
-                    const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
-                        ? getFriendlyErrorMessage(error, 'create_discussion')
-                        : '发帖失败，请稍后再试。';
-                    alert(friendlyMessage);
+                    presentComposerSubmissionError(error, {
+                        context: 'create_discussion',
+                        operationLabel: '发帖',
+                        requestParams,
+                        onRetry: () => {
+                            void submitDiscussion();
+                        }
+                    });
                 } finally {
+                    form.dataset.postSubmitting = '0';
                     submitBtn.textContent = '发表帖子';
                     submitBtn.disabled = false;
                 }
+            };
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                void submitDiscussion();
             });
         }
 

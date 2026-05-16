@@ -605,6 +605,273 @@ function parseApiErrorDetail(detail) {
     }
 }
 
+function cloneDebugValue(value) {
+    if (value == null) return value;
+    if (typeof value === 'string') {
+        return value.length > 5000 ? `${value.slice(0, 5000)}...(truncated)` : value;
+    }
+
+    try {
+        return JSON.parse(JSON.stringify(value));
+    } catch {
+        return String(value);
+    }
+}
+
+function maskDebugHeaderValue(name, value) {
+    const headerName = String(name || '').toLowerCase();
+    if (headerName === 'authorization') {
+        return typeof value === 'string' && value ? '***masked***' : value;
+    }
+    return value;
+}
+
+function getLoggableRequestHeaders(headers) {
+    const result = {};
+    if (!headers || typeof headers !== 'object') return result;
+
+    Object.keys(headers).forEach((key) => {
+        result[key] = maskDebugHeaderValue(key, headers[key]);
+    });
+    return result;
+}
+
+function getResponseHeadersForDebug(headers) {
+    const result = {};
+    if (!headers || typeof headers.forEach !== 'function') return result;
+
+    headers.forEach((value, key) => {
+        result[key] = value;
+    });
+    return result;
+}
+
+function getComposerFieldLabel(field) {
+    switch (String(field || '')) {
+        case 'title':
+            return '标题';
+        case 'content':
+            return '内容';
+        case 'discussionId':
+            return '帖子编号';
+        case 'consumablePoints':
+            return '积分';
+        case 'auth':
+            return '登录状态';
+        default:
+            return field ? String(field) : '未知字段';
+    }
+}
+
+function createComposerValidationError(message, issues = []) {
+    const error = new Error(message || '提交参数校验失败');
+    error.code = 'local_validation_error';
+    error.errorCategory = 'validation';
+    error.validationIssues = Array.isArray(issues)
+        ? issues.map((issue) => ({
+            field: issue?.field ? String(issue.field) : '',
+            label: getComposerFieldLabel(issue?.field),
+            reason: issue?.reason ? String(issue.reason) : '参数不符合要求',
+            value: cloneDebugValue(issue?.value)
+        }))
+        : [];
+    return error;
+}
+
+function isComposerValidationError(error) {
+    return !!(error?.errorCategory === 'validation' || Array.isArray(error?.validationIssues));
+}
+
+function parseApiErrorList(detail) {
+    if (!detail || typeof detail !== 'string') return [];
+
+    try {
+        const parsed = JSON.parse(detail);
+        return Array.isArray(parsed?.errors) ? parsed.errors : [];
+    } catch {
+        return [];
+    }
+}
+
+function getApiValidationIssues(error) {
+    return parseApiErrorList(error?.detail).map((item) => {
+        const pointer = String(item?.source?.pointer || item?.source?.parameter || '');
+        const pointerSegments = pointer.split('/').filter(Boolean);
+        const field = pointerSegments[pointerSegments.length - 1] || '';
+        return {
+            field,
+            label: getComposerFieldLabel(field),
+            reason: String(item?.detail || item?.title || '参数不符合要求')
+        };
+    }).filter((item) => item.reason);
+}
+
+function getComposerValidationIssues(error) {
+    if (Array.isArray(error?.validationIssues) && error.validationIssues.length > 0) {
+        return error.validationIssues;
+    }
+    return getApiValidationIssues(error);
+}
+
+function formatComposerValidationSummary(issues, fallbackMessage) {
+    if (!Array.isArray(issues) || issues.length === 0) {
+        return fallbackMessage;
+    }
+
+    return issues.slice(0, 3).map((issue) => {
+        const label = issue?.label || getComposerFieldLabel(issue?.field);
+        const reason = issue?.reason || '参数不符合要求';
+        return `${label}：${reason}`;
+    }).join('\n');
+}
+
+function classifyComposerSubmissionError(error) {
+    if (isComposerValidationError(error)) return 'validation';
+
+    const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+    const status = error?.httpStatus || parsed?.status || error?.response?.status || null;
+    const rawMessage = String(error?.message || '');
+
+    if (error?.isNetworkError || error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)) {
+        return 'network';
+    }
+
+    if (status || parsed || error?.response?.detail) {
+        return 'server';
+    }
+
+    return 'unknown';
+}
+
+function buildComposerUserErrorMessage(error, context = 'generic') {
+    const category = classifyComposerSubmissionError(error);
+    const fallbackMessage = getFriendlyErrorMessage(error, context);
+
+    if (category === 'network') {
+        return '当前网络连接不稳定，请检查网络后重试。';
+    }
+
+    if (category === 'validation') {
+        return formatComposerValidationSummary(getComposerValidationIssues(error), fallbackMessage);
+    }
+
+    if (category === 'server') {
+        const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+        const validationMessage = formatComposerValidationSummary(getApiValidationIssues(error), '');
+        const serverMessage = String(parsed?.detail || parsed?.title || '').trim();
+
+        if (validationMessage) return validationMessage;
+        if (serverMessage && !fallbackMessage.includes(serverMessage)) {
+            return `${fallbackMessage}\n服务器提示：${serverMessage}`;
+        }
+    }
+
+    return fallbackMessage;
+}
+
+function buildComposerErrorDebugInfo(error, context = 'generic', meta = {}) {
+    const parsed = error?.apiError || parseApiErrorDetail(error?.detail);
+    const requestInfo = error?.request || {};
+    const responseInfo = error?.response || {};
+
+    return {
+        context,
+        category: classifyComposerSubmissionError(error),
+        operationLabel: meta?.operationLabel || '',
+        userMessage: buildComposerUserErrorMessage(error, context),
+        errorCode: parsed?.code || error?.code || (error?.isNetworkError ? 'NETWORK_REQUEST_FAILED' : ''),
+        httpStatus: error?.httpStatus || parsed?.status || responseInfo?.status || null,
+        requestTime: requestInfo?.requestTime || meta?.requestTime || '',
+        requestUrl: requestInfo?.url || meta?.requestUrl || '',
+        requestMethod: requestInfo?.method || meta?.requestMethod || '',
+        requestHeaders: requestInfo?.headers || meta?.requestHeaders || null,
+        requestParams: requestInfo?.params !== undefined ? requestInfo.params : meta?.requestParams,
+        responseStatus: responseInfo?.status || error?.httpStatus || null,
+        responseStatusText: responseInfo?.statusText || '',
+        responseHeaders: responseInfo?.headers || null,
+        responseDetail: responseInfo?.detail !== undefined ? responseInfo.detail : error?.detail,
+        validationIssues: getComposerValidationIssues(error),
+        rawMessage: String(error?.message || ''),
+        rawError: error
+    };
+}
+
+function logComposerSubmissionError(error, context = 'generic', meta = {}) {
+    const debugInfo = buildComposerErrorDebugInfo(error, context, meta);
+    const operationLabel = meta?.operationLabel || context || '提交';
+    const title = `[${operationLabel}失败][${debugInfo.category}] ${debugInfo.userMessage.split('\n')[0]}`;
+
+    console.groupCollapsed(title);
+    console.error('用户提示:', debugInfo.userMessage);
+
+    if (debugInfo.category === 'network') {
+        console.error('网络错误码:', debugInfo.errorCode || 'UNKNOWN_NETWORK_ERROR');
+        console.error('请求时间:', debugInfo.requestTime || '');
+        console.error('请求 URL:', debugInfo.requestUrl || '');
+        console.error('请求头:', debugInfo.requestHeaders);
+        console.error('请求参数:', debugInfo.requestParams);
+    } else if (debugInfo.category === 'server') {
+        console.error('服务器返回详情:', debugInfo.responseDetail);
+        console.error('请求 URL:', debugInfo.requestUrl || '');
+        console.error('请求头:', debugInfo.requestHeaders);
+        console.error('请求参数:', debugInfo.requestParams);
+        console.error('响应状态码:', debugInfo.responseStatus || debugInfo.httpStatus || '');
+        if (debugInfo.responseStatusText) {
+            console.error('响应状态文本:', debugInfo.responseStatusText);
+        }
+        if (debugInfo.responseHeaders) {
+            console.error('响应头:', debugInfo.responseHeaders);
+        }
+    } else if (debugInfo.category === 'validation') {
+        console.error('参数校验失败字段:', debugInfo.validationIssues);
+        console.error('校验失败原因:', formatComposerValidationSummary(debugInfo.validationIssues, debugInfo.rawMessage));
+        console.error('提交参数:', debugInfo.requestParams);
+    } else {
+        console.error('请求 URL:', debugInfo.requestUrl || '');
+        console.error('请求头:', debugInfo.requestHeaders);
+        console.error('请求参数:', debugInfo.requestParams);
+        console.error('响应详情:', debugInfo.responseDetail);
+    }
+
+    console.error('原始错误对象:', debugInfo.rawError);
+    console.groupEnd();
+    return debugInfo;
+}
+
+function presentComposerSubmissionError(error, options = {}) {
+    const context = options?.context || 'generic';
+    const debugInfo = logComposerSubmissionError(error, context, options);
+    const canRetry = typeof options?.onRetry === 'function' && debugInfo.category !== 'validation';
+    const userMessage = canRetry
+        ? `${debugInfo.userMessage}\n如为临时故障，可点击“重试”再次提交。`
+        : debugInfo.userMessage;
+
+    if (typeof showUiToast === 'function') {
+        let toastController = null;
+        toastController = showUiToast({
+            type: 'error',
+            message: userMessage,
+            actionText: canRetry ? (options?.retryText || '重试') : '',
+            onAction: () => {
+                if (toastController && typeof toastController.close === 'function') {
+                    toastController.close();
+                }
+                if (canRetry) {
+                    try {
+                        options.onRetry();
+                    } catch (retryError) {
+                        console.error(`${options?.operationLabel || '操作'}重试入口触发失败:`, retryError);
+                    }
+                }
+            }
+        });
+        return debugInfo;
+    }
+
+    alert(userMessage);
+    return debugInfo;
+}
+
 function getPreferredDisplayName(userAttributes, fallback = '匿名用户') {
     const preferredName = [
         userAttributes?.nickname,
@@ -878,13 +1145,46 @@ async function flarumRequest(path, options = {}) {
             : `Token ${token}`;
     }
 
+    const requestPayload = cloneDebugValue(options.json !== undefined ? options.json : options.body);
+    const baseRequestInfo = {
+        url,
+        method: options.method || 'GET',
+        requestTime: new Date().toISOString(),
+        headers: getLoggableRequestHeaders(headers),
+        params: requestPayload
+    };
+
     const createFetchOptions = (requestHeaders) => ({
         method: options.method || 'GET',
         headers: requestHeaders,
         body: options.json !== undefined ? JSON.stringify(options.json) : options.body
     });
 
-    let response = await fetch(url, createFetchOptions(headers));
+    const performFetch = async (requestHeaders) => {
+        const requestInfo = {
+            ...baseRequestInfo,
+            headers: getLoggableRequestHeaders(requestHeaders)
+        };
+
+        try {
+            const currentResponse = await fetch(url, createFetchOptions(requestHeaders));
+            currentResponse.__requestInfo = requestInfo;
+            return currentResponse;
+        } catch (fetchError) {
+            const networkError = new Error(fetchError?.message || '网络请求失败');
+            networkError.name = fetchError?.name || 'NetworkError';
+            networkError.code = fetchError?.code || 'NETWORK_REQUEST_FAILED';
+            networkError.isNetworkError = true;
+            networkError.request = requestInfo;
+            networkError.originalError = fetchError;
+            if (fetchError?.stack) {
+                networkError.stack = fetchError.stack;
+            }
+            throw networkError;
+        }
+    };
+
+    let response = await performFetch(headers);
     const initialStatus = response.status;
 
     // 对公开接口做一次无鉴权重试，避免本地过期 token 导致“登录后反而看不到内容”。
@@ -895,7 +1195,7 @@ async function flarumRequest(path, options = {}) {
     ) {
         const retryHeaders = { ...headers };
         delete retryHeaders.Authorization;
-        response = await fetch(url, createFetchOptions(retryHeaders));
+        response = await performFetch(retryHeaders);
 
         // 重试成功说明是本地 token 问题，清理后同步刷新登录态 UI。
         if (response.ok && initialStatus === 401) {
@@ -915,6 +1215,13 @@ async function flarumRequest(path, options = {}) {
         error.detail = detail;
         error.httpStatus = response.status;
         error.apiError = parseApiErrorDetail(detail);
+        error.request = response.__requestInfo || baseRequestInfo;
+        error.response = {
+            status: response.status,
+            statusText: response.statusText,
+            headers: getResponseHeadersForDebug(response.headers),
+            detail: cloneDebugValue(detail)
+        };
         throw error;
     }
 
@@ -2843,8 +3150,9 @@ async function renderDynamicHomeLinks() {
 async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再发帖。');
-        return null;
+        throw createComposerValidationError('请先登录后再发帖。', [
+            { field: 'auth', reason: '登录状态缺失，无法发帖' }
+        ]);
     }
 
     const relationships = {};
@@ -2871,8 +3179,9 @@ async function flarumCreateDiscussion({ title, content, tagIds = [] }) {
 async function flarumCreatePost({ discussionId, content }) {
     const token = getFlarumToken();
     if (!token) {
-        alert('请先登录后再回帖。');
-        return null;
+        throw createComposerValidationError('请先登录后再回帖。', [
+            { field: 'auth', reason: '登录状态缺失，无法回帖' }
+        ]);
     }
 
     const json = await flarumRequest('/posts', {
@@ -5468,101 +5777,133 @@ function setupReplyForm() {
     // 表单提交（避免重复绑定）
     if (replyForm.dataset.boundReplySubmit !== '1') {
         replyForm.dataset.boundReplySubmit = '1';
-        replyForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const submitReply = async () => {
+            if (replyForm.dataset.replySubmitting === '1') return;
 
-            const name = replyNameInput?.value?.trim() || '';
+            const submitBtn = replyForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : '';
             const rawContent = replyContent.value.trim();
             const replyTo = replyTargetInput.value;
-
             const composerBody = replyTo
                 ? stripComposerReplyPrefix(rawContent).trim()
                 : rawContent;
-
-            if (!composerBody) {
-                alert('请输入回复内容');
-                return;
-            }
-
-            const content = expandCustomEmojiTokens(composerBody);
-
             const urlParams = new URLSearchParams(window.location.search);
-            const postId = urlParams.get('id') || '1';
+            const postId = urlParams.get('id') || '';
+            const requestParams = {
+                discussionId: postId ? String(postId) : '',
+                replyTo: replyTo || null,
+                contentLength: composerBody.length
+            };
 
-            // 获取当前帖子数据（从内存或缓存，避免重新加载）
-            let postData = window.currentPostData;
-            if (!postData) {
-                postData = await loadPostData(postId);
-                if (!postData) {
-                    alert('无法获取帖子数据');
-                    return;
-                }
-                window.currentPostData = postData;
+            replyForm.dataset.replySubmitting = '1';
+            if (submitBtn) {
+                submitBtn.textContent = '提交中...';
+                submitBtn.disabled = true;
             }
-
-            // 显示提交中状态
-            const submitBtn = replyForm.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn ? submitBtn.textContent : '';
-            if (submitBtn) submitBtn.textContent = '提交中...';
 
             try {
+                if (!composerBody) {
+                    throw createComposerValidationError('请输入回复内容', [
+                        { field: 'content', reason: '回复内容不能为空', value: rawContent }
+                    ]);
+                }
+
+                if (!postId) {
+                    throw createComposerValidationError('未找到当前帖子编号，请刷新页面后重试。', [
+                        { field: 'discussionId', reason: '帖子编号缺失', value: postId }
+                    ]);
+                }
+
+                const content = expandCustomEmojiTokens(composerBody);
+
+                // 获取当前帖子数据（从内存或缓存，避免重新加载）
+                let postData = window.currentPostData;
+                if (!postData) {
+                    postData = await loadPostData(postId);
+                    if (!postData) {
+                        throw createComposerValidationError('无法获取当前帖子数据，请刷新页面后重试。', [
+                            { field: 'discussionId', reason: '帖子上下文加载失败', value: postId }
+                        ]);
+                    }
+                    window.currentPostData = postData;
+                }
+
                 const contentToSend = replyTo
                     ? `回复 ${replyTo}楼：\n\n${content}`
                     : content;
-
-                const response = await flarumRequest('/posts', {
-                    method: 'POST',
-                    auth: true,
-                    json: {
-                        data: {
-                            type: 'posts',
-                            attributes: {
-                                content: contentToSend
-                            },
-                            relationships: {
-                                discussion: {
-                                    data: { type: 'discussions', id: String(postId) }
-                                }
+                const requestBody = {
+                    data: {
+                        type: 'posts',
+                        attributes: {
+                            content: contentToSend
+                        },
+                        relationships: {
+                            discussion: {
+                                data: { type: 'discussions', id: String(postId) }
                             }
                         }
                     }
+                };
+                const response = await flarumRequest('/posts', {
+                    method: 'POST',
+                    auth: true,
+                    json: requestBody
                 });
 
-                if (response) {
-                    const createdPostId = response?.data?.id != null ? String(response.data.id) : '';
-                    const replyToFloor = Number(replyTo);
-                    if (createdPostId && Number.isFinite(replyToFloor) && replyToFloor > 0) {
-                        storeFlarumReplyToFloor(postId, createdPostId, replyToFloor);
-                    }
-                    replyContent.value = '';
-                    replyTargetInput.value = '';
-                    if (cancelReply) cancelReply.style.display = 'none';
-                    replyBoxTitle.textContent = '发表回复';
-                    if (previewBox) previewBox.style.display = 'none';
-                    setUploadStatus(document.getElementById('reply-upload-status'), '', 'info');
-                    clearReplyComposerDraft();
-
-                    // 重新加载帖子数据并更新UI
-                    const newPostData = await loadPostData(postId);
-                    if (newPostData) {
-                        window.currentPostData = newPostData;
-                        renderForumThread(newPostData);
-                    }
-
-                    // 滚动到最新回复
-                    setTimeout(() => {
-                        const posts = document.querySelectorAll('.post');
-                        if (posts.length > 0) {
-                            posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }, 100);
+                if (!response?.data?.id) {
+                    const missingPostIdError = new Error('回复接口未返回新回复编号');
+                    missingPostIdError.code = 'missing_post_id';
+                    throw missingPostIdError;
                 }
+
+                const createdPostId = String(response.data.id);
+                const replyToFloor = Number(replyTo);
+                if (createdPostId && Number.isFinite(replyToFloor) && replyToFloor > 0) {
+                    storeFlarumReplyToFloor(postId, createdPostId, replyToFloor);
+                }
+                replyContent.value = '';
+                replyTargetInput.value = '';
+                if (cancelReply) cancelReply.style.display = 'none';
+                replyBoxTitle.textContent = '发表回复';
+                if (previewBox) previewBox.style.display = 'none';
+                setUploadStatus(document.getElementById('reply-upload-status'), '', 'info');
+                clearReplyComposerDraft();
+
+                // 重新加载帖子数据并更新UI
+                const newPostData = await loadPostData(postId);
+                if (newPostData) {
+                    window.currentPostData = newPostData;
+                    renderForumThread(newPostData);
+                }
+
+                // 滚动到最新回复
+                setTimeout(() => {
+                    const posts = document.querySelectorAll('.post');
+                    if (posts.length > 0) {
+                        posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 100);
             } catch (error) {
-                console.error('提交失败:', error);
-                alert(getFriendlyErrorMessage(error, 'create_post'));
+                presentComposerSubmissionError(error, {
+                    context: 'create_post',
+                    operationLabel: '回帖',
+                    requestParams,
+                    onRetry: () => {
+                        void submitReply();
+                    }
+                });
             } finally {
-                if (submitBtn) submitBtn.textContent = originalBtnText;
+                replyForm.dataset.replySubmitting = '0';
+                if (submitBtn) {
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                }
             }
+        };
+
+        replyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            void submitReply();
         });
     }
 }
