@@ -4172,6 +4172,24 @@ function filterPrivateDiscussionsForActor(discussions, actorContext) {
     return (Array.isArray(discussions) ? discussions : []).filter((discussion) => isPrivateDiscussionRelevantToActor(discussion, actorContext));
 }
 
+function normalizePrivateMessageTextForCompare(value) {
+    return String(value || '').replace(/\r\n/g, '\n').replace(/\s+/g, ' ').trim();
+}
+
+function isLikelyPrivateDiscussionPostCreateButNotifyFailed(error) {
+    const status = Number(error?.httpStatus || error?.apiError?.status || 0);
+    if (status < 500) return false;
+
+    const raw = [
+        String(error?.message || ''),
+        String(error?.detail || ''),
+        String(error?.apiError?.title || ''),
+        String(error?.apiError?.detail || '')
+    ].join(' ');
+
+    return /swift|smtp|mail|mailer|transportexception|expected response code 220|notification/i.test(raw);
+}
+
 async function flarumLoadPrivateDiscussionsPage({ offset, limit }) {
     const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.min(30, Math.floor(limit)) : 20;
     const safeOffset = typeof offset === 'number' && Number.isFinite(offset) && offset >= 0 ? Math.floor(offset) : 0;
@@ -4206,6 +4224,50 @@ async function flarumLoadPrivateDiscussionDetail(discussionId) {
             return contentType === 'comment';
         })
     };
+}
+
+async function recoverPrivateDiscussionAfterCreateFailure({ actorContext, recipientId, title, content }) {
+    const actorUserId = String(actorContext?.userId || '').trim();
+    const targetRecipientId = String(recipientId || '').trim();
+    const expectedTitle = String(title || '').trim();
+    const expectedContent = normalizePrivateMessageTextForCompare(content);
+    if (!actorUserId || !targetRecipientId || !expectedTitle || !expectedContent) return null;
+
+    const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 15 });
+    const discussions = filterPrivateDiscussionsForActor(Array.isArray(json?.data) ? json.data : [], actorContext)
+        .filter((discussion) => {
+            const attrs = discussion?.attributes || {};
+            if (String(attrs.title || '').trim() !== expectedTitle) return false;
+            const starterId = String(discussion?.relationships?.user?.data?.id || '').trim();
+            if (starterId !== actorUserId) return false;
+            const recipientUsers = Array.isArray(discussion?.relationships?.recipientUsers?.data)
+                ? discussion.relationships.recipientUsers.data
+                : [];
+            return recipientUsers.some((item) => String(item?.id || '').trim() === targetRecipientId);
+        })
+        .sort((a, b) => {
+            const ta = parseFlarumIsoTime(a?.attributes?.createdAt || a?.attributes?.lastPostedAt)?.getTime() || 0;
+            const tb = parseFlarumIsoTime(b?.attributes?.createdAt || b?.attributes?.lastPostedAt)?.getTime() || 0;
+            return tb - ta;
+        });
+
+    for (const discussion of discussions.slice(0, 3)) {
+        const discussionId = String(discussion?.id || '').trim();
+        if (!discussionId) continue;
+        try {
+            const detail = await flarumLoadPrivateDiscussionDetail(discussionId);
+            const firstPost = Array.isArray(detail?.posts) ? detail.posts[0] : null;
+            const actualContent = normalizePrivateMessageTextForCompare(
+                firstPost?.attributes?.content
+                || stripHtmlToText(firstPost?.attributes?.contentHtml || '')
+            );
+            if (actualContent === expectedContent) {
+                return discussionId;
+            }
+        } catch (_) {}
+    }
+
+    return null;
 }
 
 async function flarumGetPrivateUnreadCount() {
@@ -4739,7 +4801,34 @@ async function renderMessagePage() {
                         setAlert('当前账号没有使用短消息的权限，请联系网管。');
                         return;
                     }
-                    setAlert('发送失败，请稍后再试。');
+                    try {
+                        const recoveredDiscussionId = await recoverPrivateDiscussionAfterCreateFailure({
+                            actorContext,
+                            recipientId,
+                            title,
+                            content
+                        });
+                        if (recoveredDiscussionId) {
+                            setAlert('短消息已发送，但论坛通知服务返回异常；如频繁出现，请检查 Flarum 邮件/通知配置。');
+                            await openSentMessageAfterCompose({ kind: 'private', id: recoveredDiscussionId, preferredFilter: 'private' });
+                            return;
+                        }
+                    } catch (_) {}
+
+                    if (isLikelyPrivateDiscussionPostCreateButNotifyFailed(error)) {
+                        setAlert('论坛可能已创建短消息，但通知邮件发送异常；请刷新消息列表确认，并检查 Flarum 邮件配置。');
+                        return;
+                    }
+
+                    const friendlyMessage = typeof getFriendlyErrorMessage === 'function'
+                        ? getFriendlyErrorMessage(error, 'create_discussion')
+                        : '发送失败，请稍后再试。';
+                    const detailMessage = String(error?.apiError?.detail || '').trim();
+                    if (detailMessage && detailMessage !== friendlyMessage && detailMessage.length <= 120) {
+                        setAlert(`${friendlyMessage}（${detailMessage}）`);
+                        return;
+                    }
+                    setAlert(friendlyMessage);
                 } finally {
                     if (submitBtn && document.body.contains(submitBtn)) {
                         submitBtn.disabled = false;

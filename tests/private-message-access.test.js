@@ -143,7 +143,9 @@ function loadSandbox() {
         'buildPublicDiscussionFilterQuery',
         'isPrivateDiscussionRelevantToActor',
         'filterPrivateDiscussionsForActor',
-        'isAdminUserResource'
+        'isAdminUserResource',
+        'normalizePrivateMessageTextForCompare',
+        'isLikelyPrivateDiscussionPostCreateButNotifyFailed'
     ].forEach((functionName) => {
         vm.runInContext(extractFunction(source, functionName), sandbox);
     });
@@ -251,6 +253,28 @@ function createDiscussion({ id, starterId, recipientUserIds = [], recipientGroup
     assert.strictEqual(sandbox.isAdminUserResource({
         relationships: { groups: { data: [{ id: '2' }] } }
     }), false);
+})();
+
+(() => {
+    const sandbox = loadSandbox();
+    assert.strictEqual(
+        sandbox.normalizePrivateMessageTextForCompare(' 第一行\r\n\r\n第二行  '),
+        '第一行 第二行'
+    );
+    assert.strictEqual(
+        sandbox.isLikelyPrivateDiscussionPostCreateButNotifyFailed({
+            httpStatus: 500,
+            detail: 'Swift_TransportException: Expected response code 220 but got an empty response'
+        }),
+        true
+    );
+    assert.strictEqual(
+        sandbox.isLikelyPrivateDiscussionPostCreateButNotifyFailed({
+            httpStatus: 422,
+            detail: 'validation error'
+        }),
+        false
+    );
 })();
 
 console.log('private-message-access.test.js passed');
