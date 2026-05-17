@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>近期热帖浏览器测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 16px; line-height: 1.5; }
+        .case { margin-bottom: 20px; padding: 12px; border: 1px solid #ccc; }
+        .case h2 { margin: 0 0 8px; font-size: 18px; }
+        .case ul { margin: 8px 0 0; padding-left: 20px; }
+        .status { white-space: pre-wrap; background: #f7f7f7; padding: 12px; }
+    </style>
+</head>
+<body>
+    <h1>近期热帖浏览器测试</h1>
+    <div id="results" class="status">准备执行...</div>
+
+    <script src="../script.js?v=20260517-1"></script>
+    <script>
+        function createCaseDom(caseId, includeHotList) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'case';
+            wrapper.id = caseId;
+            wrapper.innerHTML = `
+                <h2>${caseId}</h2>
+                ${includeHotList ? '<ul id="hot-topics-list"><li><a href="#">加载中...</a></li></ul>' : ''}
+                <ul id="recent-hot-list"><li><a href="#">加载中...</a></li></ul>
+            `;
+            document.body.appendChild(wrapper);
+            return wrapper;
+        }
+
+        async function runCase(caseId, loader, includeHotList) {
+            document.querySelectorAll('#hot-topics-list, #recent-hot-list').forEach((node) => node.remove());
+            const wrapper = createCaseDom(caseId, includeHotList);
+            const originalLoader = window.flarumLoadDiscussionList;
+            window.flarumLoadDiscussionList = loader;
+
+            try {
+                await window.renderDynamicHomeLinks();
+                return {
+                    caseId,
+                    hot: wrapper.querySelector('#hot-topics-list')?.innerHTML || '',
+                    recent: wrapper.querySelector('#recent-hot-list')?.innerHTML || ''
+                };
+            } finally {
+                window.flarumLoadDiscussionList = originalLoader;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            (async () => {
+                const outputs = [];
+
+                outputs.push(await runCase('success', async () => ([
+                    { id: 6, title: '关于开展“拒绝黄赌毒、共建平安社区”宣传教育活动的通知', views: 999 },
+                    { id: 4, title: '求助帖，真实经历，感觉自己被脑控了', views: 888 },
+                    { id: 21, title: '热门第一', views: 800 },
+                    { id: 22, title: '热门第二', views: 700 },
+                    { id: 23, title: '热门第三', views: 600 },
+                    { id: 24, title: '热门第四', views: 500 }
+                ]), true));
+
+                outputs.push(await runCase('empty', async () => ([]), false));
+
+                outputs.push(await runCase('failure', async () => {
+                    throw new Error('network failed');
+                }, false));
+
+                const successCase = outputs.find((item) => item.caseId === 'success') || { hot: '', recent: '' };
+                const emptyCase = outputs.find((item) => item.caseId === 'empty') || { recent: '' };
+                const failureCase = outputs.find((item) => item.caseId === 'failure') || { recent: '' };
+
+                const checks = [
+                    successCase.hot.includes('violation.html'),
+                    successCase.hot.includes('pin-badge'),
+                    successCase.hot.includes('hot-badge'),
+                    successCase.recent.includes('post.html?id=21'),
+                    emptyCase.recent.includes('暂无近期帖子'),
+                    failureCase.recent.includes('近期帖子加载失败，请稍后刷新重试')
+                ];
+                const passed = checks.every(Boolean);
+                document.title = passed ? '近期热帖浏览器测试 - PASS' : '近期热帖浏览器测试 - FAIL';
+                document.getElementById('results').textContent = JSON.stringify(outputs, null, 2);
+            })().catch((error) => {
+                document.title = '近期热帖浏览器测试 - FAIL';
+                document.getElementById('results').textContent = `测试失败: ${error.message}`;
+            });
+        });
+    </script>
+</body>
+</html>

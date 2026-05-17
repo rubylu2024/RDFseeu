@@ -1997,7 +1997,8 @@ async function flarumLoadDiscussion(postId) {
     }
 }
 
-async function flarumLoadDiscussionList() {
+async function flarumLoadDiscussionList(options = {}) {
+    const shouldThrow = options?.throwOnError === true;
     try {
         let json = null;
         const filterQ = encodeURIComponent(buildPublicDiscussionFilterQuery());
@@ -2028,6 +2029,9 @@ async function flarumLoadDiscussionList() {
         });
     } catch (error) {
         console.warn('获取帖子列表失败:', error);
+        if (shouldThrow) {
+            throw error;
+        }
         return [];
     }
 }
@@ -3141,14 +3145,41 @@ async function renderSearchPage() {
     }
 }
 
+function renderTopicListMessage(listEl, message) {
+    if (!listEl) return;
+    const safeMessage = String(message || '暂无内容').trim() || '暂无内容';
+    listEl.innerHTML = `<li><span>${escapeHtml(safeMessage)}</span></li>`;
+}
+
+function renderDiscussionLinksIntoList(listEl, discussions, options = {}) {
+    if (!listEl) return;
+
+    const emptyText = String(options?.emptyText || '暂无帖子').trim() || '暂无帖子';
+    const safeList = (Array.isArray(discussions) ? discussions : [])
+        .filter((item) => item && item.id != null && String(item.title || '').trim());
+
+    if (safeList.length === 0) {
+        renderTopicListMessage(listEl, emptyText);
+        return;
+    }
+
+    listEl.innerHTML = safeList.map((item) => (
+        `<li><a href="post.html?id=${encodeURIComponent(item.id)}">${escapeHtml(String(item.title || ''))}</a></li>`
+    )).join('');
+}
+
 // 动态加载首页热帖和近期帖子链接
 async function renderDynamicHomeLinks() {
+    const hotTopicsList = document.getElementById('hot-topics-list');
+    const recentHotList = document.getElementById('recent-hot-list');
+
+    if (!hotTopicsList && !recentHotList) {
+        return;
+    }
+
     try {
-        const discussions = await flarumLoadDiscussionList();
-        
-        const hotTopicsList = document.getElementById('hot-topics-list');
-        const recentHotList = document.getElementById('recent-hot-list');
-        
+        const discussions = await flarumLoadDiscussionList({ throwOnError: true });
+
         if (hotTopicsList) {
             // 固定置顶帖标题
             const pin1Title = '红蜻蜓论坛·版务公告';
@@ -3204,13 +3235,21 @@ async function renderDynamicHomeLinks() {
             
             // 构建热帖榜（共12条）
             const hotTopics = [];
+            const createTopicItem = (href, title, badgeClass = '', badgeText = '') => {
+                const safeHref = String(href || '#');
+                const safeTitle = escapeHtml(String(title || ''));
+                const badgeHtml = badgeClass && badgeText
+                    ? `<span class="${escapeHtml(badgeClass)}">${escapeHtml(badgeText)}</span>`
+                    : '';
+                return `<li>${badgeHtml}<a href="${safeHref}">${safeTitle}</a></li>`;
+            };
             
             // 第1条：固定链接到违规公示
-            hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="violation.html">${pin1Title}</a></li>`);
+            hotTopics.push(createTopicItem('violation.html', pin1Title, 'pin-badge', '置顶'));
             
             // 第2条：固定置顶帖
             if (pin2Post) {
-                hotTopics.push(`<li><span class="pin-badge">置顶</span><a href="post.html?id=${pin2Post.id}">${pin2Post.title}</a></li>`);
+                hotTopics.push(createTopicItem(`post.html?id=${encodeURIComponent(pin2Post.id)}`, pin2Post.title, 'pin-badge', '置顶'));
             }
             
             let rankedIndex = 0;
@@ -3218,7 +3257,7 @@ async function renderDynamicHomeLinks() {
                 const safeCount = typeof count === 'number' && Number.isFinite(count) && count > 0 ? count : 0;
                 for (let i = 0; i < safeCount && rankedIndex < rankedDiscussions.length; i++) {
                     const p = rankedDiscussions[rankedIndex++];
-                    hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+                    hotTopics.push(createTopicItem(`post.html?id=${encodeURIComponent(p.id)}`, p.title));
                 }
             };
             
@@ -3227,7 +3266,7 @@ async function renderDynamicHomeLinks() {
             
             // 第7条：固定HOT帖
             if (hotPost) {
-                hotTopics.push(`<li><span class="hot-badge">HOT</span><a href="post.html?id=${hotPost.id}">${hotPost.title}</a></li>`);
+                hotTopics.push(createTopicItem(`post.html?id=${encodeURIComponent(hotPost.id)}`, hotPost.title, 'hot-badge', 'HOT'));
             }
             
             // 第8-12条：按浏览量排行的普通帖子
@@ -3235,21 +3274,30 @@ async function renderDynamicHomeLinks() {
             
             while (hotTopics.length < 12 && rankedIndex < rankedDiscussions.length) {
                 const p = rankedDiscussions[rankedIndex++];
-                hotTopics.push(`<li><a href="post.html?id=${p.id}">${p.title}</a></li>`);
+                hotTopics.push(createTopicItem(`post.html?id=${encodeURIComponent(p.id)}`, p.title));
+            }
+
+            if (hotTopics.length === 1) {
+                hotTopics.push('<li><span>暂无热帖</span></li>');
             }
             
             hotTopicsList.innerHTML = hotTopics.join('');
         }
         
-        // 最新发帖：显示最新20个帖子，按日期顺序
-        if (recentHotList && discussions.length > 0) {
-            recentHotList.innerHTML = discussions.slice(0, 20).map(p => 
-                `<li><a href="post.html?id=${p.id}">${p.title}</a></li>`
-            ).join('');
+        // 最新发帖/近期热帖：显示最新20个帖子，按日期顺序
+        if (recentHotList) {
+            renderDiscussionLinksIntoList(recentHotList, discussions.slice(0, 20), {
+                emptyText: '暂无近期帖子'
+            });
         }
     } catch (error) {
         console.warn('动态加载首页帖子列表失败:', error);
-        // 即使加载失败也不显示错误信息，保持页面安静
+        if (hotTopicsList) {
+            renderTopicListMessage(hotTopicsList, '热帖加载失败，请稍后刷新重试');
+        }
+        if (recentHotList) {
+            renderTopicListMessage(recentHotList, '近期帖子加载失败，请稍后刷新重试');
+        }
     }
 }
 
@@ -3813,12 +3861,17 @@ window.addEventListener('DOMContentLoaded', function() {
     cleanupLegacyLocalStorage();
     setupAuthReturnCapture();
     
-    // 测试Flarum API连接和动态加载首页热帖（合并为一个调用，避免重复请求）
-    if (isFlarumConfigured()) {
-        console.log('Flarum API 配置已完成，正在加载首页内容...');
-        renderDynamicHomeLinks();
-    } else {
-        console.log('Flarum API 未配置');
+    // 仅在页面存在对应挂载点时才拉取热帖数据，避免无关页面产生多余请求
+    const hasDynamicTopicModule = !!document.getElementById('hot-topics-list') || !!document.getElementById('recent-hot-list');
+    if (hasDynamicTopicModule) {
+        if (isFlarumConfigured()) {
+            console.log('Flarum API 配置已完成，正在加载热帖模块...');
+            renderDynamicHomeLinks();
+        } else {
+            console.log('Flarum API 未配置');
+            renderTopicListMessage(document.getElementById('hot-topics-list'), '热帖功能暂未开启');
+            renderTopicListMessage(document.getElementById('recent-hot-list'), '近期帖子功能暂未开启');
+        }
     }
     
     // 检查是否是帖子详情页面
