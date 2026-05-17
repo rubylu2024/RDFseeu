@@ -301,6 +301,40 @@
             }
         }
 
+        function formatComposerIssuePath(pointer) {
+            const rawPointer = String(pointer || '').trim();
+            if (!rawPointer) return '';
+
+            if (!rawPointer.startsWith('/')) {
+                return rawPointer;
+            }
+
+            const segments = rawPointer.split('/').filter(Boolean);
+            return segments.join('.');
+        }
+
+        function buildComposerIssueLabel(issue) {
+            const field = String(issue?.field || '').trim();
+            const pointer = String(issue?.pointer || '').trim();
+            const parameter = String(issue?.parameter || '').trim();
+            const mappedLabel = field ? getComposerFieldLabel(field) : '';
+            const label = String(issue?.label || mappedLabel || '').trim() || '未知字段';
+            const details = [];
+            const pathLabel = formatComposerIssuePath(pointer);
+
+            if (label === '未知字段' && field) {
+                details.push(`字段 ${field}`);
+            }
+            if (parameter && parameter !== field) {
+                details.push(`参数 ${parameter}`);
+            }
+            if (pathLabel && pathLabel !== field && pathLabel !== parameter) {
+                details.push(`路径 ${pathLabel}`);
+            }
+
+            return details.length > 0 ? `${label}（${details.join('，')}）` : label;
+        }
+
         function createComposerValidationError(message, issues = []) {
             const error = new Error(message || '提交参数校验失败');
             error.code = 'local_validation_error';
@@ -333,13 +367,17 @@
 
         function getApiValidationIssues(error) {
             return parseApiErrorList(error?.detail).map((item) => {
-                const pointer = String(item?.source?.pointer || item?.source?.parameter || '');
+                const pointer = String(item?.source?.pointer || '');
+                const parameter = String(item?.source?.parameter || '');
                 const pointerSegments = pointer.split('/').filter(Boolean);
-                const field = pointerSegments[pointerSegments.length - 1] || '';
+                const field = pointerSegments[pointerSegments.length - 1] || parameter || '';
                 return {
                     field,
                     label: getComposerFieldLabel(field),
-                    reason: String(item?.detail || item?.title || '参数不符合要求')
+                    reason: String(item?.detail || item?.title || item?.code || '参数不符合要求').trim() || '参数不符合要求',
+                    pointer,
+                    parameter,
+                    code: String(item?.code || '')
                 };
             }).filter((item) => item.reason);
         }
@@ -357,7 +395,7 @@
             }
 
             return issues.slice(0, 3).map((issue) => {
-                const label = issue?.label || getComposerFieldLabel(issue?.field);
+                const label = buildComposerIssueLabel(issue);
                 const reason = issue?.reason || '参数不符合要求';
                 return `${label}：${reason}`;
             }).join('\n');
