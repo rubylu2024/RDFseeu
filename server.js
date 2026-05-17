@@ -361,6 +361,16 @@ function mapFlarumNotificationKind(notificationType, replyToFloor) {
   return 'system';
 }
 
+function isByobuPrivateDiscussionNotificationType(notificationType) {
+  const t = String(notificationType || '').toLowerCase().trim();
+  if (!t) return false;
+  if (t.includes('byobu')) return true;
+  if (t.includes('privatediscussion')) return true;
+  if (t.includes('recipientremoved')) return true;
+  if (t.includes('recipientadded')) return true;
+  return false;
+}
+
 async function flarumFetchJsonWithAuth(authRaw, apiPath) {
   const url = `${FLARUM_BASE_URL}${apiPath.startsWith('/') ? '' : '/'}${apiPath}`;
   let response;
@@ -557,7 +567,11 @@ app.get('/custom-messages/unread-count', requireActor(async (req, res) => {
       if (authRaw) {
         const notificationsJson = await loadFlarumNotifications(authRaw, 20);
         const list = Array.isArray(notificationsJson?.data) ? notificationsJson.data : [];
-        notificationUnread = list.filter((n) => n?.attributes?.isRead === false).length;
+        notificationUnread = list.filter((n) => {
+          const notificationType = n?.attributes?.type || n?.type || '';
+          if (isByobuPrivateDiscussionNotificationType(notificationType)) return false;
+          return n?.attributes?.isRead === false;
+        }).length;
       }
     } catch (error) {
       console.warn('[custom-messages] unread-count notificationUnread skipped:', {
@@ -604,7 +618,10 @@ app.get('/custom-notifications', requireActor(async (req, res) => {
     }
 
     const rawJson = await loadFlarumNotifications(parsed.raw, 30);
-    const list = Array.isArray(rawJson?.data) ? rawJson.data : [];
+    const list = (Array.isArray(rawJson?.data) ? rawJson.data : []).filter((n) => {
+      const notificationType = n?.attributes?.type || n?.type || '';
+      return !isByobuPrivateDiscussionNotificationType(notificationType);
+    });
     const included = Array.isArray(rawJson?.included) ? rawJson.included : [];
 
     const data = list.map((n) => {
