@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子详情分页测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        .card {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 24px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .summary {
+            margin: 16px 0;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .summary.pass {
+            background: #edf9ed;
+            color: #176b17;
+            border: 1px solid #9fd19f;
+        }
+
+        .summary.fail {
+            background: #fff0f0;
+            color: #b00020;
+            border: 1px solid #ebb1b1;
+        }
+
+        .result-list {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .result-pass {
+            color: #176b17;
+        }
+
+        .result-fail {
+            color: #b00020;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>帖子详情分页与新回复定位测试</h1>
+        <div id="summary" class="summary">测试准备中...</div>
+        <ol id="result-list" class="result-list"></ol>
+        <h2>调试输出</h2>
+        <pre id="debug-output">等待执行...</pre>
+    </div>
+
+    <script>
+        const POST_PAGE_SIZE = 20;
+        const DISCUSSION_POST_BATCH_SIZE = 100;
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function addResult(message, passed) {
+            const list = document.getElementById('result-list');
+            const item = document.createElement('li');
+            item.className = passed ? 'result-pass' : 'result-fail';
+            item.textContent = `${passed ? '通过' : '失败'}: ${message}`;
+            list.appendChild(item);
+        }
+
+        function setSummary(message, passed) {
+            const summary = document.getElementById('summary');
+            summary.textContent = message;
+            summary.className = `summary ${passed ? 'pass' : 'fail'}`;
+        }
+
+        function setDebugOutput(lines) {
+            document.getElementById('debug-output').textContent = lines.join('\n');
+        }
+
+        function createPosts(startFloor, count) {
+            return Array.from({ length: count }, (_, index) => {
+                const floor = startFloor + index;
+                return {
+                    id: String(floor),
+                    type: 'posts',
+                    attributes: {
+                        number: floor
+                    }
+                };
+            });
+        }
+
+        function mergeUniqueResources(baseResources, resourcesToAppend) {
+            const merged = Array.isArray(baseResources) ? [...baseResources] : [];
+            const seen = new Set(
+                merged
+                    .filter((item) => item && item.type && item.id != null)
+                    .map((item) => `${item.type}:${String(item.id)}`)
+            );
+
+            (Array.isArray(resourcesToAppend) ? resourcesToAppend : []).forEach((item) => {
+                if (!item || !item.type || item.id == null) return;
+                const key = `${item.type}:${String(item.id)}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                merged.push(item);
+            });
+
+            return merged;
+        }
+
+        async function flarumLoadDiscussionPosts(discussionId, options = {}) {
+            const id = String(discussionId);
+            const rawExpectedCount = Number(options.expectedCount);
+            const expectedCount = Number.isFinite(rawExpectedCount) && rawExpectedCount > 0
+                ? Math.floor(rawExpectedCount)
+                : null;
+            const rawBatchSize = Number(options.batchSize);
+            const batchSize = Number.isFinite(rawBatchSize) && rawBatchSize > 0
+                ? Math.max(Math.floor(rawBatchSize), POST_PAGE_SIZE)
+                : DISCUSSION_POST_BATCH_SIZE;
+            const posts = [];
+            const postIds = new Set();
+            let included = [];
+            let offset = 0;
+
+            while (true) {
+                const postsJson = await window.mockFlarumRequest(
+                    `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${batchSize}&page[offset]=${offset}&include=user`,
+                    { auth: options.auth }
+                );
+                const batchPosts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+
+                batchPosts.forEach((post) => {
+                    const postId = post?.id != null ? String(post.id) : '';
+                    if (!postId || postIds.has(postId)) return;
+                    postIds.add(postId);
+                    posts.push(post);
+                });
+
+                included = mergeUniqueResources(included, postsJson?.included || []);
+
+                if (batchPosts.length === 0) {
+                    break;
+                }
+
+                offset += batchPosts.length;
+
+                if (expectedCount && postIds.size >= expectedCount) {
+                    break;
+                }
+
+                if (batchPosts.length < batchSize) {
+                    break;
+                }
+            }
+
+            return { posts, included };
+        }
+
+        function buildDiscussionPostList(postData) {
+            return [{
+                id: 0,
+                userId: postData.userId,
+                author: postData.author,
+                authorLevel: postData.authorLevel,
+                authorAvatar: postData.authorAvatar,
+                time: postData.publishTime,
+                floor: 1,
+                content: postData.content,
+                isOp: true,
+                replyTo: null
+            }, ...postData.comments.map((comment) => ({
+                ...comment,
+                isOp: false
+            }))];
+        }
+
+        function resolveDiscussionPageTarget(allPosts, targetPostId) {
+            const normalizedPosts = Array.isArray(allPosts) ? allPosts : [];
+            const index = normalizedPosts.findIndex((post) => String(post?.id) === String(targetPostId));
+            const safeIndex = index >= 0 ? index : Math.max(normalizedPosts.length - 1, 0);
+            const targetPost = normalizedPosts[safeIndex] || normalizedPosts[0] || null;
+
+            return {
+                index: safeIndex,
+                page: Math.floor(safeIndex / POST_PAGE_SIZE) + 1,
+                floor: targetPost?.floor || null
+            };
+        }
+
+        function syncDiscussionLocation(postId, page, floor) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('id', String(postId));
+            if (Number(page) > 1) {
+                url.searchParams.set('page', String(page));
+            } else {
+                url.searchParams.delete('page');
+            }
+            url.hash = floor ? `post-${floor}` : '';
+            window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+        }
+
+        async function runTests() {
+            const debugLines = [];
+
+            window.history.replaceState(null, '', '/post.html?id=9&page=3');
+            window.history.replaceState = (_state, _title, url) => {
+                debugLines.push(`replaceState -> ${url}`);
+            };
+            window.mockFlarumRequest = async (requestPath) => {
+                debugLines.push(`request -> ${requestPath}`);
+                const offsetMatch = /page\[offset\]=(\d+)/.exec(requestPath);
+                const offset = offsetMatch ? Number(offsetMatch[1]) : 0;
+
+                if (offset === 0) {
+                    return {
+                        data: createPosts(1, 100),
+                        included: [
+                            { type: 'users', id: 'u1' },
+                            { type: 'users', id: 'u2' }
+                        ]
+                    };
+                }
+
+                if (offset === 100) {
+                    return {
+                        data: createPosts(101, 35),
+                        included: [
+                            { type: 'users', id: 'u2' },
+                            { type: 'users', id: 'u3' }
+                        ]
+                    };
+                }
+
+                return { data: [], included: [] };
+            };
+
+            const loadResult = await flarumLoadDiscussionPosts('42', { expectedCount: 135, auth: false });
+            assert(loadResult.posts.length === 135, '应抓取完整的 135 条楼层数据');
+            assert(loadResult.included.length === 3, '应去重并合并分页中的 included 用户资源');
+            addResult('分页抓取会持续请求直到拿满全部评论数据', true);
+
+            const postData = {
+                userId: 1,
+                author: '楼主',
+                authorLevel: 'Lv.1',
+                authorAvatar: 'avatar.png',
+                publishTime: '2026-05-17 12:00:00',
+                content: '<p>首帖</p>',
+                comments: Array.from({ length: 45 }, (_, index) => ({
+                    id: index + 2,
+                    floor: index + 2,
+                    content: `<p>回复 ${index + 2}</p>`
+                }))
+            };
+            const allPosts = buildDiscussionPostList(postData);
+            const targetState = resolveDiscussionPageTarget(allPosts, '46');
+            const missingTargetState = resolveDiscussionPageTarget(allPosts, '9999');
+            assert(allPosts.length === 46, '首帖与 45 条评论应组成 46 楼');
+            assert(targetState.page === 3 && targetState.floor === 46, '新回复应定位到第 3 页第 46 楼');
+            assert(missingTargetState.page === 3 && missingTargetState.floor === 46, '找不到新回复编号时应回退到末页末楼');
+            addResult('新回复会落到正确页码，兜底时也会跳到末页', true);
+
+            syncDiscussionLocation('9', 1, 46);
+            syncDiscussionLocation('9', 3, 46);
+            assert(debugLines.includes('replaceState -> /post.html?id=9#post-46'), '第一页 URL 应移除 page 参数');
+            assert(debugLines.includes('replaceState -> /post.html?id=9&page=3#post-46'), '非第一页 URL 应保留正确 page 参数');
+            addResult('分页 URL 与楼层锚点会同步更新，支持正确跳页与高亮', true);
+
+            setSummary('全部测试通过', true);
+            setDebugOutput(debugLines);
+        }
+
+        runTests().catch((error) => {
+            addResult(error.message || String(error), false);
+            setSummary('测试失败', false);
+            setDebugOutput([error.stack || String(error)]);
+        });
+    </script>
+</body>
+</html>

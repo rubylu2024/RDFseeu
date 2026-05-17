@@ -4,6 +4,7 @@
 const FLARUM_BASE_URL = '';
 const AD_TARGET_URL = 'https://www.dihai.wiki/';
 const POST_PAGE_SIZE = 20;
+const DISCUSSION_POST_BATCH_SIZE = 100;
 const MAX_UPLOAD_IMAGE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_UPLOAD_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 const ALLOWED_UPLOAD_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']);
@@ -1844,6 +1845,74 @@ function flarumDiscussionToPostData(apiJson) {
     return postData;
 }
 
+function mergeUniqueResources(baseResources, resourcesToAppend) {
+    const merged = Array.isArray(baseResources) ? [...baseResources] : [];
+    const seen = new Set(
+        merged
+            .filter((item) => item && item.type && item.id != null)
+            .map((item) => `${item.type}:${String(item.id)}`)
+    );
+
+    (Array.isArray(resourcesToAppend) ? resourcesToAppend : []).forEach((item) => {
+        if (!item || !item.type || item.id == null) return;
+        const key = `${item.type}:${String(item.id)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(item);
+    });
+
+    return merged;
+}
+
+async function flarumLoadDiscussionPosts(discussionId, options = {}) {
+    const id = String(discussionId);
+    const rawExpectedCount = Number(options.expectedCount);
+    const expectedCount = Number.isFinite(rawExpectedCount) && rawExpectedCount > 0
+        ? Math.floor(rawExpectedCount)
+        : null;
+    const rawBatchSize = Number(options.batchSize);
+    const batchSize = Number.isFinite(rawBatchSize) && rawBatchSize > 0
+        ? Math.max(Math.floor(rawBatchSize), POST_PAGE_SIZE)
+        : DISCUSSION_POST_BATCH_SIZE;
+    const posts = [];
+    const postIds = new Set();
+    let included = [];
+    let offset = 0;
+
+    while (true) {
+        const postsJson = await flarumRequest(
+            `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${batchSize}&page[offset]=${offset}&include=user`,
+            { auth: options.auth }
+        );
+        const batchPosts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+
+        batchPosts.forEach((post) => {
+            const postId = post?.id != null ? String(post.id) : '';
+            if (!postId || postIds.has(postId)) return;
+            postIds.add(postId);
+            posts.push(post);
+        });
+
+        included = mergeUniqueResources(included, postsJson?.included || []);
+
+        if (batchPosts.length === 0) {
+            break;
+        }
+
+        offset += batchPosts.length;
+
+        if (expectedCount && postIds.size >= expectedCount) {
+            break;
+        }
+
+        if (batchPosts.length < batchSize) {
+            break;
+        }
+    }
+
+    return { posts, included };
+}
+
 async function flarumLoadDiscussion(postId) {
     const id = String(postId);
 
@@ -1859,22 +1928,20 @@ async function flarumLoadDiscussion(postId) {
             return null;
         }
 
-        // 只加载前30条帖子（核心优化点）
-        const limit = 30;
-
-        const postsJson = await flarumRequest(
-            `/posts?filter[discussion]=${encodeURIComponent(id)}&sort=number&page[limit]=${limit}&page[offset]=0&include=user`,
-            { auth: false }
-        );
-
-        const allPosts = Array.isArray(postsJson.data) ? postsJson.data : [];
+        const expectedPostCount = Number(discussionJson.data.attributes?.lastPostNumber);
+        const {
+            posts: allPosts,
+            included: postIncluded
+        } = await flarumLoadDiscussionPosts(id, {
+            expectedCount: expectedPostCount,
+            auth: readWithAuth
+        });
 
         // 合并数据结构（保持兼容）
-        discussionJson.included = [
-            ...(discussionJson.included || []),
-            ...(postsJson.included || []),
-            ...allPosts
-        ];
+        discussionJson.included = mergeUniqueResources(
+            mergeUniqueResources(discussionJson.included || [], postIncluded),
+            allPosts
+        );
 
         discussionJson.data.relationships = discussionJson.data.relationships || {};
         discussionJson.data.relationships.posts = {
@@ -5273,21 +5340,7 @@ function renderForumThread(postData) {
         return;
     }
 
-    const allPosts = [{
-        id: 0,
-        userId: postData.userId,
-        author: postData.author,
-        authorLevel: postData.authorLevel,
-        authorAvatar: postData.authorAvatar,
-        time: postData.publishTime,
-        floor: 1,
-        content: postData.content,
-        isOp: true,
-        replyTo: null
-    }, ...postData.comments.map((comment) => ({
-        ...comment,
-        isOp: isOriginalPosterReply(comment, postData)
-    }))];
+    const allPosts = buildDiscussionPostList(postData);
 
     // 分页配置
     const PAGE_SIZE = POST_PAGE_SIZE;
@@ -5396,6 +5449,49 @@ function renderForumThread(postData) {
             }
         }
     }, 100);
+}
+
+function buildDiscussionPostList(postData) {
+    return [{
+        id: 0,
+        userId: postData.userId,
+        author: postData.author,
+        authorLevel: postData.authorLevel,
+        authorAvatar: postData.authorAvatar,
+        time: postData.publishTime,
+        floor: 1,
+        content: postData.content,
+        isOp: true,
+        replyTo: null
+    }, ...postData.comments.map((comment) => ({
+        ...comment,
+        isOp: isOriginalPosterReply(comment, postData)
+    }))];
+}
+
+function resolveDiscussionPageTarget(allPosts, targetPostId) {
+    const normalizedPosts = Array.isArray(allPosts) ? allPosts : [];
+    const index = normalizedPosts.findIndex((post) => String(post?.id) === String(targetPostId));
+    const safeIndex = index >= 0 ? index : Math.max(normalizedPosts.length - 1, 0);
+    const targetPost = normalizedPosts[safeIndex] || normalizedPosts[0] || null;
+
+    return {
+        index: safeIndex,
+        page: Math.floor(safeIndex / POST_PAGE_SIZE) + 1,
+        floor: targetPost?.floor || null
+    };
+}
+
+function syncDiscussionLocation(postId, page, floor) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('id', String(postId));
+    if (Number(page) > 1) {
+        url.searchParams.set('page', String(page));
+    } else {
+        url.searchParams.delete('page');
+    }
+    url.hash = floor ? `post-${floor}` : '';
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 // 设置回复按钮
@@ -5872,17 +5968,12 @@ function setupReplyForm() {
                 // 重新加载帖子数据并更新UI
                 const newPostData = await loadPostData(postId);
                 if (newPostData) {
+                    const allPosts = buildDiscussionPostList(newPostData);
+                    const targetState = resolveDiscussionPageTarget(allPosts, createdPostId);
                     window.currentPostData = newPostData;
+                    syncDiscussionLocation(postId, targetState.page, targetState.floor || '');
                     renderForumThread(newPostData);
                 }
-
-                // 滚动到最新回复
-                setTimeout(() => {
-                    const posts = document.querySelectorAll('.post');
-                    if (posts.length > 0) {
-                        posts[posts.length - 1].scrollIntoView({ behavior: 'smooth' });
-                    }
-                }, 100);
             } catch (error) {
                 presentComposerSubmissionError(error, {
                     context: 'create_post',
@@ -6129,22 +6220,7 @@ function insertNewCommentToPage(comment, postData) {
     }
     
     // 生成新评论的HTML
-    const allPosts = [{
-        id: 0,
-        userId: postData.userId,
-        author: postData.author,
-        authorLevel: postData.authorLevel,
-        authorPoints: postData.authorPoints,
-        authorAvatar: postData.authorAvatar,
-        time: postData.publishTime,
-        floor: 1,
-        content: postData.content,
-        isOp: true,
-        replyTo: null
-    }, ...postData.comments.map((item) => ({
-        ...item,
-        isOp: isOriginalPosterReply(item, postData)
-    }))];
+    const allPosts = buildDiscussionPostList(postData);
     const normalizedComment = {
         ...comment,
         content: cleanupThreadedReplyHtml(comment.content),
