@@ -3967,9 +3967,59 @@ function isDiscussionUnreadForActor(attributes) {
     return lastPostedAt.getTime() > lastReadAt.getTime();
 }
 
+function getPrivateReadMarkersStorageKey() {
+    const userId = String(localStorage.getItem('flarumUserId') || '').trim();
+    return `pm-private-read-markers:${userId || 'guest'}`;
+}
+
+function normalizePrivateReadMarkers(markers) {
+    if (!markers || typeof markers !== 'object') return {};
+    return Object.entries(markers).reduce((acc, [discussionId, marker]) => {
+        const id = String(discussionId || '').trim();
+        if (!id || !marker || typeof marker !== 'object') return acc;
+        acc[id] = {
+            lastReadAt: typeof marker.lastReadAt === 'string' ? marker.lastReadAt : '',
+            lastReadPostNumber: Number.isFinite(Number(marker.lastReadPostNumber))
+                ? Number(marker.lastReadPostNumber)
+                : null
+        };
+        return acc;
+    }, {});
+}
+
+function loadPersistedPrivateReadMarkers() {
+    try {
+        const raw = localStorage.getItem(getPrivateReadMarkersStorageKey());
+        if (!raw) return {};
+        return normalizePrivateReadMarkers(JSON.parse(raw));
+    } catch {
+        return {};
+    }
+}
+
+function savePersistedPrivateReadMarkers(markers) {
+    try {
+        localStorage.setItem(
+            getPrivateReadMarkersStorageKey(),
+            JSON.stringify(normalizePrivateReadMarkers(markers))
+        );
+    } catch (_) {}
+}
+
+function getPrivateReadMarkersForState(state) {
+    if (state?.privateReadMarkers && typeof state.privateReadMarkers === 'object') {
+        return state.privateReadMarkers;
+    }
+    const persisted = loadPersistedPrivateReadMarkers();
+    if (state && (!state.privateReadMarkers || typeof state.privateReadMarkers !== 'object')) {
+        state.privateReadMarkers = persisted;
+    }
+    return persisted;
+}
+
 function isPrivateDiscussionLocallyMarkedRead(state, discussionId, attributes) {
     const id = discussionId == null ? '' : String(discussionId);
-    const marker = state?.privateReadMarkers?.[id];
+    const marker = getPrivateReadMarkersForState(state)?.[id];
     if (!id || !marker) return false;
 
     const currentPostNumber = Number(attributes?.lastPostNumber);
@@ -3998,6 +4048,7 @@ function rememberPrivateDiscussionRead(state, discussionId, attributes) {
         lastReadAt: attributes?.lastPostedAt || attributes?.createdAt || new Date().toISOString(),
         lastReadPostNumber: Number(attributes?.lastPostNumber) > 0 ? Number(attributes.lastPostNumber) : null
     };
+    savePersistedPrivateReadMarkers(state.privateReadMarkers);
     state.useLocalUnreadCounts = true;
 }
 
@@ -4332,27 +4383,55 @@ async function customGetUnreadCountAggregate() {
     }
 
     try {
-        const json = await customRequest('/custom-messages/unread-count', { auth: true });
-        const publicUnread = Number(json?.publicUnread ?? 0);
-        const notificationUnread = Number(json?.notificationUnread ?? 0);
-        const totalUnread = Number(json?.totalUnread ?? 0);
-        let privateUnread = Number(json?.privateUnread ?? NaN);
-        if (!Number.isFinite(privateUnread) || privateUnread < 0) {
-            privateUnread = await flarumGetPrivateUnreadCount();
-        }
-
-        const safePublic = Number.isFinite(publicUnread) && publicUnread >= 0 ? publicUnread : 0;
-        const safeNotification = Number.isFinite(notificationUnread) && notificationUnread >= 0 ? notificationUnread : 0;
-        const safePrivate = Number.isFinite(privateUnread) && privateUnread >= 0 ? privateUnread : 0;
-        const computedTotal = safePublic + safeNotification + safePrivate;
-        const safeTotal = Number.isFinite(totalUnread) && totalUnread >= 0 ? totalUnread : computedTotal;
-
-        return {
-            publicUnread: safePublic,
-            notificationUnread: safeNotification,
-            privateUnread: safePrivate,
-            totalUnread: safeTotal
+        const effectiveState = window.pmState || {
+            itemsAll: [],
+            privateReadMarkers: loadPersistedPrivateReadMarkers(),
+            useLocalUnreadCounts: false
         };
+        const localCounts = getLocalUnreadCountAggregate();
+        if (localCounts) return localCounts;
+
+        const actorContext = await getCurrentUserRoleContext().catch(() => ({ userId: '', groupIds: [], isAdmin: false, user: null }));
+        const [privateResult, publicMessages, notificationsResult] = await Promise.all([
+            (async () => {
+                try {
+                    const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
+                    return { json, error: null };
+                } catch (error) {
+                    return { json: null, error };
+                }
+            })(),
+            (async () => {
+                try {
+                    return await customGetPublicMessages();
+                } catch (error) {
+                    return { __error: error };
+                }
+            })(),
+            (async () => {
+                try {
+                    const list = await customGetNotifications();
+                    return { data: list, error: null };
+                } catch (error) {
+                    return { data: [], error };
+                }
+            })()
+        ]);
+
+        const privateDiscussions = filterPrivateDiscussionsForActor(Array.isArray(privateResult?.json?.data) ? privateResult.json.data : [], actorContext);
+        const publicItemsRaw = publicMessages && publicMessages.__error ? [] : publicMessages;
+        const notificationItemsRaw = Array.isArray(notificationsResult?.data) ? notificationsResult.data : [];
+
+        const privateUnread = privateDiscussions.reduce((count, discussion) => {
+            const attrs = discussion?.attributes || {};
+            const unread = isDiscussionUnreadForActor(attrs) && !isPrivateDiscussionLocallyMarkedRead(effectiveState, discussion?.id, attrs);
+            return count + (unread ? 1 : 0);
+        }, 0);
+        const publicUnread = (Array.isArray(publicItemsRaw) ? publicItemsRaw : []).reduce((count, item) => count + (!item?.is_read ? 1 : 0), 0);
+        const notificationUnread = notificationItemsRaw.reduce((count, item) => count + (item?.isRead === false ? 1 : 0), 0);
+        const totalUnread = Math.max(0, publicUnread + notificationUnread + privateUnread);
+
+        return { publicUnread, notificationUnread, privateUnread, totalUnread };
     } catch {
         const [publicUnread, privateUnread] = await Promise.all([
             customGetPublicUnreadCount(),
@@ -4470,7 +4549,7 @@ async function renderMessagePage() {
             items: [],
             itemsAll: [],
             selected: null,
-            privateReadMarkers: {},
+            privateReadMarkers: loadPersistedPrivateReadMarkers(),
             useLocalUnreadCounts: false
         };
         window.pmState = state;
