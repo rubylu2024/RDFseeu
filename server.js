@@ -366,6 +366,7 @@ function isByobuPrivateDiscussionNotificationType(notificationType) {
   if (!t) return false;
   if (t.includes('byobu')) return true;
   if (t.includes('privatediscussion')) return true;
+  if (t.includes('discussionadded')) return true;
   if (t.includes('recipientremoved')) return true;
   if (t.includes('recipientadded')) return true;
   return false;

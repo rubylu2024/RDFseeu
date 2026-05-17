@@ -144,6 +144,7 @@ function loadSandbox() {
     const sandbox = loadSandbox();
     assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('byobuPrivateDiscussionCreated'), true);
     assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('byobuPrivateDiscussionReplied'), true);
+    assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('byobuPrivateDiscussionAdded'), true);
     assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('byobuRecipientRemoved'), true);
     assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('newPostInDiscussion'), false);
     assert.strictEqual(sandbox.isByobuPrivateDiscussionNotificationType('userMentioned'), false);
@@ -154,6 +155,7 @@ function loadSandbox() {
     const notificationTypes = [
         'byobuPrivateDiscussionCreated',
         'byobuPrivateDiscussionReplied',
+        'byobuPrivateDiscussionAdded',
         'newPostInDiscussion',
         'userMentioned'
     ];
