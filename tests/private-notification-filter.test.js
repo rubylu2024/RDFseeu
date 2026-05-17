@@ -134,7 +134,14 @@ function loadSandbox() {
     };
 
     vm.createContext(sandbox);
-    ['isByobuPrivateDiscussionNotificationType', 'mapFlarumNotificationKind'].forEach((functionName) => {
+    [
+        'pickIncluded',
+        'isByobuPrivateDiscussionNotificationType',
+        'isPrivateDiscussionLikeResource',
+        'getNotificationDiscussionResource',
+        'shouldHidePrivateDiscussionNotification',
+        'mapFlarumNotificationKind'
+    ].forEach((functionName) => {
         vm.runInContext(extractFunction(source, functionName), sandbox);
     });
     return sandbox;
@@ -167,6 +174,52 @@ function loadSandbox() {
     const sandbox = loadSandbox();
     assert.strictEqual(sandbox.mapFlarumNotificationKind('newPostInDiscussion', null), 'reply');
     assert.strictEqual(sandbox.mapFlarumNotificationKind('userMentioned', null), 'mention');
+})();
+
+(() => {
+    const sandbox = loadSandbox();
+    const included = [
+        {
+            type: 'discussions',
+            id: '88',
+            attributes: {
+                title: '测试私信',
+                isPrivateDiscussion: true
+            }
+        }
+    ];
+    const notification = {
+        type: 'newPostInDiscussion',
+        relationships: {
+            subject: {
+                data: { type: 'discussions', id: '88' }
+            }
+        }
+    };
+    assert.strictEqual(sandbox.shouldHidePrivateDiscussionNotification(notification, included), true);
+})();
+
+(() => {
+    const sandbox = loadSandbox();
+    const included = [
+        {
+            type: 'discussions',
+            id: '66',
+            attributes: {
+                title: '公开帖子',
+                isPrivateDiscussion: false
+            }
+        }
+    ];
+    const notification = {
+        type: 'newPostInDiscussion',
+        relationships: {
+            subject: {
+                data: { type: 'discussions', id: '66' }
+            }
+        }
+    };
+    assert.strictEqual(sandbox.shouldHidePrivateDiscussionNotification(notification, included), false);
 })();
 
 console.log('private-notification-filter.test.js passed');

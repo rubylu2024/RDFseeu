@@ -372,6 +372,42 @@ function isByobuPrivateDiscussionNotificationType(notificationType) {
   return false;
 }
 
+function isPrivateDiscussionLikeResource(resource) {
+  if (!resource || String(resource.type || '') !== 'discussions') return false;
+  const attrs = resource.attributes || {};
+  const rel = resource.relationships || {};
+  if (attrs.isPrivateDiscussion === true) return true;
+  const recipientCount = Number(attrs.recipientCount);
+  if (Number.isFinite(recipientCount) && recipientCount > 0) return true;
+  if (Array.isArray(rel.recipientUsers?.data) && rel.recipientUsers.data.length > 0) return true;
+  if (Array.isArray(rel.recipientGroups?.data) && rel.recipientGroups.data.length > 0) return true;
+  if (Array.isArray(rel.recipients?.data) && rel.recipients.data.length > 0) return true;
+  return false;
+}
+
+function getNotificationDiscussionResource(notification, included) {
+  const relationships = notification?.relationships || {};
+  const subjectRel = relationships?.subject?.data;
+  const subjectType = subjectRel?.type != null ? String(subjectRel.type) : '';
+  const subjectId = subjectRel?.id != null ? String(subjectRel.id) : '';
+  const subject = subjectType && subjectId ? pickIncluded(included, subjectType, subjectId) : null;
+  if (subjectType === 'discussions' && subject) return subject;
+  if (subjectType === 'posts' && subject) {
+    const discussionRel = subject?.relationships?.discussion?.data;
+    if (discussionRel?.id != null) {
+      return pickIncluded(included, 'discussions', String(discussionRel.id));
+    }
+  }
+  return null;
+}
+
+function shouldHidePrivateDiscussionNotification(notification, included) {
+  const notificationType = notification?.attributes?.type || notification?.type || '';
+  if (isByobuPrivateDiscussionNotificationType(notificationType)) return true;
+  const discussion = getNotificationDiscussionResource(notification, included);
+  return isPrivateDiscussionLikeResource(discussion);
+}
+
 async function flarumFetchJsonWithAuth(authRaw, apiPath) {
   const url = `${FLARUM_BASE_URL}${apiPath.startsWith('/') ? '' : '/'}${apiPath}`;
   let response;
@@ -568,9 +604,9 @@ app.get('/custom-messages/unread-count', requireActor(async (req, res) => {
       if (authRaw) {
         const notificationsJson = await loadFlarumNotifications(authRaw, 20);
         const list = Array.isArray(notificationsJson?.data) ? notificationsJson.data : [];
+        const included = Array.isArray(notificationsJson?.included) ? notificationsJson.included : [];
         notificationUnread = list.filter((n) => {
-          const notificationType = n?.attributes?.type || n?.type || '';
-          if (isByobuPrivateDiscussionNotificationType(notificationType)) return false;
+          if (shouldHidePrivateDiscussionNotification(n, included)) return false;
           return n?.attributes?.isRead === false;
         }).length;
       }
@@ -619,11 +655,8 @@ app.get('/custom-notifications', requireActor(async (req, res) => {
     }
 
     const rawJson = await loadFlarumNotifications(parsed.raw, 30);
-    const list = (Array.isArray(rawJson?.data) ? rawJson.data : []).filter((n) => {
-      const notificationType = n?.attributes?.type || n?.type || '';
-      return !isByobuPrivateDiscussionNotificationType(notificationType);
-    });
     const included = Array.isArray(rawJson?.included) ? rawJson.included : [];
+    const list = (Array.isArray(rawJson?.data) ? rawJson.data : []).filter((n) => !shouldHidePrivateDiscussionNotification(n, included));
 
     const data = list.map((n) => {
       const attrs = n?.attributes || {};
