@@ -1926,6 +1926,7 @@ async function flarumLoadDiscussionPosts(discussionId, options = {}) {
             { auth: options.auth }
         );
         const batchPosts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+        const sizeBeforeMerge = postIds.size;
 
         batchPosts.forEach((post) => {
             const postId = post?.id != null ? String(post.id) : '';
@@ -1940,13 +1941,23 @@ async function flarumLoadDiscussionPosts(discussionId, options = {}) {
             break;
         }
 
-        offset += batchPosts.length;
-
         if (expectedCount && postIds.size >= expectedCount) {
             break;
         }
 
-        if (batchPosts.length < batchSize) {
+        const nextOffset = parseOffsetFromPageLink(postsJson?.links?.next);
+        if (Number.isFinite(nextOffset) && nextOffset > offset) {
+            offset = nextOffset;
+            continue;
+        }
+
+        if (postIds.size <= sizeBeforeMerge) {
+            break;
+        }
+
+        offset += batchPosts.length;
+
+        if (!expectedCount && batchPosts.length < batchSize) {
             break;
         }
     }

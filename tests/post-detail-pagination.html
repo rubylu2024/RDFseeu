@@ -137,6 +137,20 @@
             return merged;
         }
 
+        function parseOffsetFromPageLink(link) {
+            const raw = typeof link === 'string' ? link : '';
+            if (!raw) return null;
+            try {
+                const base = window.location.origin || 'http://localhost';
+                const u = new URL(raw, base);
+                const v = u.searchParams.get('page[offset]');
+                const n = v == null ? NaN : Number(v);
+                return Number.isFinite(n) && n >= 0 ? n : null;
+            } catch {
+                return null;
+            }
+        }
+
         async function flarumLoadDiscussionPosts(discussionId, options = {}) {
             const id = String(discussionId);
             const rawExpectedCount = Number(options.expectedCount);
@@ -158,6 +172,7 @@
                     { auth: options.auth }
                 );
                 const batchPosts = Array.isArray(postsJson?.data) ? postsJson.data : [];
+                const sizeBeforeMerge = postIds.size;
 
                 batchPosts.forEach((post) => {
                     const postId = post?.id != null ? String(post.id) : '';
@@ -172,13 +187,23 @@
                     break;
                 }
 
-                offset += batchPosts.length;
-
                 if (expectedCount && postIds.size >= expectedCount) {
                     break;
                 }
 
-                if (batchPosts.length < batchSize) {
+                const nextOffset = parseOffsetFromPageLink(postsJson?.links?.next);
+                if (Number.isFinite(nextOffset) && nextOffset > offset) {
+                    offset = nextOffset;
+                    continue;
+                }
+
+                if (postIds.size <= sizeBeforeMerge) {
+                    break;
+                }
+
+                offset += batchPosts.length;
+
+                if (!expectedCount && batchPosts.length < batchSize) {
                     break;
                 }
             }
@@ -238,26 +263,73 @@
             };
             window.mockFlarumRequest = async (requestPath) => {
                 debugLines.push(`request -> ${requestPath}`);
+                const discussionMatch = /filter\[discussion\]=([^&]+)/.exec(requestPath);
+                const discussionId = discussionMatch ? decodeURIComponent(discussionMatch[1]) : '';
                 const offsetMatch = /page\[offset\]=(\d+)/.exec(requestPath);
                 const offset = offsetMatch ? Number(offsetMatch[1]) : 0;
 
-                if (offset === 0) {
+                if (discussionId === '42' && offset === 0) {
                     return {
-                        data: createPosts(1, 100),
+                        data: createPosts(1, 50),
                         included: [
                             { type: 'users', id: 'u1' },
                             { type: 'users', id: 'u2' }
-                        ]
+                        ],
+                        links: {
+                            next: 'https://forum.test/api/posts?page[offset]=50'
+                        }
                     };
                 }
 
-                if (offset === 100) {
+                if (discussionId === '42' && offset === 50) {
                     return {
-                        data: createPosts(101, 35),
+                        data: createPosts(51, 50),
                         included: [
                             { type: 'users', id: 'u2' },
                             { type: 'users', id: 'u3' }
-                        ]
+                        ],
+                        links: {
+                            next: 'https://forum.test/api/posts?page[offset]=100'
+                        }
+                    };
+                }
+
+                if (discussionId === '42' && offset === 100) {
+                    return {
+                        data: createPosts(101, 35),
+                        included: [
+                            { type: 'users', id: 'u3' },
+                            { type: 'users', id: 'u4' }
+                        ],
+                        links: {}
+                    };
+                }
+
+                if (discussionId === '99' && offset === 0) {
+                    return {
+                        data: createPosts(1, 50),
+                        included: [],
+                        links: {
+                            next: 'https://forum.test/api/posts?page[offset]=50'
+                        }
+                    };
+                }
+
+                if (discussionId === '99' && offset === 50) {
+                    return {
+                        data: createPosts(51, 50),
+                        included: [],
+                        links: {
+                            next: 'https://forum.test/api/posts?page[offset]=100'
+                        }
+                    };
+                }
+
+                if (discussionId === '99' && offset === 100) {
+                    return {
+                        data: createPosts(101, 20),
+                        included: [],
+                        links: {}
                     };
                 }
 
@@ -266,8 +338,12 @@
 
             const loadResult = await flarumLoadDiscussionPosts('42', { expectedCount: 135, auth: false });
             assert(loadResult.posts.length === 135, '应抓取完整的 135 条楼层数据');
-            assert(loadResult.included.length === 3, '应去重并合并分页中的 included 用户资源');
+            assert(loadResult.included.length === 4, '应去重并合并分页中的 included 用户资源');
             addResult('分页抓取会持续请求直到拿满全部评论数据', true);
+
+            const nextLinkOnlyResult = await flarumLoadDiscussionPosts('99', { auth: false });
+            assert(nextLinkOnlyResult.posts.length === 120, '应在未提供 expectedCount 时继续沿 next 链接抓取');
+            addResult('未提供 expectedCount 时也会沿 next 链接抓取超过 100 条数据', true);
 
             const postData = {
                 userId: 1,

@@ -189,7 +189,7 @@ async function testLoadDiscussionPostsPagination() {
         }
     };
 
-    loadFunctions(sandbox, ['mergeUniqueResources', 'flarumLoadDiscussionPosts']);
+    loadFunctions(sandbox, ['mergeUniqueResources', 'parseOffsetFromPageLink', 'flarumLoadDiscussionPosts']);
     const result = await sandbox.flarumLoadDiscussionPosts('42', { expectedCount: 135, auth: false });
 
     assert.strictEqual(requestPaths.length, 2);
@@ -203,6 +203,128 @@ async function testLoadDiscussionPostsPagination() {
         result.included.map((item) => `${item.type}:${item.id}`),
         ['users:u1', 'users:u2', 'users:u3']
     );
+}
+
+async function testLoadDiscussionPostsServerPageCap() {
+    const requestPaths = [];
+    const sandbox = {
+        POST_PAGE_SIZE: 20,
+        DISCUSSION_POST_BATCH_SIZE: 100,
+        encodeURIComponent,
+        Array,
+        Math,
+        Number,
+        String,
+        Object,
+        Set,
+        URL,
+        flarumRequest: async (requestPath) => {
+            requestPaths.push(requestPath);
+            const offsetMatch = /page\[offset\]=(\d+)/.exec(requestPath);
+            const offset = offsetMatch ? Number(offsetMatch[1]) : 0;
+
+            if (offset === 0) {
+                return {
+                    data: createPosts(1, 50),
+                    included: [{ type: 'users', id: 'u1' }],
+                    links: {
+                        next: 'https://forum.test/api/posts?page[offset]=50'
+                    }
+                };
+            }
+
+            if (offset === 50) {
+                return {
+                    data: createPosts(51, 50),
+                    included: [{ type: 'users', id: 'u2' }],
+                    links: {
+                        next: 'https://forum.test/api/posts?page[offset]=100'
+                    }
+                };
+            }
+
+            if (offset === 100) {
+                return {
+                    data: createPosts(101, 35),
+                    included: [{ type: 'users', id: 'u3' }],
+                    links: {}
+                };
+            }
+
+            return { data: [], included: [], links: {} };
+        }
+    };
+
+    loadFunctions(sandbox, ['mergeUniqueResources', 'parseOffsetFromPageLink', 'flarumLoadDiscussionPosts']);
+    const result = await sandbox.flarumLoadDiscussionPosts('42', { expectedCount: 135, auth: false });
+
+    assert.strictEqual(requestPaths.length, 3);
+    assert.ok(requestPaths[0].includes('page[limit]=100'));
+    assert.ok(requestPaths[1].includes('page[offset]=50'));
+    assert.ok(requestPaths[2].includes('page[offset]=100'));
+    assert.strictEqual(result.posts.length, 135);
+    assert.strictEqual(result.posts[0].id, '1');
+    assert.strictEqual(result.posts[result.posts.length - 1].id, '135');
+}
+
+async function testLoadDiscussionPostsWithoutExpectedCountFollowsNextLink() {
+    const requestPaths = [];
+    const sandbox = {
+        POST_PAGE_SIZE: 20,
+        DISCUSSION_POST_BATCH_SIZE: 100,
+        encodeURIComponent,
+        Array,
+        Math,
+        Number,
+        String,
+        Object,
+        Set,
+        URL,
+        flarumRequest: async (requestPath) => {
+            requestPaths.push(requestPath);
+            const offsetMatch = /page\[offset\]=(\d+)/.exec(requestPath);
+            const offset = offsetMatch ? Number(offsetMatch[1]) : 0;
+
+            if (offset === 0) {
+                return {
+                    data: createPosts(1, 50),
+                    included: [],
+                    links: {
+                        next: 'https://forum.test/api/posts?page[offset]=50'
+                    }
+                };
+            }
+
+            if (offset === 50) {
+                return {
+                    data: createPosts(51, 50),
+                    included: [],
+                    links: {
+                        next: 'https://forum.test/api/posts?page[offset]=100'
+                    }
+                };
+            }
+
+            if (offset === 100) {
+                return {
+                    data: createPosts(101, 20),
+                    included: [],
+                    links: {}
+                };
+            }
+
+            return { data: [], included: [], links: {} };
+        }
+    };
+
+    loadFunctions(sandbox, ['mergeUniqueResources', 'parseOffsetFromPageLink', 'flarumLoadDiscussionPosts']);
+    const result = await sandbox.flarumLoadDiscussionPosts('99', { auth: false });
+
+    assert.strictEqual(requestPaths.length, 3);
+    assert.ok(requestPaths[1].includes('page[offset]=50'));
+    assert.ok(requestPaths[2].includes('page[offset]=100'));
+    assert.strictEqual(result.posts.length, 120);
+    assert.strictEqual(result.posts[result.posts.length - 1].id, '120');
 }
 
 function testReplyTargetPagination() {
@@ -272,6 +394,8 @@ function testSyncDiscussionLocation() {
 
 async function runTests() {
     await testLoadDiscussionPostsPagination();
+    await testLoadDiscussionPostsServerPageCap();
+    await testLoadDiscussionPostsWithoutExpectedCountFollowsNextLink();
     testReplyTargetPagination();
     testSyncDiscussionLocation();
     console.log('post-detail-pagination tests passed');
