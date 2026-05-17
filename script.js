@@ -1981,7 +1981,7 @@ async function flarumLoadDiscussionList() {
                 id: Number(d.id),
                 title: d.attributes?.title || '',
                 author: getPreferredDisplayName(user?.attributes),
-                date: (d.attributes?.createdAt || '').slice(0, 10),
+                date: formatFlarumTime(d.attributes?.createdAt || '').slice(0, 10),
                 views: viewCount
             };
         });
@@ -2538,7 +2538,7 @@ async function renderAllPostsPage() {
                 <tr>
                     <td style="width: 42%;"><a href="post.html?id=${encodeURIComponent(d.id)}">${escapeHtml(title || '无标题')}</a></td>
                     <td style="width: 14%;">${authorHtml || ''}</td>
-                    <td style="width: 16%;">${escapeHtml(createdAt.slice(0, 16).replace('T', ' '))}</td>
+                    <td style="width: 16%;">${escapeHtml(formatFlarumTime(createdAt).slice(0, 16))}</td>
                     <td style="width: 14%;">${commentCount}</td>
                     <td style="width: 14%;">${formatViewCount(viewCount)}</td>
                 </tr>
@@ -2774,7 +2774,7 @@ async function renderSearchPage() {
                 <tr>
                     <td style="width: 44%;"><a href="post.html?id=${encodeURIComponent(d.id)}">${escapeHtml(title || '无标题')}</a></td>
                     <td style="width: 14%;">${authorHtml || ''}</td>
-                    <td style="width: 16%;">${escapeHtml(createdAt.slice(0, 16).replace('T', ' '))}</td>
+                    <td style="width: 16%;">${escapeHtml(formatFlarumTime(createdAt).slice(0, 16))}</td>
                     <td style="width: 12%;">${commentCount}</td>
                     <td style="width: 14%;">${formatViewCount(viewCount)}</td>
                 </tr>
@@ -2898,7 +2898,7 @@ async function renderSearchPage() {
                 <tr>
                     <td style="width: 34%;"><a href="${href}">${previewHtml}</a></td>
                     <td style="width: 14%;">${authorHtml || ''}</td>
-                    <td style="width: 16%;">${escapeHtml(createdAt.slice(0, 16).replace('T', ' '))}</td>
+                    <td style="width: 16%;">${escapeHtml(formatFlarumTime(createdAt).slice(0, 16))}</td>
                     <td style="width: 36%;"><a href="post.html?id=${encodeURIComponent(discussionId)}">${escapeHtml(discussionTitle)}</a></td>
                 </tr>
             `;
@@ -3135,7 +3135,7 @@ async function renderDynamicHomeLinks() {
                         title: String(d.attributes?.title || ''),
                         views: getDiscussionViewCount(d.attributes),
                         author: '',
-                        date: (String(d.attributes?.createdAt || '')).slice(0, 10)
+                        date: formatFlarumTime(String(d.attributes?.createdAt || '')).slice(0, 10)
                     };
                 };
 
@@ -3695,7 +3695,7 @@ function renderPostListIntoIndex(recentReplies) {
                     <tr>
                         <td><a href="${buildReplyHref(r)}" style="color: #0066cc;">${truncate(r.content || '', 20)}</a></td>
                         <td>${r.author || ''}</td>
-                        <td>${(r.time || '').slice(0, 16).replace('T', ' ') || ''}</td>
+                        <td>${formatFlarumTime(r.time).slice(0, 16) || ''}</td>
                         <td><a href="post.html?id=${encodeURIComponent(r.discussionId)}">${truncate(r.title || '', 20)}</a></td>
                     </tr>
                 `).join('') : `<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无回复</td></tr>`}
@@ -6179,32 +6179,13 @@ function wrapSelection(textarea, before, after, newLine = false) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-// 检查用户是否有图片上传权限
+// 登录用户即可使用图片上传
 async function checkImagePermission() {
     const insertImageBtn = document.getElementById('insert-image-btn');
     if (!insertImageBtn) return;
 
     const token = getFlarumToken();
-    if (!token) {
-        insertImageBtn.style.display = 'none';
-        return;
-    }
-
-    const currentUserId = localStorage.getItem('flarumUserId');
-    if (!currentUserId) {
-        insertImageBtn.style.display = 'none';
-        return;
-    }
-
-    try {
-        const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`, { auth: true });
-        const groups = userJson?.data?.relationships?.groups?.data || [];
-        // 检查是否在管理员或版主组
-        const isAdminOrMod = groups.some(g => ['1', '2'].includes(g.id));
-        insertImageBtn.style.display = isAdminOrMod ? 'inline-block' : 'none';
-    } catch {
-        insertImageBtn.style.display = 'none';
-    }
+    insertImageBtn.style.display = token ? 'inline-block' : 'none';
 }
 
 // 将新评论直接插入到页面中（无需重新渲染整个帖子）

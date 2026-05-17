@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -812,20 +812,7 @@
             if (!insertImageBtn || typeof getFlarumToken !== 'function') return;
 
             const token = getFlarumToken();
-            const currentUserId = localStorage.getItem('flarumUserId');
-            if (!token || !currentUserId) {
-                insertImageBtn.style.display = 'none';
-                return;
-            }
-
-            try {
-                const userJson = await flarumRequest(`/users/${currentUserId}?include=groups`, { auth: true });
-                const groups = userJson && userJson.data && userJson.data.relationships && userJson.data.relationships.groups ? userJson.data.relationships.groups.data || [] : [];
-                const isAdminOrMod = groups.some((g) => ['1', '2'].includes(String(g.id)));
-                insertImageBtn.style.display = isAdminOrMod ? 'inline-flex' : 'none';
-            } catch {
-                insertImageBtn.style.display = 'none';
-            }
+            insertImageBtn.style.display = token ? 'inline-flex' : 'none';
         }
 
         document.addEventListener('DOMContentLoaded', renderNewPostPage);
