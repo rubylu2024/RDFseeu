@@ -4389,7 +4389,6 @@ function getLocalUnreadCountAggregate() {
 async function refreshShortMessagesEntry() {
     const entryEls = Array.from(document.querySelectorAll('.status-right'))
         .filter((el) => (el?.getAttribute?.('onclick') || '').includes("message.html"));
-    const badgeEls = Array.from(document.querySelectorAll('.unread-badge'));
     const headCountEl = document.getElementById('pm-unread-count');
 
     const setEntryLabel = (el, label) => {
@@ -4411,7 +4410,6 @@ async function refreshShortMessagesEntry() {
 
     if (!getFlarumToken() || !localStorage.getItem('flarumUserId')) {
         entryEls.forEach((el) => setEntryLabel(el, '消息中心'));
-        badgeEls.forEach((el) => { el.style.display = 'none'; el.textContent = '0'; });
         if (headCountEl) headCountEl.textContent = '0';
         return { totalUnread: 0, publicUnread: 0, notificationUnread: 0, privateUnread: 0 };
     }
@@ -4422,11 +4420,6 @@ async function refreshShortMessagesEntry() {
     const label = total > 0 ? `消息中心(${showText})` : '消息中心';
 
     entryEls.forEach((el) => setEntryLabel(el, label));
-
-    badgeEls.forEach((el) => {
-        el.style.display = 'none';
-        el.textContent = '0';
-    });
 
     if (headCountEl) headCountEl.textContent = String(total);
     return { ...counts, totalUnread: total };

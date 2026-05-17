@@ -1064,24 +1064,6 @@ body::before {
     }
 }
 
-/* 未读消息红点 */
-.unread-badge {
-    position: absolute;
-    top: -5px;
-    right: -10px;
-    background-color: #ff0000;
-    color: white !important;
-    font-size: 10px;
-    font-weight: bold;
-    min-width: 14px;
-    height: 14px;
-    line-height: 14px;
-    text-align: center;
-    border-radius: 50%;
-    padding: 0 2px;
-    box-shadow: 0 0 2px rgba(0,0,0,0.5);
-}
-
 .pm-list-item.pm-read {
     opacity: 0.75;
 }
