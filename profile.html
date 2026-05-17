@@ -1388,7 +1388,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260515-6"></script>
+    <script src="script.js?v=20260517-2"></script>
     <script>
         const PROFILE_TRUST_TITLES = ['新手上路', '初级会员', '中级会员', '高级会员', '资深会员', '精英会员'];
         const PROFILE_USER_TITLES = ['初来乍到', '渐入佳境', '登堂入室', '炉火纯青', '出神入化', '名动一方'];
@@ -1552,7 +1552,7 @@
             if (activityTitle) activityTitle.textContent = isOwner ? '我的主题' : 'TA的主题';
 
             if (pmLink) {
-                const canUsePrivateMessage = viewerLoggedIn && isViewerAdmin;
+                const canUsePrivateMessage = viewerLoggedIn;
                 pmLink.style.display = canUsePrivateMessage ? 'inline-block' : 'none';
                 if (isOwner) {
                     pmLink.textContent = '写短消息';

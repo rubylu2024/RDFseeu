@@ -4487,16 +4487,33 @@ async function renderMessagePage() {
         detailBodyEl.innerHTML = '<div class="pm-empty">请选择一条短消息查看内容。</div>';
     };
 
-    const actorContext = await getCurrentUserRoleContext().catch(() => ({ userId: '', groupIds: [], isAdmin: false }));
+    const actorContext = await getCurrentUserRoleContext().catch(() => ({ userId: '', groupIds: [], isAdmin: false, user: null }));
     const actorUserId = String(actorContext?.userId || '').trim();
     const isAdmin = !!actorContext.isAdmin;
+    const readConsumablePointsFromSources = (userAttributes) => (typeof getUserPoints === 'function' ? getUserPoints(userAttributes) : null);
+    const formatConsumablePointsText = (value) => (value == null ? '--' : String(value));
+    const loadPrivateMessageAccessInfo = async () => {
+        if (!actorUserId) return { consumablePoints: null };
+        try {
+            const userJson = await flarumRequest(`/users/${encodeURIComponent(actorUserId)}`, { auth: true });
+            const userAttributes = userJson?.data?.attributes || {};
+            return {
+                consumablePoints: readConsumablePointsFromSources(userAttributes)
+            };
+        } catch (error) {
+            console.warn('加载私信积分信息失败:', error);
+            return {
+                consumablePoints: readConsumablePointsFromSources(actorContext?.user?.attributes || {})
+            };
+        }
+    };
     const privateFeatureEnabled = true;
-    const canComposePrivate = isAdmin;
-    const canReplyPrivate = isAdmin;
-    const privateFeatureDeniedMessage = '私人短消息当前仅对管理员开放。';
+    const canComposePrivate = !!actorUserId;
+    const canReplyPrivate = !!actorUserId;
+    const privateFeatureDeniedMessage = '请先登录后使用私人短消息。';
     const privateFilterWrap = filterPrivate.closest('.pm-filter');
     composePublicBtn.style.display = isAdmin ? '' : 'none';
-    composePrivateBtn.style.display = canComposePrivate ? '' : 'none';
+    composePrivateBtn.style.display = '';
     if (privateFilterWrap) privateFilterWrap.style.display = privateFeatureEnabled ? '' : 'none';
 
     const setComposePrivateBtnActive = (active) => {
@@ -4577,8 +4594,17 @@ async function renderMessagePage() {
     const renderComposePrivate = async ({ toUserId }) => {
         setComposePrivateBtnActive(true);
         const toId = toUserId == null ? '' : String(toUserId);
+        const accessInfo = await loadPrivateMessageAccessInfo();
+        const consumablePoints = accessInfo.consumablePoints;
+        const canStartConversation = consumablePoints != null && consumablePoints > 0;
+        const pointsHint = consumablePoints == null
+            ? '暂时无法读取积分，请稍后刷新后重试。'
+            : (canStartConversation
+                ? `提示：发起一次新会话会扣除 1 积分，回复不扣积分。当前可用积分：${formatConsumablePointsText(consumablePoints)}`
+                : `当前可用积分：${formatConsumablePointsText(consumablePoints)}，积分需大于 0 才能发起新会话。`);
         detailBodyEl.innerHTML = `
             <form class="pm-form" id="pm-compose-form">
+                <div class="pm-hint${canStartConversation ? '' : ' warning'}" style="margin-bottom: 12px;">${escapeHtml(pointsHint)}</div>
                 <div style="margin-bottom: 10px;">
                     <label>收件人</label>
                     <select id="pm-compose-to-select">
@@ -4601,13 +4627,13 @@ async function renderMessagePage() {
                     <textarea id="pm-compose-content" placeholder="请输入短消息内容"></textarea>
                 </div>
                 <div class="pm-form-actions">
-                    <button type="submit" class="pm-btn primary">发送</button>
+                    <button type="submit" class="pm-btn primary"${canStartConversation ? '' : ' disabled'}>${canStartConversation ? '发送' : '积分不足，无法发起'}</button>
                     <button type="button" class="pm-btn" id="pm-compose-cancel">取消</button>
                 </div>
             </form>
         `;
         if (detailTitleEl) detailTitleEl.textContent = '写短消息';
-        if (detailMetaEl) detailMetaEl.textContent = '';
+        if (detailMetaEl) detailMetaEl.textContent = '发起新会话扣 1 积分，回复不扣积分';
 
         const form = document.getElementById('pm-compose-form');
         const cancelBtn = document.getElementById('pm-compose-cancel');
@@ -4775,9 +4801,26 @@ async function renderMessagePage() {
                         submitBtn.disabled = true;
                         submitBtn.textContent = '发送中...';
                     }
+                    const latestAccessInfo = await loadPrivateMessageAccessInfo();
+                    const latestConsumablePoints = latestAccessInfo.consumablePoints;
+                    if (latestConsumablePoints == null) {
+                        setAlert('暂时无法读取积分，请稍后重试。');
+                        return;
+                    }
+                    if (latestConsumablePoints <= 0) {
+                        setAlert(`积分不足，当前可用积分：${formatConsumablePointsText(latestConsumablePoints)}，无法发起新会话。`);
+                        return;
+                    }
+                    if (!window.confirm(`发起一次新会话会扣除 1 积分，回复不扣积分。当前可用积分：${formatConsumablePointsText(latestConsumablePoints)}，确认继续吗？`)) {
+                        return;
+                    }
                     const recipientUser = await flarumLoadUserById(recipientId);
+                    if (!recipientUser) {
+                        setAlert('收件人不存在或不可用。');
+                        return;
+                    }
                     if (!isAllowedPrivateRecipientUser(recipientUser)) {
-                        setAlert('当前仅支持向其他管理员发送短消息。');
+                        setAlert('不能给自己发送短消息。');
                         return;
                     }
                     const created = await flarumRequest('/discussions', {
@@ -5302,6 +5345,7 @@ async function renderMessagePage() {
             detailBodyEl.innerHTML = `
                 <div class="pm-thread" id="pm-thread">${threadHtml || '<div class="pm-empty">暂无内容</div>'}</div>
                 ${canReplyPrivate ? `
+                <div class="pm-hint" style="margin-top: 12px;">回复短消息不扣积分。</div>
                 <form class="pm-form" id="pm-reply-form">
                     <label>回复</label>
                     <textarea id="pm-reply-content" placeholder="写下你的回复..."></textarea>
@@ -5309,7 +5353,7 @@ async function renderMessagePage() {
                         <button type="submit" class="pm-btn primary">回复</button>
                     </div>
                 </form>
-                ` : '<div class="pm-hint" style="margin-top: 12px;">当前账号仅可查看私密讨论，不能回复。</div>'}
+                ` : '<div class="pm-hint" style="margin-top: 12px;">请先登录后再回复短消息。</div>'}
             `;
 
             const thread = document.getElementById('pm-thread');
