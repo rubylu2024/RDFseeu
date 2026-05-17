@@ -1535,7 +1535,8 @@
                 lastActiveAt: attributes.lastSeenAt || attributes.lastActivityAt || '',
                 groupNames: groupNames.length ? groupNames : ['普通会员'],
                 badgeHTML,
-                isActivated
+                isActivated,
+                isAdminUser: groupRefs.some((groupRef) => String(groupRef?.id || '') === '1')
             };
         }
 
@@ -1551,6 +1552,8 @@
             if (activityTitle) activityTitle.textContent = isOwner ? '我的主题' : 'TA的主题';
 
             if (pmLink) {
+                const canUsePrivateMessage = viewerLoggedIn && isViewerAdmin;
+                pmLink.style.display = canUsePrivateMessage ? 'inline-block' : 'none';
                 if (isOwner) {
                     pmLink.textContent = '写短消息';
                     pmLink.setAttribute('href', 'message.html');

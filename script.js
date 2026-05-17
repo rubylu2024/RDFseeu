@@ -4058,11 +4058,14 @@ function buildMessageHrefForUserId(toUserId) {
     return `login.html?redirect=${encodeURIComponent(base)}`;
 }
 
+function isAdminUserResource(user) {
+    const groups = user?.relationships?.groups?.data || [];
+    return Array.isArray(groups) && groups.some((g) => String(g?.id || '') === '1');
+}
+
 function isAllowedShortMessageRecipientUserId(userId) {
     const n = Number(userId);
-    if (!Number.isFinite(n) || n <= 0) return false;
-    if (n >= 1 && n <= 3) return true;
-    return n >= 131;
+    return Number.isFinite(n) && n > 0;
 }
 
 function buildUserSelectLabel(user) {
@@ -4077,7 +4080,7 @@ function buildUserSelectLabel(user) {
 async function flarumLoadUserById(userId) {
     const id = String(userId || '');
     if (!id) return null;
-    const json = await flarumRequest(`/users/${encodeURIComponent(id)}`, { auth: true });
+    const json = await flarumRequest(`/users/${encodeURIComponent(id)}?include=groups`, { auth: true });
     return json?.data || null;
 }
 
@@ -4085,8 +4088,8 @@ async function flarumSearchUsers({ query, limit }) {
     const q = typeof query === 'string' ? query.trim() : '';
     const safeLimit = typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.min(30, Math.floor(limit)) : 15;
     const url = q
-        ? `/users?page[limit]=${safeLimit}&filter[q]=${encodeURIComponent(q)}`
-        : `/users?page[limit]=${safeLimit}`;
+        ? `/users?page[limit]=${safeLimit}&filter[q]=${encodeURIComponent(q)}&include=groups`
+        : `/users?page[limit]=${safeLimit}&include=groups`;
     const json = await flarumRequest(url, { auth: true });
     return Array.isArray(json?.data) ? json.data : [];
 }
@@ -4101,14 +4104,14 @@ async function flarumLoadUsersSortedPage({ offset, limit, sortCandidates }) {
     let lastError = null;
     for (const sort of candidates) {
         try {
-            const json = await flarumRequest(`/users?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}`, { auth: true });
+            const json = await flarumRequest(`/users?sort=${encodeURIComponent(sort)}&page[limit]=${safeLimit}&page[offset]=${safeOffset}&include=groups`, { auth: true });
             return { json, usedSort: sort };
         } catch (error) {
             lastError = error;
         }
     }
 
-    const json = await flarumRequest(`/users?page[limit]=${safeLimit}&page[offset]=${safeOffset}`, { auth: true });
+    const json = await flarumRequest(`/users?page[limit]=${safeLimit}&page[offset]=${safeOffset}&include=groups`, { auth: true });
     return { json, usedSort: null, fallbackError: lastError };
 }
 
@@ -4137,6 +4140,36 @@ function mergeUsersUnique(users) {
         out.push(u);
     });
     return out;
+}
+
+function isPrivateDiscussionRelevantToActor(discussion, actorContext) {
+    const actorUserId = String(actorContext?.userId || '').trim();
+    if (!actorUserId) return false;
+
+    const relationships = discussion?.relationships || {};
+    const actorGroupIds = new Set((Array.isArray(actorContext?.groupIds) ? actorContext.groupIds : []).map((id) => String(id)));
+    const starterId = String(relationships?.user?.data?.id || '').trim();
+    if (starterId && starterId === actorUserId) return true;
+
+    const recipientUsers = Array.isArray(relationships?.recipientUsers?.data) ? relationships.recipientUsers.data : null;
+    if (recipientUsers && recipientUsers.some((item) => String(item?.id || '').trim() === actorUserId)) return true;
+
+    const recipientGroups = Array.isArray(relationships?.recipientGroups?.data) ? relationships.recipientGroups.data : null;
+    if (recipientGroups && recipientGroups.some((item) => actorGroupIds.has(String(item?.id || '').trim()))) return true;
+
+    const recipients = Array.isArray(relationships?.recipients?.data) ? relationships.recipients.data : null;
+    if (recipients && recipients.some((item) => {
+        const type = String(item?.type || '').trim();
+        const id = String(item?.id || '').trim();
+        if (type === 'users') return id === actorUserId;
+        if (type === 'groups') return actorGroupIds.has(id);
+        return false;
+    })) return true;
+    return false;
+}
+
+function filterPrivateDiscussionsForActor(discussions, actorContext) {
+    return (Array.isArray(discussions) ? discussions : []).filter((discussion) => isPrivateDiscussionRelevantToActor(discussion, actorContext));
 }
 
 async function flarumLoadPrivateDiscussionsPage({ offset, limit }) {
@@ -4178,8 +4211,9 @@ async function flarumLoadPrivateDiscussionDetail(discussionId) {
 async function flarumGetPrivateUnreadCount() {
     if (!getFlarumToken()) return 0;
     try {
+        const actorContext = await getCurrentUserRoleContext();
         const { json } = await flarumLoadPrivateDiscussionsPage({ offset: 0, limit: 30 });
-        const list = Array.isArray(json?.data) ? json.data : [];
+        const list = filterPrivateDiscussionsForActor(Array.isArray(json?.data) ? json.data : [], actorContext);
         return list.filter((d) => isDiscussionUnreadForActor(d?.attributes)).length;
     } catch {
         return 0;
@@ -4391,8 +4425,17 @@ async function renderMessagePage() {
         detailBodyEl.innerHTML = '<div class="pm-empty">请选择一条短消息查看内容。</div>';
     };
 
-    const isAdmin = await isCurrentUserAdmin().catch(() => false);
+    const actorContext = await getCurrentUserRoleContext().catch(() => ({ userId: '', groupIds: [], isAdmin: false }));
+    const actorUserId = String(actorContext?.userId || '').trim();
+    const isAdmin = !!actorContext.isAdmin;
+    const privateFeatureEnabled = true;
+    const canComposePrivate = isAdmin;
+    const canReplyPrivate = isAdmin;
+    const privateFeatureDeniedMessage = '私人短消息当前仅对管理员开放。';
+    const privateFilterWrap = filterPrivate.closest('.pm-filter');
     composePublicBtn.style.display = isAdmin ? '' : 'none';
+    composePrivateBtn.style.display = canComposePrivate ? '' : 'none';
+    if (privateFilterWrap) privateFilterWrap.style.display = privateFeatureEnabled ? '' : 'none';
 
     const setComposePrivateBtnActive = (active) => {
         if (!composePrivateBtn) return;
@@ -4400,10 +4443,13 @@ async function renderMessagePage() {
     };
 
     const isReplyMessageItem = (item) => item?.kind === 'notification' && (item?.notifyType === 'reply' || item?.notifyType === 'quote');
-    const isPrivateMessageItem = (item) => item?.kind === 'private';
-    const isDisabledMessageFeatureItem = (item) => isReplyMessageItem(item) || isPrivateMessageItem(item);
+    const isDisabledMessageFeatureItem = (item) => isReplyMessageItem(item);
     const showMessageFeatureDebuggingNotice = () => {
         alert('功能调试中');
+    };
+    const showPrivateFeatureDeniedNotice = () => {
+        setAlert(privateFeatureDeniedMessage);
+        detailBodyEl.innerHTML = `<div class="pm-empty">${escapeHtml(privateFeatureDeniedMessage)}</div>`;
     };
 
     const formatNotificationKindLabel = (t) => {
@@ -4508,12 +4554,16 @@ async function renderMessagePage() {
         const suggestBox = document.getElementById('pm-compose-suggest');
         const titleInput = document.getElementById('pm-compose-title');
         const contentInput = document.getElementById('pm-compose-content');
+        const isAllowedPrivateRecipientUser = (user) => {
+            const candidateId = String(user?.id || '').trim();
+            return !!candidateId && candidateId !== actorUserId;
+        };
 
         const rebuildRecipientOptions = (users, selectedId) => {
             if (!toSelect) return;
             const selected = selectedId != null ? String(selectedId) : '';
             const optionsHtml = mergeUsersUnique(users)
-                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id) && isAllowedPrivateRecipientUser(u))
                 .sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0))
                 .map((u) => {
                     const id = String(u.id);
@@ -4543,7 +4593,7 @@ async function renderMessagePage() {
         const setSuggestItems = (users) => {
             if (!suggestBox) return;
             const list = (Array.isArray(users) ? users : [])
-                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                .filter((u) => isAllowedShortMessageRecipientUserId(u?.id) && isAllowedPrivateRecipientUser(u))
                 .slice(0, 12);
             if (list.length === 0) {
                 suggestBox.style.display = 'none';
@@ -4616,7 +4666,7 @@ async function renderMessagePage() {
                     candidateUsers.push(...pageUsers0, ...pageUsers1);
 
                     const merged = mergeUsersUnique(candidateUsers)
-                        .filter((u) => isAllowedShortMessageRecipientUserId(u?.id))
+                        .filter((u) => isAllowedShortMessageRecipientUserId(u?.id) && isAllowedPrivateRecipientUser(u))
                         .filter((u) => userMatchesQueryFuzzy(u, q))
                         .sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0));
 
@@ -4662,6 +4712,11 @@ async function renderMessagePage() {
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.textContent = '发送中...';
+                    }
+                    const recipientUser = await flarumLoadUserById(recipientId);
+                    if (!isAllowedPrivateRecipientUser(recipientUser)) {
+                        setAlert('当前仅支持向其他管理员发送短消息。');
+                        return;
                     }
                     const created = await flarumRequest('/discussions', {
                         method: 'POST',
@@ -4934,7 +4989,7 @@ async function renderMessagePage() {
                 })()
             ]);
 
-            const privateDiscussions = Array.isArray(privateResult?.json?.data) ? privateResult.json.data : [];
+            const privateDiscussions = filterPrivateDiscussionsForActor(Array.isArray(privateResult?.json?.data) ? privateResult.json.data : [], actorContext);
             const privateIncluded = Array.isArray(privateResult?.json?.included) ? privateResult.json.included : [];
 
             const privateItems = privateDiscussions.map((d) => {
@@ -5124,7 +5179,7 @@ async function renderMessagePage() {
             }
 
             const { discussion, included, posts } = await flarumLoadPrivateDiscussionDetail(id);
-            if (!discussion) {
+            if (!discussion || !isPrivateDiscussionRelevantToActor(discussion, actorContext)) {
                 detailBodyEl.innerHTML = '<div class="pm-empty">短消息不存在或无法访问。</div>';
                 return;
             }
@@ -5157,6 +5212,7 @@ async function renderMessagePage() {
 
             detailBodyEl.innerHTML = `
                 <div class="pm-thread" id="pm-thread">${threadHtml || '<div class="pm-empty">暂无内容</div>'}</div>
+                ${canReplyPrivate ? `
                 <form class="pm-form" id="pm-reply-form">
                     <label>回复</label>
                     <textarea id="pm-reply-content" placeholder="写下你的回复..."></textarea>
@@ -5164,6 +5220,7 @@ async function renderMessagePage() {
                         <button type="submit" class="pm-btn primary">回复</button>
                     </div>
                 </form>
+                ` : '<div class="pm-hint" style="margin-top: 12px;">当前账号仅可查看私密讨论，不能回复。</div>'}
             `;
 
             const thread = document.getElementById('pm-thread');
@@ -5225,13 +5282,23 @@ async function renderMessagePage() {
     };
     filterPrivate.onchange = () => {
         if (!filterPrivate.checked) return;
-        syncFilterControls();
-        showMessageFeatureDebuggingNotice();
+        setFilter(filterPrivate.value || 'private').catch(() => {});
     };
     filterUnread.onchange = () => { if (filterUnread.checked) setFilter(filterUnread.value || 'unread').catch(() => {}); };
 
     composePrivateBtn.onclick = () => {
-        showMessageFeatureDebuggingNotice();
+        if (!canComposePrivate) {
+            showPrivateFeatureDeniedNotice();
+            return;
+        }
+        const params = new URLSearchParams(window.location.search);
+        params.delete('to');
+        params.delete('composePublic');
+        const next = params.toString();
+        window.history.replaceState(null, '', next ? `message.html?${next}` : 'message.html');
+        renderComposePrivate({ toUserId: '' }).catch(() => {
+            setAlert('短消息加载失败，请稍后再试。');
+        });
     };
 
     composePublicBtn.onclick = () => {
@@ -5252,11 +5319,15 @@ async function renderMessagePage() {
         return;
     }
     if (to) {
-        showMessageFeatureDebuggingNotice();
-        await setFilter('all');
+        if (!canComposePrivate) {
+            showPrivateFeatureDeniedNotice();
+            await setFilter('all');
+            return;
+        }
+        await renderComposePrivate({ toUserId: to });
         return;
     }
-    if (state.filter === 'reply' || state.filter === 'private') {
+    if (state.filter === 'reply') {
         state.filter = 'all';
     }
     await setFilter(state.filter);
@@ -5762,19 +5833,53 @@ async function getUserGroupBadgeType(userId) {
     return '';
 }
 
+let currentUserRoleContextCacheKey = '';
+let currentUserRoleContextCachePromise = null;
+
+async function getCurrentUserRoleContext() {
+    const token = getFlarumToken();
+    const userId = localStorage.getItem('flarumUserId');
+    if (!token || !userId) {
+        currentUserRoleContextCacheKey = '';
+        currentUserRoleContextCachePromise = null;
+        return { userId: '', groupIds: [], isAdmin: false, user: null };
+    }
+
+    const cacheKey = `${String(userId)}:${String(token)}`;
+    if (currentUserRoleContextCachePromise && currentUserRoleContextCacheKey === cacheKey) {
+        return currentUserRoleContextCachePromise;
+    }
+
+    currentUserRoleContextCacheKey = cacheKey;
+    currentUserRoleContextCachePromise = (async () => {
+        try {
+            const userJson = await flarumRequest(`/users/${userId}?include=groups`, { auth: true });
+            const groups = userJson?.data?.relationships?.groups?.data || [];
+            const groupIds = Array.isArray(groups) ? groups.map((g) => String(g?.id || '')).filter(Boolean) : [];
+            return {
+                userId: String(userId),
+                groupIds,
+                isAdmin: groupIds.includes('1'),
+                user: userJson?.data || null
+            };
+        } catch {
+            return {
+                userId: String(userId),
+                groupIds: [],
+                isAdmin: false,
+                user: null
+            };
+        }
+    })();
+
+    return currentUserRoleContextCachePromise;
+}
+
 // 检查当前用户是否是管理员
 async function isCurrentUserAdmin() {
-    const token = getFlarumToken();
-    if (!token) return false;
-    
-    const userId = localStorage.getItem('flarumUserId');
-    if (!userId) return false;
-    
     try {
-        const userJson = await flarumRequest(`/users/${userId}`, { auth: true });
-        const groups = userJson?.data?.relationships?.groups?.data || [];
-        // 检查是否在管理员组（通常ID为1）
-        return groups.some(g => g.id === '1');
+        const roleContext = await getCurrentUserRoleContext();
+        return !!roleContext.isAdmin;
     } catch {
         return false;
     }
