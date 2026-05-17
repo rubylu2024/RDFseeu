@@ -130,7 +130,10 @@ function loadSandbox() {
     const source = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
     const sandbox = {
         console,
-        String
+        String,
+        Number,
+        Array,
+        Set
     };
 
     vm.createContext(sandbox);
@@ -138,6 +141,8 @@ function loadSandbox() {
         'pickIncluded',
         'isByobuPrivateDiscussionNotificationType',
         'isPrivateDiscussionLikeResource',
+        'isPrivateDiscussionRelevantToActor',
+        'filterPrivateDiscussionsForActor',
         'getNotificationDiscussionResource',
         'shouldHidePrivateDiscussionNotification',
         'mapFlarumNotificationKind'
@@ -220,6 +225,66 @@ function loadSandbox() {
         }
     };
     assert.strictEqual(sandbox.shouldHidePrivateDiscussionNotification(notification, included), false);
+})();
+
+(() => {
+    const sandbox = loadSandbox();
+    const actor = {
+        userId: '2',
+        groupIds: ['4']
+    };
+    const discussions = [
+        {
+            type: 'discussions',
+            id: '10',
+            attributes: {
+                title: '公开帖子',
+                isPrivateDiscussion: false
+            },
+            relationships: {
+                user: { data: { type: 'users', id: '9' } }
+            }
+        },
+        {
+            type: 'discussions',
+            id: '11',
+            attributes: {
+                title: '给当前用户的私信',
+                isPrivateDiscussion: true
+            },
+            relationships: {
+                user: { data: { type: 'users', id: '9' } },
+                recipientUsers: { data: [{ type: 'users', id: '2' }] }
+            }
+        },
+        {
+            type: 'discussions',
+            id: '12',
+            attributes: {
+                title: '其他人的私信',
+                isPrivateDiscussion: true
+            },
+            relationships: {
+                user: { data: { type: 'users', id: '9' } },
+                recipientUsers: { data: [{ type: 'users', id: '7' }] }
+            }
+        },
+        {
+            type: 'discussions',
+            id: '13',
+            attributes: {
+                title: '群组私信',
+                recipientCount: 1
+            },
+            relationships: {
+                user: { data: { type: 'users', id: '9' } },
+                recipientGroups: { data: [{ type: 'groups', id: '4' }] }
+            }
+        }
+    ];
+
+    const filtered = sandbox.filterPrivateDiscussionsForActor(discussions, actor);
+    assert.deepStrictEqual(filtered.map((item) => item.id), ['11', '13']);
 })();
 
 console.log('private-notification-filter.test.js passed');

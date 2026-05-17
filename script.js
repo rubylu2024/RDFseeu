@@ -5226,6 +5226,7 @@ async function renderMessagePage() {
             });
 
             state.itemsAll = merged;
+            state.useLocalUnreadCounts = true;
             await renderListFromCache();
         } catch (error) {
             if (error?.httpStatus === 403 || error?.apiError?.status === 403) {

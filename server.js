@@ -276,6 +276,7 @@ async function resolveActorFromRequest(req) {
   const isAdmin = attrs.isAdmin === true || groups.some((g) => String(g?.id) === '1');
   const actor = {
     userId: String(userJson?.data?.id || parsed.userId),
+    groupIds: groups.map((g) => String(g?.id || '')).filter(Boolean),
     isAdmin
   };
 
@@ -383,6 +384,39 @@ function isPrivateDiscussionLikeResource(resource) {
   if (Array.isArray(rel.recipientGroups?.data) && rel.recipientGroups.data.length > 0) return true;
   if (Array.isArray(rel.recipients?.data) && rel.recipients.data.length > 0) return true;
   return false;
+}
+
+function isPrivateDiscussionRelevantToActor(resource, actor) {
+  if (!isPrivateDiscussionLikeResource(resource)) return false;
+
+  const actorUserId = String(actor?.userId || '').trim();
+  if (!actorUserId) return false;
+
+  const actorGroupIds = new Set((Array.isArray(actor?.groupIds) ? actor.groupIds : []).map((id) => String(id)));
+  const rel = resource?.relationships || {};
+  const starterId = String(rel?.user?.data?.id || '').trim();
+  if (starterId && starterId === actorUserId) return true;
+
+  const recipientUsers = Array.isArray(rel.recipientUsers?.data) ? rel.recipientUsers.data : null;
+  if (recipientUsers && recipientUsers.some((item) => String(item?.id || '').trim() === actorUserId)) return true;
+
+  const recipientGroups = Array.isArray(rel.recipientGroups?.data) ? rel.recipientGroups.data : null;
+  if (recipientGroups && recipientGroups.some((item) => actorGroupIds.has(String(item?.id || '').trim()))) return true;
+
+  const recipients = Array.isArray(rel.recipients?.data) ? rel.recipients.data : null;
+  if (recipients && recipients.some((item) => {
+    const type = String(item?.type || '').trim();
+    const id = String(item?.id || '').trim();
+    if (type === 'users') return id === actorUserId;
+    if (type === 'groups') return actorGroupIds.has(id);
+    return false;
+  })) return true;
+
+  return false;
+}
+
+function filterPrivateDiscussionsForActor(discussions, actor) {
+  return (Array.isArray(discussions) ? discussions : []).filter((discussion) => isPrivateDiscussionRelevantToActor(discussion, actor));
 }
 
 function getNotificationDiscussionResource(notification, included) {
@@ -621,7 +655,7 @@ app.get('/custom-messages/unread-count', requireActor(async (req, res) => {
     try {
       if (authRaw) {
         const discussionsJson = await loadFlarumPrivateDiscussions(authRaw, 30);
-        const list = Array.isArray(discussionsJson?.data) ? discussionsJson.data : [];
+        const list = filterPrivateDiscussionsForActor(Array.isArray(discussionsJson?.data) ? discussionsJson.data : [], req.actor);
         privateUnread = list.filter((d) => {
           const a = d?.attributes || {};
           const lastPostedAt = a.lastPostedAt ? Date.parse(a.lastPostedAt) : NaN;
